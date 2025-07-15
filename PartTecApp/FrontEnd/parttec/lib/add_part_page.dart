@@ -37,7 +37,7 @@ class AddPartPage extends StatelessWidget {
               icon: Icon(Icons.camera_alt),
               label: Text(
                 "رفع صورة لتحليل القطعة",
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: const Color.fromARGB(255, 0, 0, 0)),
               ),
               style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 255, 255, 255),
