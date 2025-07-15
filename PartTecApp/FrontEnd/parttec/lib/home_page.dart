@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'add_part_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -14,6 +15,7 @@ class _HomePageState extends State<HomePage> {
   String? selectedFuel;
 
   final List<String> makes = [
+    'All',
     'Acura',
     'Alfa Romeo',
     'Aston Martin',
@@ -117,7 +119,6 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // القوائم المنسدلة
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
@@ -326,7 +327,10 @@ class _HomePageState extends State<HomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // تنفيذ إجراء عند الضغط على الزر
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddPartPage()),
+          );
         },
         backgroundColor: Colors.blue,
         child: Icon(Icons.add),
