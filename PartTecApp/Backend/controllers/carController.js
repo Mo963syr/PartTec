@@ -13,6 +13,18 @@ exports.addCar = async (req, res) => {
   }
 };
 
+exports.viewcar = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const cars = await Car.find({ user: userId });
+    res.status(200).json(cars);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: '❌ فشل في جلب السيارات' });
+  }
+};
+
 exports.addCarToUser = async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -44,4 +56,5 @@ exports.addCarToUser = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+
 };

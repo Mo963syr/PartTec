@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'add_part_page.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:parttec/setting.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -7,14 +10,91 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _selectedIndex = 2;
+  bool showCars = true;
 
+  int _selectedIndex = 2;
+  String userId = '68761cf7f92107b8288158c2';
   String? selectedMake;
   String? selectedModel;
   String? selectedYear;
   String? selectedFuel;
+  List<dynamic> userCars = [];
+
+  Future<void> fetchUserCars() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${AppSettings.baseUrl}/cars/veiwCars/$userId'),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          userCars = jsonDecode(response.body);
+        });
+      } else {
+        print('فشل في تحميل السيارات: ${response.body}');
+      }
+    } catch (e) {
+      print('خطأ أثناء تحميل السيارات: $e');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserCars();
+  }
+
+  void submitCar() async {
+    if (selectedMake == null ||
+        selectedModel == null ||
+        selectedYear == null ||
+        selectedFuel == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('يرجى تحديد جميع البيانات')),
+      );
+      return;
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse('${AppSettings.baseUrl}/cars/add/$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'manufacturer': selectedMake,
+          'model': selectedModel,
+          'year': selectedYear,
+          'fuelType': selectedFuel,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('✅ تم حفظ السيارة بنجاح')),
+        );
+        setState(() {
+          selectedMake = null;
+          selectedModel = null;
+          selectedYear = null;
+          selectedFuel = null;
+        });
+        await fetchUserCars();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ فشل في الحفظ: ${response.body}')),
+        );
+      }
+    } catch (e) {
+      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ خطأ في الاتصال بالخادم')),
+      );
+    }
+  }
 
   final List<String> makes = [
+    'Hyundai',
     'All',
     'Acura',
     'Alfa Romeo',
@@ -36,7 +116,6 @@ class _HomePageState extends State<HomePage> {
     'Genesis',
     'GMC',
     'Honda',
-    'Hyundai',
     'Infiniti',
     'Jaguar',
     'Jeep',
@@ -119,6 +198,77 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (userCars.isNotEmpty)
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          showCars = !showCars;
+                        });
+                      },
+                      child: Row(
+                        children: [
+                          Text(
+                            '🚗 سياراتك:',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          Icon(
+                            showCars ? Icons.expand_less : Icons.expand_more,
+                            color: Colors.blue,
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    AnimatedCrossFade(
+                      firstChild: Container(),
+                      secondChild: ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: userCars.length,
+                        itemBuilder: (context, index) {
+                          final car = userCars[index];
+                          return Container(
+                            padding: EdgeInsets.all(8),
+                            margin: EdgeInsets.only(bottom: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              border: Border.all(color: Colors.blue.shade200),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                    child: Text(
+                                        '🚗 ${car['manufacturer'] ?? ''}')),
+                                Expanded(
+                                    child: Text('📌 ${car['model'] ?? ''}')),
+                                Expanded(
+                                    child: Text(
+                                        '📅 ${car['year']?.toString() ?? ''}')),
+                                Expanded(
+                                    child: Text('⛽ ${car['fuelType'] ?? ''}')),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                      crossFadeState: showCars
+                          ? CrossFadeState.showSecond
+                          : CrossFadeState.showFirst,
+                      duration: Duration(milliseconds: 300),
+                    ),
+                  ],
+                ),
+              ),
+
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
@@ -207,6 +357,21 @@ class _HomePageState extends State<HomePage> {
                             selectedFuel = value;
                           });
                         },
+                      ),
+                    ),
+                  if (selectedFuel != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 20),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: submitCar,
+                          icon: Icon(Icons.save),
+                          label: Text('حفظ السيارة'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                          ),
+                        ),
                       ),
                     ),
                 ],
