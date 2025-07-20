@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class AddPartPageForSupplier extends StatefulWidget {
   const AddPartPageForSupplier({super.key});
@@ -17,8 +19,6 @@ class _AddPartPageForSupplierState extends State<AddPartPageForSupplier> {
   String? model;
   String? year;
   String? fuelType;
-  String? imageUrl;
-  String? user;
   File? _pickedImage;
 
   final List<String> makes = ['Toyota', 'Hyundai', 'Kia'];
@@ -32,8 +32,47 @@ class _AddPartPageForSupplierState extends State<AddPartPageForSupplier> {
     if (pickedFile != null) {
       setState(() {
         _pickedImage = File(pickedFile.path);
-        imageUrl = pickedFile.path; // حفظ المسار المحلي مؤقتًا
       });
+    }
+  }
+
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) return;
+    _formKey.currentState!.save();
+
+    final uri = Uri.parse('http://localhost:3000/part/add');
+
+    final request = http.MultipartRequest('POST', uri);
+
+    request.fields['name'] = name!;
+    request.fields['manufacturer'] = manufacturer!;
+    request.fields['model'] = model!;
+    request.fields['year'] = year!;
+    request.fields['fuelType'] = fuelType!;
+    request.fields['user'] = '12345';
+
+    if (_pickedImage != null) {
+      request.files.add(
+        await http.MultipartFile.fromPath('image', _pickedImage!.path),
+      );
+    }
+
+    try {
+      final response = await request.send();
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تمت إضافة القطعة بنجاح')),
+        );
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('فشل في الإرسال: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('خطأ أثناء الإرسال: $e')),
+      );
     }
   }
 
@@ -67,9 +106,10 @@ class _AddPartPageForSupplierState extends State<AddPartPageForSupplier> {
                   labelText: 'الماركة',
                   border: OutlineInputBorder(),
                 ),
-                items: makes.map((make) {
-                  return DropdownMenuItem(value: make, child: Text(make));
-                }).toList(),
+                items: makes
+                    .map((make) =>
+                        DropdownMenuItem(value: make, child: Text(make)))
+                    .toList(),
                 onChanged: (val) => manufacturer = val,
                 validator: (val) => val == null ? 'مطلوب' : null,
               ),
@@ -141,41 +181,11 @@ class _AddPartPageForSupplierState extends State<AddPartPageForSupplier> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-
-              // اسم المستخدم
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'اسم المستخدم',
-                  border: OutlineInputBorder(),
-                ),
-                onSaved: (val) => user = val,
-              ),
               const SizedBox(height: 20),
 
               // زر الإضافة
               ElevatedButton.icon(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    _formKey.currentState!.save();
-
-                    // هنا تنفذ الإرسال أو الحفظ
-                    print('--- قطعة جديدة ---');
-                    print('Name: $name');
-                    print('Manufacturer: $manufacturer');
-                    print('Model: $model');
-                    print('Year: $year');
-                    print('FuelType: $fuelType');
-                    print('ImageURL: $imageUrl');
-                    print('User: $user');
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('تمت إضافة القطعة بنجاح')),
-                    );
-
-                    Navigator.pop(context);
-                  }
-                },
+                onPressed: _submitForm,
                 icon: const Icon(Icons.add),
                 label: const Text('إضافة القطعة'),
                 style: ElevatedButton.styleFrom(
