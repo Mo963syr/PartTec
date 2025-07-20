@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+<<<<<<< HEAD
 import 'dart:convert';
 import 'package:parttec/setting.dart';
+=======
+>>>>>>> d63f7cc5aaf509d8d367c47d283de3ad9aeb240d
 
 class AddPartPageForSupplier extends StatefulWidget {
   const AddPartPageForSupplier({super.key});
@@ -20,11 +23,15 @@ class _AddPartPageForSupplierState extends State<AddPartPageForSupplier> {
   String? model;
   String? year;
   String? fuelType;
+  String? category;
+  String? status;
   File? _pickedImage;
 
   final List<String> makes = ['Toyota', 'Hyundai', 'Kia'];
   final List<String> years = ['2025', '2024', '2023', '2022'];
   final List<String> fuelTypes = ['بترول', 'ديزل'];
+  final List<String> categories = ['محرك', 'فرامل', 'هيكل'];
+  final List<String> statuses = ['جديد', 'مستعمل'];
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
@@ -50,7 +57,13 @@ class _AddPartPageForSupplierState extends State<AddPartPageForSupplier> {
     request.fields['model'] = model!;
     request.fields['year'] = year!;
     request.fields['fuelType'] = fuelType!;
+<<<<<<< HEAD
     request.fields['user'] = '68761cf7f92107b8288158c2';
+=======
+    request.fields['category'] = category!;
+    request.fields['status'] = status!;
+    request.fields['user'] = '12345';
+>>>>>>> d63f7cc5aaf509d8d367c47d283de3ad9aeb240d
 
     if (_pickedImage != null) {
       request.files.add(
@@ -151,6 +164,34 @@ class _AddPartPageForSupplierState extends State<AddPartPageForSupplier> {
                     .map((f) => DropdownMenuItem(value: f, child: Text(f)))
                     .toList(),
                 onChanged: (val) => fuelType = val,
+                validator: (val) => val == null ? 'مطلوب' : null,
+              ),
+              const SizedBox(height: 12),
+
+              // التصنيف (Category)
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: 'التصنيف',
+                  border: OutlineInputBorder(),
+                ),
+                items: categories
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                    .toList(),
+                onChanged: (val) => category = val,
+                validator: (val) => val == null ? 'مطلوب' : null,
+              ),
+              const SizedBox(height: 12),
+
+              // الحالة (Status)
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: 'الحالة',
+                  border: OutlineInputBorder(),
+                ),
+                items: statuses
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
+                onChanged: (val) => status = val,
                 validator: (val) => val == null ? 'مطلوب' : null,
               ),
               const SizedBox(height: 12),
