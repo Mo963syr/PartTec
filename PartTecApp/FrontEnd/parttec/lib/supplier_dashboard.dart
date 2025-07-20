@@ -21,29 +21,27 @@ class SupplierDashboard extends StatelessWidget {
           crossAxisSpacing: 20,
           childAspectRatio: 3 / 2,
           children: [
-            // كارد إضافة قطعة
             _buildCard(
               icon: Icons.add_box,
               title: 'إضافة قطعة',
-              buttonText: 'إضافة',
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (_) => const AddPartPageForSupplier()),
+                    builder: (_) => const AddPartPageForSupplier(),
+                  ),
                 );
               },
             ),
-
-            // كارد تعديل أو حذف القطع
             _buildCard(
               icon: Icons.edit_note,
               title: 'تعديل أو حذف قطعة',
-              buttonText: 'عرض القطع',
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const ManagePartsPage()),
+                  MaterialPageRoute(
+                    builder: (_) => const ManagePartsPage(),
+                  ),
                 );
               },
             ),
@@ -56,7 +54,6 @@ class SupplierDashboard extends StatelessWidget {
   Widget _buildCard({
     required IconData icon,
     required String title,
-    required String buttonText,
     required VoidCallback onTap,
   }) {
     return Card(
@@ -70,34 +67,27 @@ class SupplierDashboard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 50, color: Colors.blue),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Icon(icon, size: 50, color: Colors.blue),
                 ),
-              ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: onTap,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                const SizedBox(height: 12),
+                Flexible(
+                  child: Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
                 ),
-                child: Text(buttonText),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -105,7 +105,6 @@ class _AddPartPageForSupplierState extends State<AddPartPageForSupplier> {
               ),
               const SizedBox(height: 12),
 
-              // الشركة المصنعة
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(
                   labelText: 'الماركة',
