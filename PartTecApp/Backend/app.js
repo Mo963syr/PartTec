@@ -11,7 +11,17 @@ app.use('/cars', carRoutes);
 app.use('/user', userRoutes);
 app.use('/part', partRoutes);
 
-mongoose.connect('mongodb://localhost:27017/PartTec');
+const uri =
+  'mongodb+srv://moafaqaqeed01:JqphSStXpXgsv8t@cluster0.vhz1h.mongodb.net/PartTec?retryWrites=true&w=majority';
+
+mongoose
+  .connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => {
+    console.log('✅ تم الاتصال بقاعدة بيانات PartTec في MongoDB Atlas');
+  })
+  .catch((err) => {
+    console.error('❌ فشل الاتصال:', err);
+  });
 
 app.listen(3000, () => {
   console.log('الخادم يعمل على المنفذ 3000');

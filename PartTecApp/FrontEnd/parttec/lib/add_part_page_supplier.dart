@@ -46,7 +46,7 @@ class _AddPartPageForSupplierState extends State<AddPartPageForSupplier> {
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
 
-    final uri = Uri.parse('${AppSettings.baseUrl}/part/add');
+    final uri = Uri.parse('${AppSettings.serverurl}/part/add');
 
     final request = http.MultipartRequest('POST', uri);
 
