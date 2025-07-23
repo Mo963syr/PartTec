@@ -25,7 +25,14 @@ class _ManagePartsPageState extends State<ManagePartsPage> {
     try {
       final response = await http.get(uri);
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
+        final Map<String, dynamic> decoded = json.decode(response.body);
+
+        print(' الاستجابة من السيرفر: $decoded');
+
+        final List<dynamic> data = decoded['parts'];
+
+        print(' تم جلب القطع: $data');
+
         setState(() {
           parts = data;
           isLoading = false;
@@ -34,6 +41,7 @@ class _ManagePartsPageState extends State<ManagePartsPage> {
         throw Exception('فشل تحميل البيانات');
       }
     } catch (e) {
+      print('❌ خطأ أثناء تحميل القطع: $e');
       setState(() {
         isLoading = false;
       });
@@ -44,18 +52,27 @@ class _ManagePartsPageState extends State<ManagePartsPage> {
   }
 
   Future<void> deletePart(String id) async {
-    final uri = Uri.parse('http://localhost:3000/part/delete/$id');
+    final uri = Uri.parse('${AppSettings.serverurl}/part/delete/$id');
+
+    print('🗑️ سيتم حذف القطعة ذات المعرف: $id');
+
     try {
       final response = await http.delete(uri);
       if (response.statusCode == 200) {
+        print('✅ تم حذف القطعة بنجاح');
+
+        setState(() {
+          parts.removeWhere((p) => p['_id'] == id);
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('تم حذف القطعة')),
         );
-        fetchParts(); // إعادة التحديث
       } else {
         throw Exception('فشل الحذف');
       }
     } catch (e) {
+      print('❌ خطأ أثناء حذف القطعة: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('خطأ أثناء الحذف: $e')),
       );
@@ -99,7 +116,8 @@ class _ManagePartsPageState extends State<ManagePartsPage> {
                               icon:
                                   const Icon(Icons.edit, color: Colors.orange),
                               onPressed: () {
-                                // TODO: افتح صفحة تعديل القطعة
+                                print(
+                                    '✏️ تعديل القطعة: ${part['_id']} - ${part['name']}');
                               },
                             ),
                             IconButton(
