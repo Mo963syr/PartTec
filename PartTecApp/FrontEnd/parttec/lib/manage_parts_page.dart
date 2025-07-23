@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:parttec/setting.dart';
 
 class ManagePartsPage extends StatefulWidget {
   const ManagePartsPage({super.key});
@@ -20,7 +21,7 @@ class _ManagePartsPageState extends State<ManagePartsPage> {
   }
 
   Future<void> fetchParts() async {
-    final uri = Uri.parse('http://localhost:3000/part/all');
+    final uri = Uri.parse('${AppSettings.serverurl}/part/viewPrivateParts');
     try {
       final response = await http.get(uri);
       if (response.statusCode == 200) {

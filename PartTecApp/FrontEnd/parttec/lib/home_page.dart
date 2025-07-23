@@ -23,7 +23,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> fetchUserCars() async {
     try {
       final response = await http.get(
-        Uri.parse('${AppSettings.baseUrl}/cars/veiwCars/$userId'),
+        Uri.parse('${AppSettings.serverurl}/cars/veiwCars/$userId'),
       );
 
       if (response.statusCode == 200) {
