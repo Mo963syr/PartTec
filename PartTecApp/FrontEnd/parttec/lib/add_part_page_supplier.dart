@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:parttec/setting.dart';
 
 class AddPartPageForSupplier extends StatefulWidget {
@@ -22,6 +23,7 @@ class _AddPartPageForSupplierState extends State<AddPartPageForSupplier> {
   String? category;
   String? status;
   File? _pickedImage;
+
   bool _isLoading = false;
 
   final List<String> makes = ['Toyota', 'Hyundai', 'Kia'];
@@ -99,7 +101,10 @@ class _AddPartPageForSupplierState extends State<AddPartPageForSupplier> {
             content: const Text('تمت إضافة القطعة بنجاح.'),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop();
+                },
                 child: const Text('موافق'),
               ),
             ],
