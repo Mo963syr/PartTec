@@ -11,14 +11,17 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool showCars = true;
-
   int _selectedIndex = 2;
-  String userId = '68761cf7f92107b8288158c2';
+  String userId = '687ff5a6bf0de81878ed94f5';
+
   String? selectedMake;
   String? selectedModel;
   String? selectedYear;
   String? selectedFuel;
+
   List<dynamic> userCars = [];
+  List<dynamic> availableParts = [];
+  bool isLoadingAvailable = true;
 
   Future<void> fetchUserCars() async {
     try {
@@ -38,10 +41,34 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> fetchAvailableParts() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${AppSettings.serverurl}/part/viewPrivateParts'),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> decoded = json.decode(response.body);
+        print('✅ القطع المتوفرة: ${decoded['parts']}');
+        setState(() {
+          availableParts = decoded['parts'];
+          isLoadingAvailable = false;
+        });
+      } else {
+        print('❌ فشل تحميل القطع المتوفرة: ${response.body}');
+        setState(() => isLoadingAvailable = false);
+      }
+    } catch (e) {
+      print('❌ خطأ أثناء تحميل القطع المتوفرة: $e');
+      setState(() => isLoadingAvailable = false);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     fetchUserCars();
+    fetchAvailableParts();
   }
 
   void submitCar() async {
@@ -198,6 +225,7 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 1 - سيارات المستخدم
             if (userCars.isNotEmpty)
               Padding(
                 padding:
@@ -269,6 +297,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
+            // 2 - نموذج اختيار السيارة
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
@@ -378,20 +407,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            // إعلان
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(horizontal: 12),
-              height: 100,
-              decoration: BoxDecoration(
-                color: Colors.purple.shade100,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Center(
-                child: Text('تسليم في جميع أنحاء العالم - DHL, FedEx, EMS'),
-              ),
-            ),
-
+            // 3 - Best Selling Parts
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Text('Best Selling Parts',
@@ -411,7 +427,6 @@ class _HomePageState extends State<HomePage> {
                       Expanded(
                         child: Container(
                           color: Colors.grey.shade200,
-                          // child: Image.asset(part['image'], fit: BoxFit.contain),
                           child:
                               Icon(Icons.image, size: 40, color: Colors.grey),
                         ),
@@ -426,6 +441,8 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
+            // بقية الصفحة كما هي (يمكنك نقل أو حذف الأقسام لاحقًا حسب رغبتك)
+            // New Parts
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Text('New Parts',
@@ -452,7 +469,6 @@ class _HomePageState extends State<HomePage> {
                               color: Colors.grey.shade300,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            // child: Image.asset(part['image'], fit: BoxFit.cover),
                             child:
                                 Icon(Icons.image, size: 50, color: Colors.grey),
                           ),
@@ -487,6 +503,57 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
             ),
+
+            // القطع المتوفرة (في الأسفل، يمكن نقلها أو حذفها لاحقاً)
+            if (isLoadingAvailable)
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (availableParts.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('🛠️ القطع المتوفرة',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8),
+                    GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      childAspectRatio: 3,
+                      children: availableParts.map((part) {
+                        return Card(
+                          child: ListTile(
+                            leading: part['imageUrl'] != null
+                                ? Image.network(
+                                    part['imageUrl'],
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Icon(Icons.image_not_supported,
+                                          size: 50);
+                                    },
+                                  )
+                                : Icon(Icons.image, size: 50),
+                            title: Text(part['name'] ?? 'بدون اسم'),
+                            subtitle: Text(
+                              '${part['manufacturer'] ?? ''} - ${part['model'] ?? ''} - ${part['year'] ?? ''}',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                            trailing:
+                                Icon(Icons.check_circle, color: Colors.green),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
