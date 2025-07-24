@@ -7,7 +7,7 @@ class AddPartPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("إضافة قطعة"),
+        title: const Text("طلب قطعة"),
         backgroundColor: Colors.blue,
       ),
       body: Padding(

@@ -9,7 +9,7 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   bool showCars = true;
   int _selectedIndex = 2;
   String userId = '687ff5a6bf0de81878ed94f5';
@@ -23,18 +23,29 @@ class _HomePageState extends State<HomePage> {
   List<dynamic> availableParts = [];
   bool isLoadingAvailable = true;
 
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+    fetchUserCars();
+    fetchAvailableParts();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
   Future<void> fetchUserCars() async {
     try {
       final response = await http.get(
         Uri.parse('${AppSettings.serverurl}/cars/veiwCars/$userId'),
       );
-
       if (response.statusCode == 200) {
-        setState(() {
-          userCars = jsonDecode(response.body);
-        });
-      } else {
-        print('فشل في تحميل السيارات: ${response.body}');
+        setState(() => userCars = jsonDecode(response.body));
       }
     } catch (e) {
       print('خطأ أثناء تحميل السيارات: $e');
@@ -46,29 +57,27 @@ class _HomePageState extends State<HomePage> {
       final response = await http.get(
         Uri.parse('${AppSettings.serverurl}/part/viewPrivateParts'),
       );
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> decoded = json.decode(response.body);
-        print('✅ القطع المتوفرة: ${decoded['parts']}');
+        final parts = decoded['parts'];
+        print('✅ رد السيرفر: $parts');
+        if (parts == null || parts.isEmpty) {
+          print('🚫 لا توجد قطع في الرد');
+        } else {
+          print('✅ عدد القطع: ${parts.length}');
+        }
         setState(() {
-          availableParts = decoded['parts'];
+          availableParts = parts;
           isLoadingAvailable = false;
         });
       } else {
-        print('❌ فشل تحميل القطع المتوفرة: ${response.body}');
+        print('❌ فشل تحميل القطع: ${response.body}');
         setState(() => isLoadingAvailable = false);
       }
     } catch (e) {
-      print('❌ خطأ أثناء تحميل القطع المتوفرة: $e');
+      print('❌ خطأ أثناء تحميل القطع: $e');
       setState(() => isLoadingAvailable = false);
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    fetchUserCars();
-    fetchAvailableParts();
   }
 
   void submitCar() async {
@@ -81,13 +90,10 @@ class _HomePageState extends State<HomePage> {
       );
       return;
     }
-
     try {
       final response = await http.post(
         Uri.parse('${AppSettings.baseUrl}/cars/add/$userId'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'manufacturer': selectedMake,
           'model': selectedModel,
@@ -95,18 +101,14 @@ class _HomePageState extends State<HomePage> {
           'fuelType': selectedFuel,
         }),
       );
-
       if (response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('✅ تم حفظ السيارة بنجاح')),
         );
         setState(() {
-          selectedMake = null;
-          selectedModel = null;
-          selectedYear = null;
-          selectedFuel = null;
+          selectedMake = selectedModel = selectedYear = selectedFuel = null;
         });
-        await fetchUserCars();
+        fetchUserCars();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('❌ فشل في الحفظ: ${response.body}')),
@@ -174,13 +176,11 @@ class _HomePageState extends State<HomePage> {
     'Volkswagen',
     'Volvo'
   ];
-
   final Map<String, List<String>> modelsByMake = {
     'Kia': ['Sportage', 'Sorento', 'Cerato'],
     'Toyota': ['Corolla', 'Camry', 'Land Cruiser'],
     'Hyundai': ['Elantra', 'Sonata', 'Tucson'],
   };
-
   final List<String> years = [
     '2025',
     '2024',
@@ -193,377 +193,235 @@ class _HomePageState extends State<HomePage> {
   ];
   final List<String> fuelTypes = ['بترول', 'ديزل'];
 
-  final List<Map<String, dynamic>> bestSellingParts = [
-    {'name': 'Fuel Injector', 'image': 'assets/images/fuel_injector.png'},
-    {'name': 'ECU', 'image': 'assets/images/ecu.png'},
-    {'name': 'Turbo Charger', 'image': 'assets/images/turbo.png'},
-    {'name': 'Compressor', 'image': 'assets/images/compressor.png'},
-    {'name': 'Clutch Disc', 'image': 'assets/images/clutch.png'},
-    {'name': 'Oil Filter', 'image': 'assets/images/filter.png'},
-    {'name': 'Fuel Pump', 'image': 'assets/images/fuel_pump.png'},
-    {'name': 'Flywheel', 'image': 'assets/images/flywheel.png'},
-    {'name': 'FAN Clutch', 'image': 'assets/images/fan_clutch.png'},
-    {'name': 'Starter Motors', 'image': 'assets/images/starter.png'},
-    {'name': 'Alternator', 'image': 'assets/images/alternator.png'},
-  ];
+  Widget _buildPartsByCategory(String category) {
+    final filtered = availableParts.where((part) {
+      final c = (part['category'] ?? '').toString().toLowerCase();
+      return c == category.toLowerCase();
+    }).toList();
 
-  final List<Map<String, dynamic>> newParts = [
-    {'image': 'assets/images/car1.png', 'label': '20% OFF', 'tag': 'NEW'},
-    {'image': 'assets/images/part1.png', 'label': '20% OFF', 'tag': 'NEW'},
-    {'image': 'assets/images/part2.png', 'label': '20% OFF', 'tag': 'NEW'},
-  ];
+    print('🔍 [$category] عدد القطع المصنفة: ${filtered.length}');
+
+    if (filtered.isEmpty)
+      return Center(child: Text('لا توجد قطع في هذا القسم'));
+
+    return GridView.builder(
+      padding: const EdgeInsets.only(top: 10),
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      itemCount: filtered.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 0.8),
+      itemBuilder: (ctx, i) {
+        final p = filtered[i];
+        return Card(
+          elevation: 4,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              children: [
+                Expanded(
+                  child: p['imageUrl'] != null
+                      ? Image.network(p['imageUrl'],
+                          fit: BoxFit.cover, width: double.infinity)
+                      : Icon(Icons.image, size: 50, color: Colors.grey),
+                ),
+                SizedBox(height: 6),
+                Text(p['name'] ?? 'بدون اسم',
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('قطع الغيار'),
-        backgroundColor: Colors.blue,
-      ),
+      appBar: AppBar(title: Text('قطع الغيار'), backgroundColor: Colors.blue),
       body: SingleChildScrollView(
         padding: const EdgeInsets.only(bottom: 80),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1 - سيارات المستخدم
-            if (userCars.isNotEmpty)
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          showCars = !showCars;
-                        });
-                      },
-                      child: Row(
-                        children: [
-                          Text(
-                            '🚗 سياراتك:',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                          Icon(
-                            showCars ? Icons.expand_less : Icons.expand_more,
-                            color: Colors.blue,
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    AnimatedCrossFade(
-                      firstChild: Container(),
-                      secondChild: ListView.builder(
-                        shrinkWrap: true,
-                        physics: NeverScrollableScrollPhysics(),
-                        itemCount: userCars.length,
-                        itemBuilder: (context, index) {
-                          final car = userCars[index];
-                          return Container(
-                            padding: EdgeInsets.all(8),
-                            margin: EdgeInsets.only(bottom: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              border: Border.all(color: Colors.blue.shade200),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                    child: Text(
-                                        '🚗 ${car['manufacturer'] ?? ''}')),
-                                Expanded(
-                                    child: Text('📌 ${car['model'] ?? ''}')),
-                                Expanded(
-                                    child: Text(
-                                        '📅 ${car['year']?.toString() ?? ''}')),
-                                Expanded(
-                                    child: Text('⛽ ${car['fuelType'] ?? ''}')),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                      crossFadeState: showCars
-                          ? CrossFadeState.showSecond
-                          : CrossFadeState.showFirst,
-                      duration: Duration(milliseconds: 300),
-                    ),
-                  ],
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          if (userCars.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(children: [
+                GestureDetector(
+                  onTap: () => setState(() => showCars = !showCars),
+                  child: Row(children: [
+                    Text('🚗 سياراتك:',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    Icon(showCars ? Icons.expand_less : Icons.expand_more,
+                        color: Colors.blue),
+                  ]),
                 ),
-              ),
-
-            // 2 - نموذج اختيار السيارة
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  DropdownButtonFormField<String>(
-                    decoration: InputDecoration(
-                      labelText: 'اختر ماركة السيارة',
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                    ),
-                    value: selectedMake,
-                    items: makes.map((make) {
-                      return DropdownMenuItem(value: make, child: Text(make));
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedMake = value;
-                        selectedModel = null;
-                        selectedYear = null;
-                        selectedFuel = null;
-                      });
-                    },
-                  ),
-                  if (selectedMake != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: DropdownButtonFormField<String>(
-                        decoration: InputDecoration(
-                          labelText: 'اختر الموديل',
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                        ),
-                        value: selectedModel,
-                        items: (modelsByMake[selectedMake] ?? []).map((model) {
-                          return DropdownMenuItem(
-                              value: model, child: Text(model));
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedModel = value;
-                            selectedYear = null;
-                            selectedFuel = null;
-                          });
-                        },
-                      ),
-                    ),
-                  if (selectedModel != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: DropdownButtonFormField<String>(
-                        decoration: InputDecoration(
-                          labelText: 'اختر سنة الصنع',
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                        ),
-                        value: selectedYear,
-                        items: years.map((year) {
-                          return DropdownMenuItem(
-                              value: year, child: Text(year));
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedYear = value;
-                            selectedFuel = null;
-                          });
-                        },
-                      ),
-                    ),
-                  if (selectedYear != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: DropdownButtonFormField<String>(
-                        decoration: InputDecoration(
-                          labelText: 'اختر نوع الوقود',
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                        ),
-                        value: selectedFuel,
-                        items: fuelTypes.map((fuel) {
-                          return DropdownMenuItem(
-                              value: fuel, child: Text(fuel));
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedFuel = value;
-                          });
-                        },
-                      ),
-                    ),
-                  if (selectedFuel != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 20),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: submitCar,
-                          icon: Icon(Icons.save),
-                          label: Text('حفظ السيارة'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+                if (showCars)
+                  ...userCars
+                      .map((c) => Text(
+                          '• ${c['manufacturer']} ${c['model']} (${c['year']})'))
+                      .toList(),
+              ]),
             ),
-
-            // 3 - Best Selling Parts
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Text('Best Selling Parts',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              child: GridView.count(
-                crossAxisCount: 4,
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                childAspectRatio: 0.75,
-                children: bestSellingParts.map((part) {
-                  return Column(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          color: Colors.grey.shade200,
-                          child:
-                              Icon(Icons.image, size: 40, color: Colors.grey),
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(part['name'],
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 12)),
-                    ],
-                  );
-                }).toList(),
-              ),
-            ),
-
-            // بقية الصفحة كما هي (يمكنك نقل أو حذف الأقسام لاحقًا حسب رغبتك)
-            // New Parts
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Text('New Parts',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ),
-
-            SizedBox(
-              height: 160,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: newParts.length,
-                itemBuilder: (context, index) {
-                  final part = newParts[index];
-                  return Container(
-                    width: 140,
-                    margin: const EdgeInsets.only(left: 10),
-                    child: Stack(
-                      children: [
-                        Card(
-                          child: Container(
-                            width: double.infinity,
-                            height: 140,
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade300,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child:
-                                Icon(Icons.image, size: 50, color: Colors.grey),
-                          ),
-                        ),
-                        Positioned(
-                          top: 8,
-                          left: 8,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            color: Colors.blue,
-                            child: Text(part['label'],
-                                style: TextStyle(
-                                    color: Colors.white, fontSize: 10)),
-                          ),
-                        ),
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            color: Colors.red,
-                            child: Text(part['tag'],
-                                style: TextStyle(
-                                    color: Colors.white, fontSize: 10)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                    labelText: 'ماركة السيارة', border: OutlineInputBorder()),
+                value: selectedMake,
+                items: makes
+                    .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                    .toList(),
+                onChanged: (val) {
+                  setState(() {
+                    selectedMake = val;
+                  });
                 },
               ),
-            ),
-
-            // القطع المتوفرة (في الأسفل، يمكن نقلها أو حذفها لاحقاً)
-            if (isLoadingAvailable)
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (availableParts.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('🛠️ القطع المتوفرة',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold)),
-                    SizedBox(height: 8),
-                    GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      childAspectRatio: 3,
-                      children: availableParts.map((part) {
-                        return Card(
-                          child: ListTile(
-                            leading: part['imageUrl'] != null
-                                ? Image.network(
-                                    part['imageUrl'],
-                                    width: 50,
-                                    height: 50,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Icon(Icons.image_not_supported,
-                                          size: 50);
-                                    },
-                                  )
-                                : Icon(Icons.image, size: 50),
-                            title: Text(part['name'] ?? 'بدون اسم'),
-                            subtitle: Text(
-                              '${part['manufacturer'] ?? ''} - ${part['model'] ?? ''} - ${part['year'] ?? ''}',
-                              style: TextStyle(fontSize: 12),
-                            ),
-                            trailing:
-                                Icon(Icons.check_circle, color: Colors.green),
-                          ),
-                        );
-                      }).toList(),
-                    ),
+              if (selectedMake != null) ...[
+                SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                      labelText: 'الموديل', border: OutlineInputBorder()),
+                  value: selectedModel,
+                  items: (modelsByMake[selectedMake] ?? [])
+                      .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                      .toList(),
+                  onChanged: (val) {
+                    setState(() {
+                      selectedMake = val;
+                    });
+                  },
+                ),
+              ],
+              if (selectedModel != null) ...[
+                SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                      labelText: 'سنة الصنع', border: OutlineInputBorder()),
+                  value: selectedYear,
+                  items: years
+                      .map((y) => DropdownMenuItem(value: y, child: Text(y)))
+                      .toList(),
+                  onChanged: (val) {
+                    setState(() {
+                      selectedMake = val;
+                    });
+                  },
+                ),
+              ],
+              if (selectedYear != null) ...[
+                SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                      labelText: 'نوع الوقود', border: OutlineInputBorder()),
+                  value: selectedFuel,
+                  items: fuelTypes
+                      .map((f) => DropdownMenuItem(value: f, child: Text(f)))
+                      .toList(),
+                  onChanged: (val) {
+                    setState(() {
+                      selectedMake = val;
+                    });
+                  },
+                ),
+              ],
+              if (selectedFuel != null) ...[
+                SizedBox(height: 20),
+                ElevatedButton.icon(
+                  icon: Icon(Icons.save),
+                  label: Text('حفظ السيارة'),
+                  onPressed: submitCar,
+                  style:
+                      ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                ),
+              ],
+            ]),
+          ),
+          if (!isLoadingAvailable)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(children: [
+                TabBar(
+                  controller: _tabController,
+                  labelColor: Colors.blue,
+                  unselectedLabelColor: Colors.grey,
+                  indicatorColor: Colors.blue,
+                  tabs: [
+                    Tab(icon: Icon(Icons.settings), text: 'محرك'),
+                    Tab(icon: Icon(Icons.car_repair), text: 'هيكل'),
+                    Tab(
+                        icon: Icon(Icons.settings_input_component),
+                        text: 'فرامل'),
                   ],
                 ),
-              ),
-          ],
-        ),
+                SizedBox(
+                  height: 300,
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildPartsByCategory('محرك'),
+                      _buildPartsByCategory('هيكل'),
+                      _buildPartsByCategory('فرامل'),
+                    ],
+                  ),
+                ),
+              ]),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('🛠️ القطع المتوفرة:',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              if (isLoadingAvailable)
+                Center(child: CircularProgressIndicator())
+              else if (availableParts.isEmpty)
+                Text('لا توجد قطع متاحة')
+              else
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: availableParts.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 0.8),
+                  itemBuilder: (ctx, i) {
+                    final p = availableParts[i];
+                    return Card(
+                      child: Column(children: [
+                        Expanded(
+                          child: p['imageUrl'] != null
+                              ? Image.network(p['imageUrl'],
+                                  fit: BoxFit.cover, width: double.infinity)
+                              : Icon(Icons.image, size: 50, color: Colors.grey),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Text(p['name'] ?? 'بدون اسم',
+                              textAlign: TextAlign.center),
+                        ),
+                      ]),
+                    );
+                  },
+                ),
+            ]),
+          ),
+        ]),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AddPartPage()),
-          );
-        },
+        onPressed: () => Navigator.push(
+            context, MaterialPageRoute(builder: (_) => AddPartPage())),
         backgroundColor: Colors.blue,
         child: Icon(Icons.add),
       ),
@@ -572,34 +430,32 @@ class _HomePageState extends State<HomePage> {
         shape: CircularNotchedRectangle(),
         notchMargin: 6,
         child: SizedBox(
-          height: 60,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              IconButton(
-                icon: Icon(Icons.notifications,
-                    color: _selectedIndex == 0 ? Colors.blue : Colors.grey),
-                onPressed: () => setState(() => _selectedIndex = 0),
-              ),
-              IconButton(
-                icon: Icon(Icons.history,
-                    color: _selectedIndex == 1 ? Colors.blue : Colors.grey),
-                onPressed: () => setState(() => _selectedIndex = 1),
-              ),
-              SizedBox(width: 40),
-              IconButton(
-                icon: Icon(Icons.receipt_long,
-                    color: _selectedIndex == 3 ? Colors.blue : Colors.grey),
-                onPressed: () => setState(() => _selectedIndex = 3),
-              ),
-              IconButton(
-                icon: Icon(Icons.home,
-                    color: _selectedIndex == 2 ? Colors.blue : Colors.grey),
-                onPressed: () => setState(() => _selectedIndex = 2),
-              ),
-            ],
-          ),
-        ),
+            height: 60,
+            child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  IconButton(
+                      icon: Icon(Icons.notifications,
+                          color:
+                              _selectedIndex == 0 ? Colors.blue : Colors.grey),
+                      onPressed: () => setState(() => _selectedIndex = 0)),
+                  IconButton(
+                      icon: Icon(Icons.history,
+                          color:
+                              _selectedIndex == 1 ? Colors.blue : Colors.grey),
+                      onPressed: () => setState(() => _selectedIndex = 1)),
+                  SizedBox(width: 40),
+                  IconButton(
+                      icon: Icon(Icons.receipt_long,
+                          color:
+                              _selectedIndex == 3 ? Colors.blue : Colors.grey),
+                      onPressed: () => setState(() => _selectedIndex = 3)),
+                  IconButton(
+                      icon: Icon(Icons.home,
+                          color:
+                              _selectedIndex == 2 ? Colors.blue : Colors.grey),
+                      onPressed: () => setState(() => _selectedIndex = 2)),
+                ])),
       ),
     );
   }
