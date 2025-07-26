@@ -92,7 +92,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     }
     try {
       final response = await http.post(
-        Uri.parse('${AppSettings.baseUrl}/cars/add/$userId'),
+        Uri.parse('${AppSettings.serverurl}/cars/add/$userId'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'manufacturer': selectedMake,
@@ -297,7 +297,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       .toList(),
                   onChanged: (val) {
                     setState(() {
-                      selectedMake = val;
+                      selectedModel = val;
                     });
                   },
                 ),
@@ -313,7 +313,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       .toList(),
                   onChanged: (val) {
                     setState(() {
-                      selectedMake = val;
+                      selectedYear = val;
                     });
                   },
                 ),
@@ -329,7 +329,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       .toList(),
                   onChanged: (val) {
                     setState(() {
-                      selectedMake = val;
+                      selectedFuel = val;
                     });
                   },
                 ),
