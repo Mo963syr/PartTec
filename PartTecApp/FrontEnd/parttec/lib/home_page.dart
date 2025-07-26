@@ -60,12 +60,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       if (response.statusCode == 200) {
         final Map<String, dynamic> decoded = json.decode(response.body);
         final parts = decoded['parts'];
-        print('✅ رد السيرفر: $parts');
-        if (parts == null || parts.isEmpty) {
-          print('🚫 لا توجد قطع في الرد');
-        } else {
-          print('✅ عدد القطع: ${parts.length}');
-        }
         setState(() {
           availableParts = parts;
           isLoadingAvailable = false;
@@ -123,83 +117,47 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   final List<String> makes = [
-    'Hyundai',
-    'All',
-    'Acura',
-    'Alfa Romeo',
-    'Aston Martin',
-    'Audi',
-    'Bentley',
-    'BMW',
-    'Bugatti',
-    'Buick',
-    'Cadillac',
-    'Chevrolet',
-    'Chrysler',
-    'Citroën',
-    'Dacia',
-    'Dodge',
-    'Ferrari',
-    'Fiat',
-    'Ford',
-    'Genesis',
-    'GMC',
-    'Honda',
-    'Infiniti',
-    'Jaguar',
-    'Jeep',
-    'Kia',
-    'Koenigsegg',
-    'Lamborghini',
-    'Land Rover',
-    'Lexus',
-    'Lucid',
-    'Maserati',
-    'Mazda',
-    'McLaren',
-    'Mercedes-Benz',
-    'Mini',
-    'Mitsubishi',
-    'Nissan',
-    'Opel',
-    'Peugeot',
-    'Porsche',
-    'Renault',
-    'Rolls-Royce',
-    'Saab',
-    'Seat',
-    'Škoda',
-    'Subaru',
-    'Suzuki',
-    'Tesla',
-    'Toyota',
-    'Volkswagen',
-    'Volvo'
+    'Hyundai', 'All', 'Acura', 'Alfa Romeo', 'Aston Martin', 'Audi', 'Bentley',
+    'BMW', 'Bugatti', 'Buick', 'Cadillac', 'Chevrolet', 'Chrysler', 'Citroën',
+    'Dacia', 'Dodge', 'Ferrari', 'Fiat', 'Ford', 'Genesis', 'GMC', 'Honda',
+    'Infiniti', 'Jaguar', 'Jeep', 'Kia', 'Koenigsegg', 'Lamborghini',
+    'Land Rover', 'Lexus', 'Lucid', 'Maserati', 'Mazda', 'McLaren',
+    'Mercedes-Benz', 'Mini', 'Mitsubishi', 'Nissan', 'Opel', 'Peugeot',
+    'Porsche', 'Renault', 'Rolls-Royce', 'Saab', 'Seat', 'Škoda', 'Subaru',
+    'Suzuki', 'Tesla', 'Toyota', 'Volkswagen', 'Volvo'
   ];
+
   final Map<String, List<String>> modelsByMake = {
     'Kia': ['Sportage', 'Sorento', 'Cerato'],
     'Toyota': ['Corolla', 'Camry', 'Land Cruiser'],
     'Hyundai': ['Elantra', 'Sonata', 'Tucson'],
   };
+
   final List<String> years = [
-    '2025',
-    '2024',
-    '2023',
-    '2022',
-    '2021',
-    '2020',
-    '2019',
-    '2018'
+    '2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018'
   ];
+
   final List<String> fuelTypes = ['بترول', 'ديزل'];
+
+  Widget _buildScrollableCategory(String category) {
+    return RefreshIndicator(
+      displacement: 200.0, // زيادة مسافة سحب المؤشر
+      strokeWidth: 3.0,
+      onRefresh: () async {
+        await fetchAvailableParts();
+      },
+      child: SingleChildScrollView(
+        physics: BouncingScrollPhysics(),
+        child: _buildPartsByCategory(category),
+      ),
+    );
+  }
 
   Widget _buildPartsByCategory(String category) {
     final filtered = availableParts.where((part) {
       final c = (part['category'] ?? '').toString().toLowerCase();
       return c == category.toLowerCase();
     }).toList();
-
-    print('🔍 [$category] عدد القطع المصنفة: ${filtered.length}');
 
     if (filtered.isEmpty)
       return Center(child: Text('لا توجد قطع في هذا القسم'));
@@ -210,16 +168,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       physics: NeverScrollableScrollPhysics(),
       itemCount: filtered.length,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          childAspectRatio: 0.8),
+        crossAxisCount: 2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 0.8,
+      ),
       itemBuilder: (ctx, i) {
         final p = filtered[i];
         return Card(
           elevation: 4,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Column(
@@ -227,7 +185,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 Expanded(
                   child: p['imageUrl'] != null
                       ? Image.network(p['imageUrl'],
-                          fit: BoxFit.cover, width: double.infinity)
+                      fit: BoxFit.cover, width: double.infinity)
                       : Icon(Icons.image, size: 50, color: Colors.grey),
                 ),
                 SizedBox(height: 6),
@@ -246,178 +204,157 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('قطع الغيار'), backgroundColor: Colors.blue),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 80),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          if (userCars.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(children: [
-                GestureDetector(
-                  onTap: () => setState(() => showCars = !showCars),
-                  child: Row(children: [
-                    Text('🚗 سياراتك:',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                    Icon(showCars ? Icons.expand_less : Icons.expand_more,
-                        color: Colors.blue),
-                  ]),
-                ),
-                if (showCars)
-                  ...userCars
-                      .map((c) => Text(
-                          '• ${c['manufacturer']} ${c['model']} (${c['year']})'))
-                      .toList(),
-              ]),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                    labelText: 'ماركة السيارة', border: OutlineInputBorder()),
-                value: selectedMake,
-                items: makes
-                    .map((m) => DropdownMenuItem(value: m, child: Text(m)))
-                    .toList(),
-                onChanged: (val) {
-                  setState(() {
-                    selectedMake = val;
-                  });
-                },
-              ),
-              if (selectedMake != null) ...[
-                SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                      labelText: 'الموديل', border: OutlineInputBorder()),
-                  value: selectedModel,
-                  items: (modelsByMake[selectedMake] ?? [])
-                      .map((m) => DropdownMenuItem(value: m, child: Text(m)))
-                      .toList(),
-                  onChanged: (val) {
-                    setState(() {
-                      selectedModel = val;
-                    });
-                  },
-                ),
-              ],
-              if (selectedModel != null) ...[
-                SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                      labelText: 'سنة الصنع', border: OutlineInputBorder()),
-                  value: selectedYear,
-                  items: years
-                      .map((y) => DropdownMenuItem(value: y, child: Text(y)))
-                      .toList(),
-                  onChanged: (val) {
-                    setState(() {
-                      selectedYear = val;
-                    });
-                  },
-                ),
-              ],
-              if (selectedYear != null) ...[
-                SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  decoration: InputDecoration(
-                      labelText: 'نوع الوقود', border: OutlineInputBorder()),
-                  value: selectedFuel,
-                  items: fuelTypes
-                      .map((f) => DropdownMenuItem(value: f, child: Text(f)))
-                      .toList(),
-                  onChanged: (val) {
-                    setState(() {
-                      selectedFuel = val;
-                    });
-                  },
-                ),
-              ],
-              if (selectedFuel != null) ...[
-                SizedBox(height: 20),
-                ElevatedButton.icon(
-                  icon: Icon(Icons.save),
-                  label: Text('حفظ السيارة'),
-                  onPressed: submitCar,
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                ),
-              ],
-            ]),
+      body: RefreshIndicator(
+        displacement: 200.0, // زيادة مسافة سحب المؤشر
+        strokeWidth: 3.0,
+        onRefresh: () async {
+          await fetchAvailableParts();
+        },
+        child: SingleChildScrollView(
+          physics: BouncingScrollPhysics(),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).padding.bottom + 160,
           ),
-          if (!isLoadingAvailable)
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(children: [
-                TabBar(
-                  controller: _tabController,
-                  labelColor: Colors.blue,
-                  unselectedLabelColor: Colors.grey,
-                  indicatorColor: Colors.blue,
-                  tabs: [
-                    Tab(icon: Icon(Icons.settings), text: 'محرك'),
-                    Tab(icon: Icon(Icons.car_repair), text: 'هيكل'),
-                    Tab(
-                        icon: Icon(Icons.settings_input_component),
-                        text: 'فرامل'),
-                  ],
-                ),
-                SizedBox(
-                  height: 300,
-                  child: TabBarView(
-                    controller: _tabController,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (userCars.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
                     children: [
-                      _buildPartsByCategory('محرك'),
-                      _buildPartsByCategory('هيكل'),
-                      _buildPartsByCategory('فرامل'),
+                      GestureDetector(
+                        onTap: () => setState(() => showCars = !showCars),
+                        child: Row(
+                          children: [
+                            Text('🚗 سياراتك:',
+                                style: TextStyle(fontWeight: FontWeight.bold)),
+                            Icon(showCars ? Icons.expand_less : Icons.expand_more,
+                                color: Colors.blue),
+                          ],
+                        ),
+                      ),
+                      if (showCars)
+                        ...userCars.map((c) => Text(
+                            '• ${c['manufacturer']} ${c['model']} (${c['year']})'))
+                            .toList(),
                     ],
                   ),
                 ),
-              ]),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('🛠️ القطع المتوفرة:',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              if (isLoadingAvailable)
-                Center(child: CircularProgressIndicator())
-              else if (availableParts.isEmpty)
-                Text('لا توجد قطع متاحة')
-              else
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: availableParts.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: 0.8),
-                  itemBuilder: (ctx, i) {
-                    final p = availableParts[i];
-                    return Card(
-                      child: Column(children: [
-                        Expanded(
-                          child: p['imageUrl'] != null
-                              ? Image.network(p['imageUrl'],
-                                  fit: BoxFit.cover, width: double.infinity)
-                              : Icon(Icons.image, size: 50, color: Colors.grey),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Text(p['name'] ?? 'بدون اسم',
-                              textAlign: TextAlign.center),
-                        ),
-                      ]),
-                    );
-                  },
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                          labelText: 'ماركة السيارة', border: OutlineInputBorder()),
+                      value: selectedMake,
+                      items: makes
+                          .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                          .toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          selectedMake = val;
+                          selectedModel = null;
+                          selectedYear = null;
+                          selectedFuel = null;
+                        });
+                      },
+                    ),
+                    if (selectedMake != null) ...[
+                      SizedBox(height: 10),
+                      DropdownButtonFormField<String>(
+                        decoration: InputDecoration(
+                            labelText: 'الموديل', border: OutlineInputBorder()),
+                        value: selectedModel,
+                        items: (modelsByMake[selectedMake] ?? [])
+                            .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                            .toList(),
+                        onChanged: (val) {
+                          setState(() {
+                            selectedModel = val;
+                          });
+                        },
+                      ),
+                    ],
+                    if (selectedModel != null) ...[
+                      SizedBox(height: 10),
+                      DropdownButtonFormField<String>(
+                        decoration: InputDecoration(
+                            labelText: 'سنة الصنع', border: OutlineInputBorder()),
+                        value: selectedYear,
+                        items: years
+                            .map((y) => DropdownMenuItem(value: y, child: Text(y)))
+                            .toList(),
+                        onChanged: (val) {
+                          setState(() {
+                            selectedYear = val;
+                          });
+                        },
+                      ),
+                    ],
+                    if (selectedYear != null) ...[
+                      SizedBox(height: 10),
+                      DropdownButtonFormField<String>(
+                        decoration: InputDecoration(
+                            labelText: 'نوع الوقود', border: OutlineInputBorder()),
+                        value: selectedFuel,
+                        items: fuelTypes
+                            .map((f) => DropdownMenuItem(value: f, child: Text(f)))
+                            .toList(),
+                        onChanged: (val) {
+                          setState(() {
+                            selectedFuel = val;
+                          });
+                        },
+                      ),
+                    ],
+                    if (selectedFuel != null) ...[
+                      SizedBox(height: 20),
+                      ElevatedButton.icon(
+                        icon: Icon(Icons.save),
+                        label: Text('حفظ السيارة'),
+                        onPressed: submitCar,
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                      ),
+                    ],
+                  ],
                 ),
-            ]),
+              ),
+              if (!isLoadingAvailable)
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    children: [
+                      TabBar(
+                        controller: _tabController,
+                        labelColor: Colors.blue,
+                        unselectedLabelColor: Colors.grey,
+                        indicatorColor: Colors.blue,
+                        tabs: [
+                          Tab(icon: Icon(Icons.settings), text: 'محرك'),
+                          Tab(icon: Icon(Icons.car_repair), text: 'هيكل'),
+                          Tab(icon: Icon(Icons.settings_input_component), text: 'فرامل'),
+                        ],
+                      ),
+                      Container(
+                        height: MediaQuery.of(context).size.height * 0.44,
+                        child: TabBarView(
+                          controller: _tabController,
+                          children: [
+                            _buildScrollableCategory('محرك'),
+                            _buildScrollableCategory('هيكل'),
+                            _buildScrollableCategory('فرامل'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
-        ]),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(
@@ -430,32 +367,30 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         shape: CircularNotchedRectangle(),
         notchMargin: 6,
         child: SizedBox(
-            height: 60,
-            child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  IconButton(
-                      icon: Icon(Icons.notifications,
-                          color:
-                              _selectedIndex == 0 ? Colors.blue : Colors.grey),
-                      onPressed: () => setState(() => _selectedIndex = 0)),
-                  IconButton(
-                      icon: Icon(Icons.history,
-                          color:
-                              _selectedIndex == 1 ? Colors.blue : Colors.grey),
-                      onPressed: () => setState(() => _selectedIndex = 1)),
-                  SizedBox(width: 40),
-                  IconButton(
-                      icon: Icon(Icons.receipt_long,
-                          color:
-                              _selectedIndex == 3 ? Colors.blue : Colors.grey),
-                      onPressed: () => setState(() => _selectedIndex = 3)),
-                  IconButton(
-                      icon: Icon(Icons.home,
-                          color:
-                              _selectedIndex == 2 ? Colors.blue : Colors.grey),
-                      onPressed: () => setState(() => _selectedIndex = 2)),
-                ])),
+          height: 60,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              IconButton(
+                  icon: Icon(Icons.notifications,
+                      color: _selectedIndex == 0 ? Colors.blue : Colors.grey),
+                  onPressed: () => setState(() => _selectedIndex = 0)),
+              IconButton(
+                  icon: Icon(Icons.history,
+                      color: _selectedIndex == 1 ? Colors.blue : Colors.grey),
+                  onPressed: () => setState(() => _selectedIndex = 1)),
+              SizedBox(width: 40),
+              IconButton(
+                  icon: Icon(Icons.receipt_long,
+                      color: _selectedIndex == 3 ? Colors.blue : Colors.grey),
+                  onPressed: () => setState(() => _selectedIndex = 3)),
+              IconButton(
+                  icon: Icon(Icons.home,
+                      color: _selectedIndex == 2 ? Colors.blue : Colors.grey),
+                  onPressed: () => setState(() => _selectedIndex = 2)),
+            ],
+          ),
+        ),
       ),
     );
   }
