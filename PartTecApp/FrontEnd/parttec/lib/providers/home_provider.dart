@@ -18,14 +18,58 @@ class HomeProvider with ChangeNotifier {
 
   // قوائم البيانات
   final List<String> makes = [
-    'Hyundai', 'All', 'Acura', 'Alfa Romeo', 'Aston Martin', 'Audi', 'Bentley',
-    'BMW', 'Bugatti', 'Buick', 'Cadillac', 'Chevrolet', 'Chrysler', 'Citroën',
-    'Dacia', 'Dodge', 'Ferrari', 'Fiat', 'Ford', 'Genesis', 'GMC', 'Honda',
-    'Infiniti', 'Jaguar', 'Jeep', 'Kia', 'Koenigsegg', 'Lamborghini',
-    'Land Rover', 'Lexus', 'Lucid', 'Maserati', 'Mazda', 'McLaren',
-    'Mercedes-Benz', 'Mini', 'Mitsubishi', 'Nissan', 'Opel', 'Peugeot',
-    'Porsche', 'Renault', 'Rolls-Royce', 'Saab', 'Seat', 'Škoda', 'Subaru',
-    'Suzuki', 'Tesla', 'Toyota', 'Volkswagen', 'Volvo'
+    'Hyundai',
+    'All',
+    'Acura',
+    'Alfa Romeo',
+    'Aston Martin',
+    'Audi',
+    'Bentley',
+    'BMW',
+    'Bugatti',
+    'Buick',
+    'Cadillac',
+    'Chevrolet',
+    'Chrysler',
+    'Citroën',
+    'Dacia',
+    'Dodge',
+    'Ferrari',
+    'Fiat',
+    'Ford',
+    'Genesis',
+    'GMC',
+    'Honda',
+    'Infiniti',
+    'Jaguar',
+    'Jeep',
+    'Kia',
+    'Koenigsegg',
+    'Lamborghini',
+    'Land Rover',
+    'Lexus',
+    'Lucid',
+    'Maserati',
+    'Mazda',
+    'McLaren',
+    'Mercedes-Benz',
+    'Mini',
+    'Mitsubishi',
+    'Nissan',
+    'Opel',
+    'Peugeot',
+    'Porsche',
+    'Renault',
+    'Rolls-Royce',
+    'Saab',
+    'Seat',
+    'Škoda',
+    'Subaru',
+    'Suzuki',
+    'Tesla',
+    'Toyota',
+    'Volkswagen',
+    'Volvo'
   ];
 
   final Map<String, List<String>> modelsByMake = {
@@ -35,20 +79,31 @@ class HomeProvider with ChangeNotifier {
   };
 
   final List<String> years = [
-    '2025', '2024', '2023', '2022', '2021', '2020', '2019', '2018'
+    '2025',
+    '2024',
+    '2023',
+    '2022',
+    '2021',
+    '2020',
+    '2019',
+    '2018'
   ];
 
   final List<String> fuelTypes = ['بترول', 'ديزل'];
 
-  // الدوال
   Future<void> fetchUserCars() async {
     try {
       final response = await http.get(
         Uri.parse('${AppSettings.serverurl}/cars/veiwCars/$userId'),
       );
+
       if (response.statusCode == 200) {
-        userCars = jsonDecode(response.body);
-        notifyListeners();
+        final data = jsonDecode(response.body);
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          userCars = data;
+          notifyListeners();
+        });
       }
     } catch (e) {
       print('خطأ أثناء تحميل السيارات: $e');
@@ -57,28 +112,47 @@ class HomeProvider with ChangeNotifier {
 
   Future<void> fetchAvailableParts() async {
     try {
-      isLoadingAvailable = true;
-      notifyListeners();
+      // إشعار ببداية التحميل – مؤجل
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        isLoadingAvailable = true;
+        notifyListeners();
+      });
 
       final response = await http.get(
         Uri.parse('${AppSettings.serverurl}/part/viewPrivateParts'),
       );
+
       if (response.statusCode == 200) {
         final Map<String, dynamic> decoded = json.decode(response.body);
-        availableParts = decoded['parts'] ?? [];
+        final parts = decoded['parts'] ?? [];
+
+        // تحديث البيانات – مؤجل
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          availableParts = parts;
+          isLoadingAvailable = false;
+          notifyListeners();
+        });
       } else {
         print('❌ فشل تحميل القطع: ${response.body}');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          isLoadingAvailable = false;
+          notifyListeners();
+        });
       }
     } catch (e) {
       print('❌ خطأ أثناء تحميل القطع: $e');
-    } finally {
-      isLoadingAvailable = false;
-      notifyListeners();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        isLoadingAvailable = false;
+        notifyListeners();
+      });
     }
   }
 
   void submitCar(BuildContext context) async {
-    if (selectedMake == null || selectedModel == null || selectedYear == null || selectedFuel == null) {
+    if (selectedMake == null ||
+        selectedModel == null ||
+        selectedYear == null ||
+        selectedFuel == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('يرجى تحديد جميع البيانات')),
       );

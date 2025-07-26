@@ -17,9 +17,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    final provider = Provider.of<HomeProvider>(context, listen: false);
-    provider.fetchUserCars();
-    provider.fetchAvailableParts();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<HomeProvider>(context, listen: false);
+      provider.fetchUserCars();
+      provider.fetchAvailableParts();
+    });
   }
 
   @override
@@ -73,15 +76,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             onTap: provider.toggleShowCars,
             child: Row(
               children: [
-                Text('🚗 سياراتك:', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('🚗 سياراتك:',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 Icon(provider.showCars ? Icons.expand_less : Icons.expand_more,
                     color: Colors.blue),
               ],
             ),
           ),
           if (provider.showCars)
-            ...provider.userCars.map((c) => Text(
-                '• ${c['manufacturer']} ${c['model']} (${c['year']})'))
+            ...provider.userCars
+                .map((c) =>
+                    Text('• ${c['manufacturer']} ${c['model']} (${c['year']})'))
                 .toList(),
         ],
       ),
