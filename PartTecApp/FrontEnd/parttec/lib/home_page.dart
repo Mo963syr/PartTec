@@ -346,6 +346,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             _buildScrollableCategory('محرك'),
                             _buildScrollableCategory('هيكل'),
                             _buildScrollableCategory('فرامل'),
+
                           ],
                         ),
                       ),
