@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parttec/supplier_dashboard.dart';
 
 import 'home_page.dart';
 
@@ -7,9 +8,7 @@ import 'providers/parts_provider.dart';
 import 'providers/add_part_provider.dart';
 import 'package:provider/provider.dart';
 
-
 void main() {
-
   runApp(
     MultiProvider(
       providers: [
