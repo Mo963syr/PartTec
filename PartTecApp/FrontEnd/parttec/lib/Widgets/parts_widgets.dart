@@ -43,6 +43,11 @@ class PartsGrid extends StatelessWidget {
                 Text(p['name'] ?? 'بدون اسم',
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.ellipsis),
+                SizedBox(height: 6),
+                Text(p['manufacturer'] ?? 'بدون اسم',
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis),
+
               ],
             ),
           ),

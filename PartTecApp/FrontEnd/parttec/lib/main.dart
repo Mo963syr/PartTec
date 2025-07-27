@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:parttec/supplier_dashboard.dart';
+
 import 'home_page.dart';
-<<<<<<< HEAD
-=======
+
 import 'providers/home_provider.dart';
 import 'providers/parts_provider.dart';
 import 'providers/add_part_provider.dart';
->>>>>>> ffb5cc40757eb2566b68f9316a4cc8a9373758de
 import 'package:provider/provider.dart';
-import 'providers/home_provider.dart';
-import 'supplier_dashboard.dart';
+
+
 void main() {
 
   runApp(
@@ -32,7 +30,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: SupplierDashboard(),
+      home: HomePage(),
     );
   }
 }

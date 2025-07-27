@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:parttec/setting.dart';
 
 class HomeProvider with ChangeNotifier {
-  String userId = '687ff5a6bf0de81878ed94f5';
+  String userid = '687ff5a6bf0de81878ed94f5';
 
   // الحالات
   bool showCars = true;
@@ -94,7 +94,7 @@ class HomeProvider with ChangeNotifier {
   Future<void> fetchUserCars() async {
     try {
       final response = await http.get(
-        Uri.parse('${AppSettings.serverurl}/cars/veiwCars/$userId'),
+        Uri.parse('${AppSettings.serverurl}/cars/veiwCars/$userid'),
       );
 
       if (response.statusCode == 200) {
@@ -119,12 +119,13 @@ class HomeProvider with ChangeNotifier {
       });
 
       final response = await http.get(
-        Uri.parse('${AppSettings.serverurl}/part/viewPrivateParts'),
+        Uri.parse('${AppSettings.serverurl}/part/viewPrivateParts/$userid'),
       );
-
+      print(response.body);
+     print(response.body);
       if (response.statusCode == 200) {
         final Map<String, dynamic> decoded = json.decode(response.body);
-        final parts = decoded['parts'] ?? [];
+        final parts = decoded['compatibleParts'] ?? [];
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           availableParts = parts;
@@ -160,7 +161,7 @@ class HomeProvider with ChangeNotifier {
 
     try {
       final response = await http.post(
-        Uri.parse('${AppSettings.serverurl}/cars/add/$userId'),
+        Uri.parse('${AppSettings.serverurl}/cars/add/$userid'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'manufacturer': selectedMake,

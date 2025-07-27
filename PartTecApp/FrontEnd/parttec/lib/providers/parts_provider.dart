@@ -20,6 +20,7 @@ class PartsProvider extends ChangeNotifier {
       if (response.statusCode == 200) {
         final Map<String, dynamic> decoded = json.decode(response.body);
         _parts = decoded['parts'] ?? [];
+        print(_parts);
       } else {
         throw Exception('فشل تحميل البيانات');
       }
