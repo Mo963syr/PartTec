@@ -51,7 +51,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             children: [
               if (provider.userCars.isNotEmpty) _buildUserCarsSection(provider),
               _buildCarFormSection(context, provider),
-              if (!provider.isLoadingAvailable) _buildPartsSection(),
+               _buildPartsSection(),
             ],
           ),
         ),
@@ -66,32 +66,56 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       bottomNavigationBar: _buildBottomAppBar(),
     );
   }
-
   Widget _buildUserCarsSection(HomeProvider provider) {
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 🔁 زر تبديل عرض السيارات
           GestureDetector(
             onTap: provider.toggleShowCars,
             child: Row(
               children: [
                 Text('🚗 سياراتك:',
                     style: TextStyle(fontWeight: FontWeight.bold)),
-                Icon(provider.showCars ? Icons.expand_less : Icons.expand_more,
-                    color: Colors.blue),
+                Icon(
+                  provider.showCars ? Icons.expand_less : Icons.expand_more,
+                  color: Colors.blue,
+                ),
               ],
             ),
           ),
+
+
           if (provider.showCars)
             ...provider.userCars
-                .map((c) =>
-                    Text('• ${c['manufacturer']} ${c['model']} (${c['year']})'))
+                .map((c) => Text(
+                '• ${c['manufacturer']} ${c['model']} (${c['year']})'))
                 .toList(),
+
+          SizedBox(height: 16),
+
+          // 🔁 زر التبديل بين القطع الخاصة والعامة
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'عرض قطع ${provider.isPrivate ? "خاصة" : "عامة"}',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Switch(
+                value: provider.isPrivate,
+                onChanged: (_) => provider.toggleIsPrivate(),
+                activeColor: Colors.blue,
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
+
 
   Widget _buildCarFormSection(BuildContext context, HomeProvider provider) {
     return Padding(

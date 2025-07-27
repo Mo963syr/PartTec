@@ -6,7 +6,7 @@ import 'package:parttec/setting.dart';
 class HomeProvider with ChangeNotifier {
   String userid = '687ff5a6bf0de81878ed94f5';
 
-  // الحالات
+
   bool showCars = true;
   String? selectedMake;
   String? selectedModel;
@@ -109,20 +109,28 @@ class HomeProvider with ChangeNotifier {
       print('خطأ أثناء تحميل السيارات: $e');
     }
   }
-
+  bool isPrivate = true;
+  void toggleIsPrivate() {
+    isPrivate = !isPrivate;
+    notifyListeners();
+    fetchAvailableParts();
+  }
   Future<void> fetchAvailableParts() async {
     try {
-      // إشعار ببداية التحميل – مؤجل
+
       WidgetsBinding.instance.addPostFrameCallback((_) {
         isLoadingAvailable = true;
         notifyListeners();
       });
 
-      final response = await http.get(
-        Uri.parse('${AppSettings.serverurl}/part/viewPrivateParts/$userid'),
-      );
+
+      final String url = isPrivate
+          ? '${AppSettings.serverurl}/part/viewPrivateParts/$userid'
+          : '${AppSettings.serverurl}/part/viewAllParts';
+
+      final response = await http.get(Uri.parse(url));
       print(response.body);
-     print(response.body);
+
       if (response.statusCode == 200) {
         final Map<String, dynamic> decoded = json.decode(response.body);
         final parts = decoded['compatibleParts'] ?? [];
@@ -147,6 +155,7 @@ class HomeProvider with ChangeNotifier {
       });
     }
   }
+
 
   void submitCar(BuildContext context) async {
     if (selectedMake == null ||
