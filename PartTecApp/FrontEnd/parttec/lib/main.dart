@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parttec/supplier_dashboard.dart';
 import 'home_page.dart';
 import 'providers/home_provider.dart';
 import 'package:provider/provider.dart';
@@ -22,7 +23,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: HomePage(),
+      home: SupplierDashboard(),
     );
   }
 }

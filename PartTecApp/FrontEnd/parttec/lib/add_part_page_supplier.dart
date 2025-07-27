@@ -22,6 +22,7 @@ class _AddPartPageForSupplierState extends State<AddPartPageForSupplier> {
   String? fuelType;
   String? category;
   String? status;
+  String? price;
   File? _pickedImage;
 
   bool _isLoading = false;
@@ -82,6 +83,7 @@ class _AddPartPageForSupplierState extends State<AddPartPageForSupplier> {
     request.fields['user'] = '68761cf7f92107b8288158c2';
     request.fields['category'] = category!;
     request.fields['status'] = status!;
+    request.fields['price'] = price!;
 
     if (_pickedImage != null) {
       request.files.add(
@@ -247,6 +249,22 @@ class _AddPartPageForSupplierState extends State<AddPartPageForSupplier> {
                           .toList(),
                       onChanged: (val) => status = val,
                       validator: (val) => val == null ? 'مطلوب' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      decoration: const InputDecoration(
+                        labelText: 'السعر (بالدولار)',
+                        border: OutlineInputBorder(),
+                        suffixText: '\$',
+                      ),
+                      keyboardType: TextInputType.number,
+                      onSaved: (val) => price = val,
+                      validator: (val) {
+                        if (val == null || val.isEmpty) return 'مطلوب';
+                        if (double.tryParse(val) == null)
+                          return 'أدخل رقمًا صالحًا';
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 12),
                     Column(

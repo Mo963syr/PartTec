@@ -126,7 +126,6 @@ class HomeProvider with ChangeNotifier {
         final Map<String, dynamic> decoded = json.decode(response.body);
         final parts = decoded['parts'] ?? [];
 
-        // تحديث البيانات – مؤجل
         WidgetsBinding.instance.addPostFrameCallback((_) {
           availableParts = parts;
           isLoadingAvailable = false;
