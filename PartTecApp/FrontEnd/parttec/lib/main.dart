@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
-import 'providers/home_provider.dart';
 import 'package:provider/provider.dart';
-
+import 'providers/home_provider.dart';
+import 'supplier_dashboard.dart';
 void main() {
+
   runApp(
     MultiProvider(
       providers: [
@@ -22,7 +23,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: HomePage(),
+      home: SupplierDashboard(),
     );
   }
 }
