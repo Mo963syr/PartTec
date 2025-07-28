@@ -23,11 +23,20 @@ class _AddPartPageForSupplierState extends State<AddPartPageForSupplier> {
   String? status;
   String? price;
   File? _pickedImage;
+  String? serialNumber;
+  String? description;
 
   final List<String> makes = ['Toyota', 'Hyundai', 'Kia'];
   final List<String> years = ['2025', '2024', '2023', '2022'];
   final List<String> fuelTypes = ['بترول', 'ديزل'];
-  final List<String> categories = ['محرك', 'فرامل', 'هيكل'];
+  final List<String> categories = [
+    'محرك',
+    'فرامل',
+    'هيكل',
+    'كهرباء',
+    'إطارات',
+    'نظام التعليق'
+  ];
   final List<String> statuses = ['جديد', 'مستعمل'];
 
   Future<void> _pickImage() async {
@@ -163,7 +172,14 @@ class _AddPartPageForSupplierState extends State<AddPartPageForSupplier> {
                               (y) => DropdownMenuItem(value: y, child: Text(y)))
                           .toList(),
                       onChanged: (val) => year = val,
-                      validator: (val) => val == null ? 'مطلوب' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      decoration: const InputDecoration(
+                        labelText: 'الرقم التسلسلي',
+                        border: OutlineInputBorder(),
+                      ),
+                      onSaved: (val) => serialNumber = val,
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
@@ -214,6 +230,15 @@ class _AddPartPageForSupplierState extends State<AddPartPageForSupplier> {
                           return 'أدخل رقمًا صالحًا';
                         return null;
                       },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      decoration: const InputDecoration(
+                        labelText: 'وصف القطعة',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 3,
+                      onSaved: (val) => description = val,
                     ),
                     const SizedBox(height: 12),
                     Column(

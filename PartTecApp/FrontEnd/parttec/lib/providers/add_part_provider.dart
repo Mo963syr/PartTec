@@ -19,6 +19,8 @@ class AddPartProvider extends ChangeNotifier {
     required String status,
     required String price,
     File? image,
+    String? serialNumber,
+    String? description,
   }) async {
     isLoading = true;
     errorMessage = null;
@@ -30,12 +32,21 @@ class AddPartProvider extends ChangeNotifier {
     request.fields['name'] = name;
     request.fields['manufacturer'] = manufacturer;
     request.fields['model'] = model;
-    request.fields['year'] = year;
+    if (year != null && year.isNotEmpty) {
+      request.fields['year'] = year;
+    }
     request.fields['fuelType'] = fuelType;
-    request.fields['user'] = '68761cf7f92107b8288158c2'; // ثابت حاليًا
+    request.fields['user'] = '68761cf7f92107b8288158c2';
     request.fields['category'] = category;
     request.fields['status'] = status;
     request.fields['price'] = price;
+    if (serialNumber != null && serialNumber.isNotEmpty) {
+      request.fields['serialNumber'] = serialNumber;
+    }
+
+    if (description != null && description.isNotEmpty) {
+      request.fields['description'] = description;
+    }
 
     if (image != null) {
       request.files.add(
