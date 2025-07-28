@@ -5,10 +5,12 @@ import 'package:parttec/setting.dart';
 
 class CartProvider extends ChangeNotifier {
   String userid = '687ff5a6bf0de81878ed94f5';
+
   // فقط إرسال القطعة إلى السيرفر
   Future<bool> addToCartToServer(Map<String, dynamic> part) async {
     final url = Uri.parse(
-        '${AppSettings.serverurl}/cart/addToCart'); // غيّر إلى رابط السيرفر الفعلي
+        '${AppSettings
+            .serverurl}/cart/addToCart'); // غيّر إلى رابط السيرفر الفعلي
     print(part);
     try {
       final response = await http.post(
@@ -30,6 +32,45 @@ class CartProvider extends ChangeNotifier {
     } catch (e) {
       print('حدث خطأ أثناء الإرسال إلى السلة: $e');
       return false;
+    }
+  }
+
+  List<Map<String, dynamic>> _fetchedCartItems = [];
+
+  List<Map<String, dynamic>> get fetchedCartItems => _fetchedCartItems;
+
+  bool isLoading = false;
+  String? error;
+
+  // ✅ تحميل السلة من السيرفر
+  Future<void> fetchCartFromServer() async {
+    final url = Uri.parse(
+        'https://your-server-url.com/cart/getUserCart/$userid');
+
+    try {
+      isLoading = true;
+      error = null;
+      notifyListeners();
+
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['cart'] != null) {
+          _fetchedCartItems = List<Map<String, dynamic>>.from(data['cart']);
+        } else {
+          _fetchedCartItems = [];
+        }
+      } else {
+        error = 'فشل التحميل: ${response.statusCode}';
+        _fetchedCartItems = [];
+      }
+    } catch (e) {
+      error = 'خطأ في تحميل السلة: $e';
+      _fetchedCartItems = [];
+    } finally {
+      isLoading = false;
+      notifyListeners();
     }
   }
 }

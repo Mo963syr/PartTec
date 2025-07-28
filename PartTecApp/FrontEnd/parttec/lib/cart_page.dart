@@ -7,93 +7,83 @@ class CartPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final cart = Provider.of<CartProvider>(context);
 
+    // تحميل الطلبات من السيرفر عند أول دخول للصفحة
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (cart.fetchedCartItems.isEmpty && !cart.isLoading) {
+        cart.fetchCartFromServer();
+      }
+    });
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(title: Text('سلة المشتريات')),
-        body: cart.items.isEmpty
+        body: cart.isLoading
+            ? Center(child: CircularProgressIndicator())
+            : cart.fetchedCartItems.isEmpty
             ? Center(child: Text('السلة فارغة 🛒'))
             : Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                itemCount: cart.fetchedCartItems.length,
+                itemBuilder: (context, index) {
+                  final item = cart.fetchedCartItems[index];
+                  final part = item['partId']; // مفترض أنها populate من الخادم
+
+                  return Card(
+                    margin: EdgeInsets.all(10),
+                    child: ListTile(
+                      leading: part['imageUrl'] != null
+                          ? Image.network(part['imageUrl'], width: 60)
+                          : Icon(Icons.image, size: 50),
+                      title: Text(part['name'] ?? 'بدون اسم'),
+                      subtitle: Text(
+                        '${part['price']} \$',
+                        style: TextStyle(color: Colors.green),
+                      ),
+                      trailing: Text('الكمية: ${item['quantity'] ?? 1}'),
+                    ),
+                  );
+                },
+              ),
+            ),
+            Divider(),
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
                 children: [
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: cart.items.length,
-                      itemBuilder: (context, index) {
-                        final item = cart.items[index];
-                        return Card(
-                          margin: EdgeInsets.all(10),
-                          child: ListTile(
-                            leading: item['imageUrl'] != null
-                                ? Image.network(item['imageUrl'], width: 60)
-                                : Icon(Icons.image, size: 50),
-                            title: Text(item['name'] ?? 'بدون اسم'),
-                            subtitle: Text(
-                              '${item['price']} \$',
-                              style: TextStyle(color: Colors.green),
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if ((item['quantity'] ?? 1) > 1)
-                                  IconButton(
-                                    icon: Icon(Icons.remove_circle),
-                                    onPressed: () =>
-                                        cart.decreaseQuantity(index),
-                                  )
-                                else
-                                  IconButton(
-                                    icon: Icon(Icons.delete, color: Colors.red),
-                                    onPressed: () =>
-                                        _confirmDelete(context, cart, index),
-                                  ),
-                                Text('${item['quantity'] ?? 1}'),
-                                IconButton(
-                                  icon: Icon(Icons.add_circle),
-                                  onPressed: () => cart.increaseQuantity(index),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () =>
+                            _confirmOrder(context, 'الدفع عند الاستلام'),
+                        icon: Icon(Icons.delivery_dining),
+                        label: Text('الدفع عند الاستلام'),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () =>
+                            _confirmOrder(context, 'الدفع الإلكتروني'),
+                        icon: Icon(Icons.credit_card),
+                        label: Text('الدفع بالبطاقة'),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green),
+                      ),
+                    ],
                   ),
-                  Divider(),
-                  Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            ElevatedButton.icon(
-                              onPressed: () =>
-                                  _confirmOrder(context, 'الدفع عند الاستلام'),
-                              icon: Icon(Icons.delivery_dining),
-                              label: Text('الدفع عند الاستلام'),
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.orange),
-                            ),
-                            ElevatedButton.icon(
-                              onPressed: () =>
-                                  _confirmOrder(context, 'الدفع الإلكتروني'),
-                              icon: Icon(Icons.credit_card),
-                              label: Text('الدفع بالبطاقة'),
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          'الإجمالي: ${cart.totalAmount.toStringAsFixed(2)} \$',
-                          style: TextStyle(fontSize: 18),
-                        )
-                      ],
-                    ),
-                  )
+                  SizedBox(height: 10),
+                  // Text(
+                  //   // 'الإجمالي: ${cart.totalAmount.toStringAsFixed(2)} \$',
+                  //   // style: TextStyle(fontSize: 18),
+                  // )
                 ],
               ),
+            )
+          ],
+        ),
       ),
     );
   }
@@ -111,7 +101,7 @@ class CartPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () {
-              cart.removeFromCart(index);
+              // cart.removeFromCart(index);
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('تم حذف القطعة من السلة 🗑️')),
