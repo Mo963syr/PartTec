@@ -3,6 +3,7 @@ import 'add_part_page.dart';
 import 'providers/home_provider.dart';
 import 'package:parttec/Widgets/parts_widgets.dart';
 import 'package:provider/provider.dart';
+import 'cart_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -36,7 +37,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final provider = Provider.of<HomeProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text('قطع الغيار'), backgroundColor: Colors.blue),
+      appBar: AppBar(
+        title: Text('قطع الغيار'),
+        backgroundColor: Colors.blue,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.shopping_cart),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => CartPage()),
+              );
+            },
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         displacement: 200.0,
         strokeWidth: 3.0,
@@ -51,7 +66,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             children: [
               if (provider.userCars.isNotEmpty) _buildUserCarsSection(provider),
               _buildCarFormSection(context, provider),
-               _buildPartsSection(),
+              _buildPartsSection(),
             ],
           ),
         ),
@@ -66,6 +81,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       bottomNavigationBar: _buildBottomAppBar(),
     );
   }
+
   Widget _buildUserCarsSection(HomeProvider provider) {
     return Padding(
       padding: const EdgeInsets.all(12),
@@ -87,11 +103,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ),
           ),
 
-
           if (provider.showCars)
             ...provider.userCars
-                .map((c) => Text(
-                '• ${c['manufacturer']} ${c['model']} (${c['year']})'))
+                .map((c) =>
+                    Text('• ${c['manufacturer']} ${c['model']} (${c['year']})'))
                 .toList(),
 
           SizedBox(height: 16),
@@ -115,7 +130,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       ),
     );
   }
-
 
   Widget _buildCarFormSection(BuildContext context, HomeProvider provider) {
     return Padding(
