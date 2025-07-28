@@ -39,9 +39,14 @@ class CartPage extends StatelessWidget {
                                     icon: Icon(Icons.remove_circle),
                                     onPressed: () =>
                                         cart.decreaseQuantity(index),
+                                  )
+                                else
+                                  IconButton(
+                                    icon: Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () =>
+                                        _confirmDelete(context, cart, index),
                                   ),
-                                Text('${item['quantity'] ?? 1}',
-                                    style: TextStyle(fontSize: 16)),
+                                Text('${item['quantity'] ?? 1}'),
                                 IconButton(
                                   icon: Icon(Icons.add_circle),
                                   onPressed: () => cart.increaseQuantity(index),
@@ -89,6 +94,32 @@ class CartPage extends StatelessWidget {
                   )
                 ],
               ),
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, CartProvider cart, int index) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('حذف القطعة'),
+        content: Text('هل أنت متأكد من حذف هذه القطعة من السلة؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              cart.removeFromCart(index);
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('تم حذف القطعة من السلة 🗑️')),
+              );
+            },
+            child: Text('حذف'),
+          ),
+        ],
       ),
     );
   }
