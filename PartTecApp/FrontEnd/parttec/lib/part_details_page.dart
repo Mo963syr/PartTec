@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'providers/cart_provider.dart';
+import 'package:provider/provider.dart';
 
 class PartDetailsPage extends StatelessWidget {
   final Map<String, dynamic> part;
@@ -105,6 +107,11 @@ class PartDetailsPage extends StatelessWidget {
           ),
           child: ElevatedButton(
             onPressed: () {
+              Provider.of<CartProvider>(context, listen: false).addToCart({
+                ...part,
+                'quantity': 1,
+              });
+
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('تمت الإضافة إلى السلة ✅')),
               );
