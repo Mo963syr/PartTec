@@ -75,7 +75,7 @@ class HomeProvider with ChangeNotifier {
   final Map<String, List<String>> modelsByMake = {
     'Kia': ['Sportage', 'Sorento', 'Cerato'],
     'Toyota': ['Corolla', 'Camry', 'Land Cruiser'],
-    'Hyundai': ['Elantra', 'Sonata', 'Tucson'],
+    'Hyundai': ['Elantra', 'Sonata', 'Tucson','Azera'],
   };
 
   final List<String> years = [

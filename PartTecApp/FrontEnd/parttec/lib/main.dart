@@ -7,7 +7,7 @@ import 'providers/home_provider.dart';
 import 'providers/parts_provider.dart';
 import 'providers/add_part_provider.dart';
 import 'package:provider/provider.dart';
-
+import 'providers/cart_provider.dart';
 void main() {
   runApp(
     MultiProvider(
@@ -15,6 +15,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => HomeProvider()),
         ChangeNotifierProvider(create: (_) => PartsProvider()),
         ChangeNotifierProvider(create: (_) => AddPartProvider()),
+        ChangeNotifierProvider(create: (_) => CartProvider()),
       ],
       child: MyApp(),
     ),
@@ -29,7 +30,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: SupplierDashboard(),
+      home: HomePage(),
     );
   }
 }

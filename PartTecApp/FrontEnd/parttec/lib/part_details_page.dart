@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import 'providers/cart_provider.dart';
+import 'package:provider/provider.dart';
 class PartDetailsPage extends StatelessWidget {
   final Map<String, dynamic> part;
 
@@ -104,11 +105,23 @@ class PartDetailsPage extends StatelessWidget {
             ],
           ),
           child: ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
+              final success = await Provider.of<CartProvider>(context, listen: false)
+                  .addToCartToServer(part);
+print(success);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('تمت الإضافة إلى السلة ✅')),
+                SnackBar(
+                  content: Text(
+                    success
+                        ? '❌ فشل في إضافة القطعة، تحقق من الاتصال أو البيانات'
+                        : 'تمت الاضافة الى السلة بنجاح',
+                  ),
+                  backgroundColor: success ? Colors.red : Colors.green,
+                  duration: Duration(seconds: 3),
+                ),
               );
             },
+
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
               backgroundColor: Colors.green[700],
