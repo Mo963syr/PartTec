@@ -9,8 +9,7 @@ class CartProvider extends ChangeNotifier {
   // فقط إرسال القطعة إلى السيرفر
   Future<bool> addToCartToServer(Map<String, dynamic> part) async {
     final url = Uri.parse(
-        '${AppSettings
-            .serverurl}/cart/addToCart'); // غيّر إلى رابط السيرفر الفعلي
+        '${AppSettings.serverurl}/cart/addToCart'); // غيّر إلى رابط السيرفر الفعلي
     print(part);
     try {
       final response = await http.post(
@@ -42,10 +41,8 @@ class CartProvider extends ChangeNotifier {
   bool isLoading = false;
   String? error;
 
-  // ✅ تحميل السلة من السيرفر
   Future<void> fetchCartFromServer() async {
-    final url = Uri.parse(
-        'https://your-server-url.com/cart/getUserCart/$userid');
+    final url = Uri.parse('${AppSettings.serverurl}/cart/getUserCart/$userid');
 
     try {
       isLoading = true;
