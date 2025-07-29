@@ -39,4 +39,33 @@ class SellerOrdersProvider with ChangeNotifier {
     isLoading = false;
     notifyListeners();
   }
+
+  Future<void> updateStatus(String cartId, String newStatus, BuildContext context) async {
+    final url = Uri.parse('${AppSettings.serverurl}/cart/status/$cartId');
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'status': newStatus}),
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success']) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'])),
+        );
+        fetchOrders();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? 'فشل في التحديث')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('حدث خطأ أثناء التحديث: $e')),
+      );
+    }
+  }
 }
+
