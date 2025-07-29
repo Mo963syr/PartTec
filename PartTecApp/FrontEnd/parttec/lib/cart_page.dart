@@ -7,11 +7,17 @@ class CartPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final cart = Provider.of<CartProvider>(context);
 
-    // تحميل الطلبات من السيرفر عند أول دخول للصفحة
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (cart.fetchedCartItems.isEmpty && !cart.isLoading) {
         cart.fetchCartFromServer();
       }
+    });
+
+    double total = cart.fetchedCartItems.fold(0, (sum, item) {
+      final part = item['partId'];
+      final quantity = item['quantity'] ?? 1;
+      final price = part?['price'] ?? 0;
+      return sum + (price * quantity);
     });
 
     return Directionality(
@@ -22,67 +28,125 @@ class CartPage extends StatelessWidget {
             ? Center(child: CircularProgressIndicator())
             : cart.fetchedCartItems.isEmpty
             ? Center(child: Text('السلة فارغة 🛒'))
-            : Column(
-          children: [
-            Expanded(
-              child: ListView.builder(
-                itemCount: cart.fetchedCartItems.length,
-                itemBuilder: (context, index) {
-                  final item = cart.fetchedCartItems[index];
-                  final part = item['partId']; // مفترض أنها populate من الخادم
+            : RefreshIndicator(
+          onRefresh: () => cart.fetchCartFromServer(),
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  itemCount: cart.fetchedCartItems.length,
+                  itemBuilder: (context, index) {
+                    final item = cart.fetchedCartItems[index];
+                    final part = item['partId'];
 
-                  return Card(
-                    margin: EdgeInsets.all(10),
-                    child: ListTile(
-                      leading: part['imageUrl'] != null
-                          ? Image.network(part['imageUrl'], width: 60)
-                          : Icon(Icons.image, size: 50),
-                      title: Text(part['name'] ?? 'بدون اسم'),
-                      subtitle: Text(
-                        '${part['price']} \$',
-                        style: TextStyle(color: Colors.green),
+                    if (part == null) {
+                      return ListTile(
+                        title: Text('⚠️ لا توجد معلومات عن القطعة'),
+                      );
+                    }
+
+                    return Container(
+                      margin: EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 16),
+                      padding: EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 5,
+                          )
+                        ],
                       ),
-                      trailing: Text('الكمية: ${item['quantity'] ?? 1}'),
+                      child: Row(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              part['imageUrl'] ?? '',
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  Icon(Icons.broken_image),
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment:
+                              CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  part['name'] ?? 'بدون اسم',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  '${part['price']} \$',
+                                  style: TextStyle(
+                                    color: Colors.green,
+                                  ),
+                                ),
+                                Text(
+                                    'الكمية: ${item['quantity'] ?? 1}')
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete,
+                                color: Colors.red),
+                            onPressed: () => _confirmDelete(
+                                context, cart, index),
+                          )
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Divider(),
+              Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  children: [
+                    Text(
+                      'الإجمالي: \$${total.toStringAsFixed(2)}',
+                      style: TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                  );
-                },
-              ),
-            ),
-            Divider(),
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: () =>
-                            _confirmOrder(context, 'الدفع عند الاستلام'),
-                        icon: Icon(Icons.delivery_dining),
-                        label: Text('الدفع عند الاستلام'),
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () =>
-                            _confirmOrder(context, 'الدفع الإلكتروني'),
-                        icon: Icon(Icons.credit_card),
-                        label: Text('الدفع بالبطاقة'),
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 10),
-                  // Text(
-                  //   // 'الإجمالي: ${cart.totalAmount.toStringAsFixed(2)} \$',
-                  //   // style: TextStyle(fontSize: 18),
-                  // )
-                ],
-              ),
-            )
-          ],
+                    SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment:
+                      MainAxisAlignment.spaceAround,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () => _confirmOrder(
+                              context, 'الدفع عند الاستلام'),
+                          icon: Icon(Icons.delivery_dining),
+                          label: Text('الدفع عند الاستلام'),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: () => _confirmOrder(
+                              context, 'الدفع الإلكتروني'),
+                          icon: Icon(Icons.credit_card),
+                          label: Text('الدفع بالبطاقة'),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );
@@ -101,7 +165,7 @@ class CartPage extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () {
-              // cart.removeFromCart(index);
+              cart.removeAt(index);
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('تم حذف القطعة من السلة 🗑️')),
