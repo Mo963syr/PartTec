@@ -16,6 +16,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => PartsProvider()),
         ChangeNotifierProvider(create: (_) => AddPartProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
+
       ],
       child: MyApp(),
     ),
