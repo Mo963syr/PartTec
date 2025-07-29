@@ -8,7 +8,12 @@ import 'providers/parts_provider.dart';
 import 'providers/add_part_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:parttec/providers/seller_orders_provider.dart';
+<<<<<<< HEAD
 import 'package:parttec/providers/cart_provider.dart';
+=======
+
+
+>>>>>>> 86d7709a359f668019d8ddf662e41a831fdb9396
 
 void main() {
   runApp(
