@@ -8,12 +8,7 @@ import 'providers/parts_provider.dart';
 import 'providers/add_part_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:parttec/providers/seller_orders_provider.dart';
-<<<<<<< HEAD
 import 'package:parttec/providers/cart_provider.dart';
-=======
-
-
->>>>>>> 86d7709a359f668019d8ddf662e41a831fdb9396
 
 void main() {
   runApp(
@@ -24,9 +19,8 @@ void main() {
         ChangeNotifierProvider(create: (_) => AddPartProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(
-          create: (_) => SellerOrdersProvider(
-              '68761cf7f92107b8288158c2') // ← غيّر الـ ID حسب البائع
-            ..fetchOrders(),
+          create: (_) =>
+              SellerOrdersProvider('68761cf7f92107b8288158c2')..fetchOrders(),
         ),
       ],
       child: MyApp(),
@@ -42,7 +36,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: HomePage(),
+      home: SellerOrdersPage(),
     );
   }
 }
