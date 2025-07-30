@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:parttec/setting.dart';
+
 class SellerOrdersProvider with ChangeNotifier {
   final String sellerId;
   SellerOrdersProvider(this.sellerId);
@@ -18,7 +19,8 @@ class SellerOrdersProvider with ChangeNotifier {
     error = null;
     notifyListeners();
 
-    final url = Uri.parse('${AppSettings.serverurl}/cart/getCartItemsForSeller/$sellerId');
+    final url = Uri.parse(
+        '${AppSettings.serverurl}/cart/getCartItemsForSeller/$sellerId');
 
     try {
       final response = await http.get(url);
@@ -40,7 +42,8 @@ class SellerOrdersProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateStatus(String cartId, String newStatus, BuildContext context) async {
+  Future<void> updateStatus(
+      String cartId, String newStatus, BuildContext context) async {
     final url = Uri.parse('${AppSettings.serverurl}/cart/status/$cartId');
 
     try {
@@ -68,4 +71,3 @@ class SellerOrdersProvider with ChangeNotifier {
     }
   }
 }
-
