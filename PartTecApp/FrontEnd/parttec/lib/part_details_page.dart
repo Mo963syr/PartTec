@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'providers/cart_provider.dart';
 import 'package:provider/provider.dart';
+
 class PartDetailsPage extends StatelessWidget {
   final Map<String, dynamic> part;
 
@@ -60,28 +61,20 @@ class PartDetailsPage extends StatelessWidget {
                 ),
                 child: ListView(
                   children: [
-                    Text(
-                      part['name'] ?? 'بدون اسم',
-                      style:
-                          TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      part['manufacturer'] ?? 'بدون ماركة',
-                      style: TextStyle(fontSize: 16, color: Colors.grey[700]),
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      part['price'] != null
-                          ? '${part['price']} \$'
-                          : 'بدون سعر',
-                      style: TextStyle(fontSize: 18, color: Colors.green[800]),
-                    ),
-                    Divider(height: 32),
+                    _buildDetailRow('اسم القطعة', part['name']),
+                    _buildDetailRow('الموديل', part['model']),
+                    _buildDetailRow('الماركة', part['manufacturer']),
+                    _buildDetailRow('سنة الصنع', part['year']),
+                    _buildDetailRow('الرقم التسلسلي', part['serialNumber']),
+                    _buildDetailRow('نوع الوقود', part['fuelType']),
+                    _buildDetailRow('الحالة', part['status']),
+                    _buildDetailRow('السعر',
+                        part['price'] != null ? '${part['price']} \$' : null),
+                    SizedBox(height: 16),
                     Text(
                       'الوصف:',
                       style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     SizedBox(height: 6),
                     Text(
@@ -105,10 +98,11 @@ class PartDetailsPage extends StatelessWidget {
             ],
           ),
           child: ElevatedButton(
-           onPressed: () async {
-              final success = await Provider.of<CartProvider>(context, listen: false)
-                  .addToCartToServer(part);
-print(success);
+            onPressed: () async {
+              final success =
+                  await Provider.of<CartProvider>(context, listen: false)
+                      .addToCartToServer(part);
+              print(success);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
@@ -121,7 +115,6 @@ print(success);
                 ),
               );
             },
-
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
               backgroundColor: Colors.green[700],
@@ -134,6 +127,23 @@ print(success);
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, dynamic value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Row(
+        children: [
+          Text(
+            '$label: ',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          Expanded(
+            child: Text(value?.toString() ?? 'غير متوفر'),
+          ),
+        ],
       ),
     );
   }
