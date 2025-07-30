@@ -73,9 +73,15 @@ class PartsGrid extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      p['price'] != null ? '${p['price']} \$' : 'بدون سعر',
+                      p['model'] ?? 'بدون موديل',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.green[700], fontSize: 14),
+                      style: TextStyle(fontSize: 13, color: Colors.black87),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      p['year']?.toString() ?? 'بدون سنة',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                     ),
                   ],
                 ),

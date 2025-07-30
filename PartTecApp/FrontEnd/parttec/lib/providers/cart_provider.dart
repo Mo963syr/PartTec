@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:parttec/setting.dart';
+
 class CartProvider extends ChangeNotifier {
   String userid = '687ff5a6bf0de81878ed94f5';
 
@@ -14,7 +15,8 @@ class CartProvider extends ChangeNotifier {
 
   // ✅ تحميل السلة من السيرفر
   Future<void> fetchCartFromServer() async {
-    final url = Uri.parse('https://parttec.onrender.com/cart/viewcartitem/$userid');
+    final url =
+        Uri.parse('https://parttec.onrender.com/cart/viewcartitem/$userid');
 
     try {
       isLoading = true;
@@ -43,13 +45,11 @@ class CartProvider extends ChangeNotifier {
     }
   }
 
-  // ✅ حذف عنصر من السلة حسب الفهرس
   void removeAt(int index) {
     _fetchedCartItems.removeAt(index);
     notifyListeners();
   }
 
-  // ✅ إرسال قطعة إلى السيرفر
   Future<bool> addToCartToServer(Map<String, dynamic> part) async {
     final url = Uri.parse('${AppSettings.serverurl}/cart/addToCart');
     print(part);
