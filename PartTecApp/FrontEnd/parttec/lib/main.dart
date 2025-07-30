@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:parttec/supplier_dashboard.dart';
 import 'home_page.dart';
-import 'package:parttec/seller_orders_page.dart';
+
 import 'package:parttec/GroupedOrdersPage.dart';
 import 'providers/cart_provider.dart';
 import 'providers/home_provider.dart';
@@ -9,12 +9,10 @@ import 'providers/parts_provider.dart';
 import 'providers/add_part_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:parttec/providers/seller_orders_provider.dart';
-<<<<<<< HEAD
-import 'package:parttec/providers/cart_provider.dart';
-=======
-import 'package:parttec/ChooseDestinationPage.dart';
 
->>>>>>> 22a6c63096dbc4b537b350f7ff4fe86fd17412c0
+import 'package:parttec/providers/cart_provider.dart';
+
+import 'package:parttec/ChooseDestinationPage.dart';
 
 void main() {
   runApp(
@@ -25,13 +23,8 @@ void main() {
         ChangeNotifierProvider(create: (_) => AddPartProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(
-<<<<<<< HEAD
           create: (_) =>
               SellerOrdersProvider('68761cf7f92107b8288158c2')..fetchOrders(),
-=======
-          create: (_) => SellerOrdersProvider('68761cf7f92107b8288158c2') // ← غيّر الـ ID حسب البائع
-            ..fetchOrders(),
->>>>>>> 22a6c63096dbc4b537b350f7ff4fe86fd17412c0
         ),
       ],
       child: MyApp(),
@@ -47,11 +40,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-<<<<<<< HEAD
-      home: SellerOrdersPage(),
-=======
-      home: ChooseDestinationPage(),
->>>>>>> 22a6c63096dbc4b537b350f7ff4fe86fd17412c0
+      home: SupplierDashboard(),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'add_part_page_supplier.dart';
 import 'manage_parts_page.dart';
+import 'GroupedOrdersPage.dart';
 
 class SupplierDashboard extends StatelessWidget {
   const SupplierDashboard({super.key});
@@ -41,6 +42,18 @@ class SupplierDashboard extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => const ManagePartsPage(),
+                  ),
+                );
+              },
+            ),
+            _buildCard(
+              icon: Icons.shopping_cart,
+              title: 'طلبات الزبائن',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => GroupedOrdersPage(),
                   ),
                 );
               },
