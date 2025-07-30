@@ -17,6 +17,8 @@ class SellerOrderDetailsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = Provider.of<SellerOrdersProvider>(context, listen: false);
     final total = orders.fold(0.0, (sum, item) => sum + (item['total'] ?? 0));
+    final String orderId = orders.first['orderId'] ?? '';
+    final String status = orders.first['status'] ?? 'غير محددة';
 
     return Scaffold(
       appBar: AppBar(title: Text('تفاصيل الطلب - $customerName')),
@@ -27,12 +29,7 @@ class SellerOrderDetailsPage extends StatelessWidget {
             final part = order['part'] ?? {};
             final quantity = order['quantity'] ?? 0;
             final total = order['total'] ?? 0;
-
-            final orderData = order['order'] ?? {};
-            final status = order['status'] ?? 'غير محددة';
             final createdAt = order['createdAt'];
-            print('📦 بيانات الطلب: $orderData');
-
 
             String formattedDate = 'تاريخ غير معروف';
             if (createdAt != null) {
@@ -57,7 +54,7 @@ class SellerOrderDetailsPage extends StatelessWidget {
                   children: [
                     Text('الكمية: $quantity'),
                     Text('السعر الإجمالي: \$${total.toStringAsFixed(2)}'),
-                    Text('الحالة: $status'),
+                    Text('الحالة: ${order['status'] ?? 'غير معروفة'}'),
                     Text('تاريخ الإنشاء: $formattedDate'),
                   ],
                 ),
@@ -70,43 +67,42 @@ class SellerOrderDetailsPage extends StatelessWidget {
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
-          Wrap(
-            spacing: 10,
-            children: [
-              ElevatedButton(
-                onPressed: () {
-                  final orderId = orders.first['order']?['_id'];
-                  if (orderId != null) {
-                    provider.updateStatus(orderId, 'ملغي', context);
-                    Navigator.pop(context);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('معرف الطلب غير متوفر')),
-                    );
-                  }
 
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                child: const Text('إلغاء'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  final orderId = orders.first['order']?['_id'];
-                  if (orderId != null) {
-                    provider.updateStatus(orderId, 'على الطريق', context);
-                    Navigator.pop(context);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('معرف الطلب غير متوفر')),
-                    );
-                  }
-
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                child: const Text('على الطريق'),
-              ),
-            ],
-          ),
+          // أزرار الحالة (تظهر فقط عندما تكون الحالة "مؤكد")
+          if (status == 'مؤكد')
+            Wrap(
+              spacing: 10,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    if (orderId.isNotEmpty) {
+                      provider.updateStatus(orderId, 'ملغي', context);
+                      Navigator.pop(context);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('معرف الطلب غير متوفر')),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  child: const Text('إلغاء'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (orderId.isNotEmpty) {
+                      provider.updateStatus(orderId, 'على الطريق', context);
+                      Navigator.pop(context);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('معرف الطلب غير متوفر')),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                  child: const Text('على الطريق'),
+                ),
+              ],
+            ),
         ],
       ),
     );
