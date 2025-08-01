@@ -197,33 +197,46 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   Widget _buildPartsSection() {
+    final List<Map<String, dynamic>> categories = [
+      {'label': 'محرك', 'icon': Icons.settings},
+      {'label': 'هيكل', 'icon': Icons.car_repair},
+      {'label': 'فرامل', 'icon': Icons.settings_input_component},
+      {'label': 'كهرباء', 'icon': Icons.electrical_services},
+      {'label': 'إطارات', 'icon': Icons.circle},
+      {'label': 'نظام التعليق', 'icon': Icons.sync_alt},
+    ];
+
     return Padding(
       padding: const EdgeInsets.all(12),
-      child: Column(
-        children: [
-          TabBar(
-            controller: _tabController,
-            labelColor: Colors.blue,
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: Colors.blue,
-            tabs: [
-              Tab(icon: Icon(Icons.settings), text: 'محرك'),
-              Tab(icon: Icon(Icons.car_repair), text: 'هيكل'),
-              Tab(icon: Icon(Icons.settings_input_component), text: 'فرامل'),
-            ],
-          ),
-          Container(
-            height: MediaQuery.of(context).size.height * 0.44,
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                CategoryTabView(category: 'محرك'),
-                CategoryTabView(category: 'هيكل'),
-                CategoryTabView(category: 'فرامل'),
-              ],
+      child: DefaultTabController(
+        length: categories.length,
+        child: Column(
+          children: [
+            Container(
+              alignment: Alignment.centerLeft,
+              child: TabBar(
+                isScrollable: true,
+                labelColor: Colors.blue,
+                unselectedLabelColor: Colors.grey,
+                indicatorColor: Colors.blue,
+                tabs: categories
+                    .map((cat) => Tab(
+                          icon: Icon(cat['icon']),
+                          text: cat['label'],
+                        ))
+                    .toList(),
+              ),
             ),
-          ),
-        ],
+            Container(
+              height: MediaQuery.of(context).size.height * 0.44,
+              child: TabBarView(
+                children: categories
+                    .map((cat) => CategoryTabView(category: cat['label']))
+                    .toList(),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

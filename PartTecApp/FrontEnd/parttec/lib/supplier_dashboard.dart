@@ -3,6 +3,7 @@ import 'add_part_page_supplier.dart';
 import 'manage_parts_page.dart';
 import 'GroupedOrdersPage.dart';
 import 'added_parts_page.dart';
+import 'recommendation_requests_page.dart';
 
 class SupplierDashboard extends StatelessWidget {
   const SupplierDashboard({super.key});
@@ -67,6 +68,18 @@ class SupplierDashboard extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => AddedPartsPage(),
+                  ),
+                );
+              },
+            ),
+            _buildCard(
+              icon: Icons.recommend, // أيقونة تدل على توصية
+              title: 'طلبات التوصية',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => RecommendationRequestsPage(), // صفحة جديدة
                   ),
                 );
               },

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'request_recommendation_page.dart';
 
 class AddPartPage extends StatelessWidget {
   const AddPartPage({super.key});
@@ -42,6 +43,22 @@ class AddPartPage extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 255, 255, 255),
                   minimumSize: Size(double.infinity, 50)),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => RequestRecommendationPage()),
+                );
+              },
+              icon: Icon(Icons.assignment),
+              label: Text("طلب قطعة توصية"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                minimumSize: Size(double.infinity, 50),
+              ),
             ),
           ],
         ),
