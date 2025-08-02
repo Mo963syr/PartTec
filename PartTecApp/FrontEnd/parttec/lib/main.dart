@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parttec/providers/order_provider.dart';
 import 'package:parttec/supplier_dashboard.dart';
 import 'home_page.dart';
 import 'employee/DeliveryDashboard.dart';
@@ -9,7 +10,7 @@ import 'providers/parts_provider.dart';
 import 'providers/add_part_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:parttec/providers/seller_orders_provider.dart';
-
+import 'package:parttec/providers/cart_provider.dart';
 import 'package:parttec/providers/cart_provider.dart';
 
 import 'package:parttec/ChooseDestinationPage.dart';
@@ -26,6 +27,7 @@ void main() {
           create: (_) =>
               SellerOrdersProvider('68761cf7f92107b8288158c2')..fetchOrders(),
         ),
+        ChangeNotifierProvider(create: (_) => OrderProvider()),
       ],
       child: MyApp(),
     ),
@@ -36,10 +38,19 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+<<<<<<< HEAD
         title: 'PartTec',
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
         home: SupplierDashboard());
+=======
+      title: 'PartTec',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: ChooseDestinationPage(),
+    );
+>>>>>>> c869e8ee4e0e1648b869df235b860551692815b6
   }
 }

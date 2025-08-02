@@ -9,7 +9,7 @@ class CartPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cart = Provider.of<CartProvider>(context);
-
+    String userId = "687ff5a6bf0de81878ed94f5";
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (cart.fetchedCartItems.isEmpty && !cart.isLoading) {
         cart.fetchCartFromServer();
@@ -133,7 +133,7 @@ class CartPage extends StatelessWidget {
                                           await Navigator.of(context).push(
                                         MaterialPageRoute(
                                             builder: (_) =>
-                                                LocationPickerPage()),
+                                                LocationPickerPage(userId:userId)),
                                       );
 
                                       if (location != null) {
