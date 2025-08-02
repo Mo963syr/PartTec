@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parttec/supplier_dashboard.dart';
 import 'home_page.dart';
 import 'package:parttec/groupedorderspage.dart'; // تأكد من وجود هذا الملف
 
@@ -33,7 +34,7 @@ class ChooseDestinationPage extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => GroupedOrdersPage()),
+                  MaterialPageRoute(builder: (_) => SupplierDashboard()),
                 );
               },
             ),
