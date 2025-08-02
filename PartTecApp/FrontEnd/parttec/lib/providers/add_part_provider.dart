@@ -9,19 +9,19 @@ class AddPartProvider extends ChangeNotifier {
   bool isLoading = false;
   String? errorMessage;
 
-  Future<bool> addPart({
-    required String name,
-    required String manufacturer,
-    required String model,
-    required String year,
-    required String fuelType,
-    required String category,
-    required String status,
-    required String price,
-    File? image,
-    String? serialNumber,
-    String? description,
-  }) async {
+  Future<bool> addPart(
+      {required String name,
+      required String manufacturer,
+      required String model,
+      required String year,
+      required String fuelType,
+      required String category,
+      required String status,
+      required String price,
+      File? image,
+      String? serialNumber,
+      String? description,
+      int quantity = 1}) async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
@@ -40,6 +40,7 @@ class AddPartProvider extends ChangeNotifier {
     request.fields['category'] = category;
     request.fields['status'] = status;
     request.fields['price'] = price;
+    request.fields['quantity'] = quantity.toString();
     if (serialNumber != null && serialNumber.isNotEmpty) {
       request.fields['serialNumber'] = serialNumber;
     }

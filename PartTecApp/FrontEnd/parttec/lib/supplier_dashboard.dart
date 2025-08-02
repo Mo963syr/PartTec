@@ -31,7 +31,7 @@ class SupplierDashboard extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const AddPartPageForSupplier(),
+                    builder: (_) => const KiaPartAddPage(),
                   ),
                 );
               },
