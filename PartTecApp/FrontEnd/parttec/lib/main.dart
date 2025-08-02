@@ -36,11 +36,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'PartTec',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: HomePage(),
-    );
+        title: 'PartTec',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        home: SupplierDashboard());
   }
 }

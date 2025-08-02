@@ -65,23 +65,35 @@ class PartsGrid extends StatelessWidget {
                       style: TextStyle(fontWeight: FontWeight.bold),
                       overflow: TextOverflow.ellipsis,
                     ),
-                    Text(
-                      p['manufacturer'] ?? 'بدون ماركة',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      p['model'] ?? 'بدون موديل',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 13, color: Colors.black87),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      p['year']?.toString() ?? 'بدون سنة',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 15,
+                        ),
+                        Text(
+                          p['manufacturer'] ?? 'بدون ماركة',
+                          textAlign: TextAlign.center,
+                          style:
+                              TextStyle(color: Colors.grey[600], fontSize: 12),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          p['model'] ?? 'بدون موديل',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 13, color: Colors.black87),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(
+                          width: 10,
+                        ),
+                        Text(
+                          p['year']?.toString() ?? 'بدون سنة',
+                          textAlign: TextAlign.center,
+                          style:
+                              TextStyle(fontSize: 12, color: Colors.grey[700]),
+                        ),
+                      ],
                     ),
                   ],
                 ),
