@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/cart_provider.dart';
+import 'providers/cart_provider.dart';
 import 'package:latlong2/latlong.dart';
 import 'add_location.dart';
 import 'order_summary_page.dart';
@@ -132,8 +132,8 @@ class CartPage extends StatelessWidget {
                                       final LatLng? location =
                                           await Navigator.of(context).push(
                                         MaterialPageRoute(
-                                            builder: (_) =>
-                                                LocationPickerPage(userId:userId)),
+                                            builder: (_) => LocationPickerPage(
+                                                userId: userId)),
                                       );
 
                                       if (location != null) {

@@ -4,6 +4,7 @@ import 'providers/home_provider.dart';
 import 'package:parttec/Widgets/parts_widgets.dart';
 import 'package:provider/provider.dart';
 import 'cart_page.dart';
+import 'my_order_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -254,9 +255,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     color: _selectedIndex == 0 ? Colors.blue : Colors.grey),
                 onPressed: () => setState(() => _selectedIndex = 0)),
             IconButton(
-                icon: Icon(Icons.history,
-                    color: _selectedIndex == 1 ? Colors.blue : Colors.grey),
-                onPressed: () => setState(() => _selectedIndex = 1)),
+              icon: Icon(Icons.history,
+                  color: _selectedIndex == 1 ? Colors.blue : Colors.grey),
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  builder: (_) => SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.85,
+                    child: MyOrdersPage(),
+                  ),
+                );
+              },
+            ),
             SizedBox(width: 40),
             IconButton(
                 icon: Icon(Icons.receipt_long,

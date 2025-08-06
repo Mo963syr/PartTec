@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
-import 'package:parttec/providers/order_provider.dart'; // تأكد من المسار الصحيح
+import 'providers/order_provider.dart'; // تأكد من المسار الصحيح
 
 class LocationPickerPage extends StatefulWidget {
   final String userId;
@@ -40,7 +40,8 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate:
+                    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                 subdomains: ['a', 'b', 'c'],
               ),
               if (selectedLocation != null)
@@ -72,7 +73,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                     selectedLocation!.latitude,
                   ];
 
-                  await orderProvider.sendOrder( coords);
+                  await orderProvider.sendOrder(coords);
 
                   if (orderProvider.error != null) {
                     ScaffoldMessenger.of(context).showSnackBar(
