@@ -34,18 +34,18 @@ class _AddedPartsPageState extends State<AddedPartsPage>
   Future<void> fetchParts() async {
     try {
       final response = await http.get(
-        Uri.parse('${AppSettings.serverurl}/part/viewMyParts'),
+        Uri.parse(
+            '${AppSettings.serverurl}/part/viewsellerParts/68761cf7f92107b8288158c2'),
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> parts = json.decode(response.body);
+        final Map<String, dynamic> data = json.decode(response.body);
+        final List<dynamic> parts = data['parts'] ?? [];
 
-        // تفريغ التصنيفات
         for (var key in categorizedParts.keys) {
           categorizedParts[key] = [];
         }
 
-        // تصنيف القطع
         for (var part in parts) {
           final category = part['category'] ?? '';
           if (categorizedParts.containsKey(category)) {
