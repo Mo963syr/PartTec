@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../providers/home_provider.dart';
+import 'package:parttec/providers/home_provider.dart';
 import 'package:provider/provider.dart';
 import '../part_details_page.dart';
 
