@@ -30,7 +30,7 @@ class ChooseDestinationPage extends StatelessWidget {
             const SizedBox(height: 20),
             ElevatedButton.icon(
               icon: Icon(Icons.list_alt),
-              label: Text('عرض الطلبات المجمعة'),
+              label: Text('صفحة البائع'),
               onPressed: () {
                 Navigator.push(
                   context,

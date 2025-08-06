@@ -1,8 +1,11 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import 'package:provider/provider.dart';
-import 'providers/add_part_provider.dart';
+import 'package:http/http.dart' as http;
+import '../providers/add_part_provider.dart';
+import '../setting.dart';
 
 class KiaPartAddPage extends StatefulWidget {
   const KiaPartAddPage({super.key});
@@ -12,215 +15,240 @@ class KiaPartAddPage extends StatefulWidget {
 }
 
 class _KiaPartAddPageState extends State<KiaPartAddPage> {
-  final List<String> kiaModels = ['Cerato', 'Sportage', 'Rio', 'Sorento'];
-  final Map<String, List<String>> modelYears = {
-    'Cerato': ['2022', '2023', '2024'],
-    'Sportage': ['2021', '2022', '2023'],
-    'Rio': ['2020', '2021', '2022'],
-    'Sorento': ['2022', '2023'],
-  };
-  final List<String> availableParts = [
-    'فلتر زيت',
-    'كمبيوتر محرك',
-    'ردياتير',
-    'بواجي',
-    'كمبروسر',
-    'طقم فرامل',
-  ];
-  final List<String> fuelTypes = ['بترول', 'ديزل'];
-  final List<String> categories = [
-    'محرك',
-    'فرامل',
-    'كهرباء',
-    'هيكل',
-    'إطارات',
-    'نظام التعليق'
-  ];
 
+  final List<String> years = ['2020', '2021', '2022', '2023', '2024'];
+  final List<String> partsList = ['فلتر زيت', 'كمبيوتر محرك', 'ردياتير', 'بواجي'];
+  final List<String> fuels = ['بترول', 'ديزل'];
+  final List<String> categories = ['محرك', 'فرامل', 'كهرباء', 'هيكل'];
+  final List<String> statuses = ['جديد', 'مستعمل'];
+
+
+  List<String> brands = [];
+  List<String> models = [];
+
+  String? selectedBrand;
   String? selectedModel;
   String? selectedYear;
   String? selectedPart;
   String? selectedFuel;
   String? selectedCategory;
+  String? selectedStatus;
   File? _pickedImage;
-  TextEditingController priceController = TextEditingController();
+  final priceController = TextEditingController();
 
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _pickedImage = File(pickedFile.path);
-      });
+  bool isLoading = false;
+  bool isModelsLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchBrands();
+  }
+
+  Future<void> _fetchBrands() async {
+    final url = Uri.parse(
+      '${AppSettings.serverurl}/user/viewsellerprands/6891009147d76ee5e1b22647',
+    );
+    try {
+      final r = await http.get(url);
+      if (r.statusCode == 200) {
+        final data = jsonDecode(r.body);
+        setState(() {
+          brands = (data['prands'] as List<dynamic>)
+              .map((b) => (b as String).capitalize())
+              .toList();
+        });
+      }
+    } catch (e) {
+
     }
   }
 
-  Future<void> _submitPart() async {
-    if (selectedModel == null ||
-        selectedYear == null ||
-        selectedPart == null ||
-        selectedFuel == null ||
-        selectedCategory == null ||
+  Future<void> _fetchModels(String brand) async {
+    setState(() => isModelsLoading = true);
+    final url = Uri.parse(
+      '${AppSettings.serverurl}/api/models?brand=${Uri.encodeComponent(brand.toLowerCase())}',
+    );
+    try {
+      final r = await http.get(url);
+      if (r.statusCode == 200) {
+        final data = jsonDecode(r.body);
+        models = List<String>.from(data['models']);
+      } else {
+        models = [];
+      }
+    } catch (e) {
+      models = [];
+    }
+    setState(() => isModelsLoading = false);
+  }
+
+  Future<void> _pickImage() async {
+    final p = ImagePicker();
+    final f = await p.pickImage(source: ImageSource.gallery);
+    if (f != null) setState(() => _pickedImage = File(f.path));
+  }
+
+  Future<void> _submit() async {
+    if ([selectedBrand, selectedModel, selectedYear, selectedPart,
+      selectedFuel, selectedCategory, selectedStatus]
+        .contains(null) ||
         priceController.text.isEmpty ||
         _pickedImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى تعبئة جميع الحقول المطلوبة')),
+        const SnackBar(content: Text('يرجى تعبئة جميع الحقول')),
       );
       return;
     }
-
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('تأكيد'),
-        content: const Text('هل تريد إضافة القطعة؟'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('إلغاء')),
-          TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('نعم')),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
-    final provider = Provider.of<AddPartProvider>(context, listen: false);
-    final success = await provider.addPart(
+    setState(() => isLoading = true);
+    final ok = await context.read<AddPartProvider>().addPart(
       name: selectedPart!,
-      manufacturer: 'Kia',
+      manufacturer: selectedBrand!.toLowerCase(),
       model: selectedModel!,
       year: selectedYear!,
       fuelType: selectedFuel!,
       category: selectedCategory!,
-      status: 'جديد',
+      status: selectedStatus!,
       price: priceController.text,
       image: _pickedImage,
     );
+    setState(() => isLoading = false);
 
-    if (success) {
-      await showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('تم بنجاح'),
-          content: const Text('تمت إضافة القطعة.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pop(context);
-              },
-              child: const Text('موافق'),
-            ),
-          ],
-        ),
-      );
-    } else {
-      final error = provider.errorMessage ?? 'حدث خطأ غير معروف';
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('فشل الإرسال'),
-          content: Text(error),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('موافق'),
-            ),
-          ],
-        ),
-      );
+    final msg = ok ? '✅ تمت الإضافة' : (context.read<AddPartProvider>().errorMessage ?? 'فشل');
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    if (ok) Navigator.pop(context);
+  }
+
+  int get _currentStep {
+    if (selectedBrand == null) return 0;
+    if (selectedModel == null) return 1;
+    if (selectedYear == null) return 2;
+    if (selectedPart == null) return 3;
+    if (selectedFuel == null) return 4;
+    if (selectedCategory == null) return 5;
+    if (selectedStatus == null) return 6;
+    return 7;
+  }
+
+  // يبني محتوى الخطوة step
+  Widget _buildCurrentStep(int step) {
+    switch (step) {
+      case 0:
+        return _cardStep('اختر البراند:', brands, selectedBrand, (b) {
+          setState(() {
+            selectedBrand = b;
+            selectedModel = null;
+            _fetchModels(b);
+          });
+        });
+      case 1:
+        return _cardStep(
+          'اختر الموديل:',
+          models,
+          selectedModel,
+              (m) => setState(() => selectedModel = m),
+          loading: isModelsLoading,
+        );
+      case 2:
+        return _cardStep(
+          'اختر سنة الصنع:',
+          years,
+          selectedYear,
+              (y) => setState(() => selectedYear = y),
+        );
+      case 3:
+        return _cardStep(
+          'اختر اسم القطعة:',
+          partsList,
+          selectedPart,
+              (p) => setState(() => selectedPart = p),
+        );
+      case 4:
+        return _cardStep(
+          'اختر نوع الوقود:',
+          fuels,
+          selectedFuel,
+              (f) => setState(() => selectedFuel = f),
+        );
+      case 5:
+        return _cardStep(
+          'اختر التصنيف:',
+          categories,
+          selectedCategory,
+              (c) => setState(() => selectedCategory = c),
+        );
+      case 6:
+        return _cardStep(
+          'اختر الحالة:',
+          statuses,
+          selectedStatus,
+              (s) => setState(() => selectedStatus = s),
+        );
+      default:
+        return _buildFinalForm();
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final isLoading = context.watch<AddPartProvider>().isLoading;
-
-    return Scaffold(
-      appBar: AppBar(
-          title: const Text('إضافة قطعة - Kia'), backgroundColor: Colors.blue),
-      body: Stack(
-        children: [
-          AbsorbPointer(
-            absorbing: isLoading,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (selectedModel == null)
-                      _buildSelection(
-                          'اختر الموديل:',
-                          kiaModels,
-                          Icons.directions_car,
-                          (val) => setState(() => selectedModel = val))
-                    else if (selectedYear == null)
-                      _buildSelection(
-                          'اختر سنة الصنع:',
-                          modelYears[selectedModel]!,
-                          Icons.date_range,
-                          (val) => setState(() => selectedYear = val))
-                    else if (selectedPart == null)
-                      _buildSelection(
-                          'اختر القطعة:',
-                          availableParts,
-                          Icons.build,
-                          (val) => setState(() => selectedPart = val))
-                    else
-                      _buildFinalForm(),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          if (isLoading)
-            const Center(
-              child: CircularProgressIndicator(),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSelection(String title, List<String> items, IconData icon,
-      void Function(String) onSelect) {
+  // بطاقة اختيار عامة
+  Widget _cardStep<T>(
+      String title,
+      List<T> options,
+      T? selected,
+      void Function(T) onSelect, {
+        bool loading = false,
+      }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: items
-              .map((item) => Card(
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    elevation: 4,
-                    child: InkWell(
-                      onTap: () => onSelect(item),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        width: MediaQuery.of(context).size.width / 2 - 24,
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(icon, size: 30, color: Colors.blue),
-                            const SizedBox(height: 8),
-                            Text(item, textAlign: TextAlign.center),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ))
-              .toList(),
-        ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        if (loading)
+          const Center(child: CircularProgressIndicator())
+        else
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: options.map((opt) {
+              final txt = opt.toString();
+              final isSel = opt == selected;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                decoration: BoxDecoration(
+                  color: isSel ? Colors.blue.shade50 : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: isSel
+                      ? Border.all(color: Colors.blue, width: 2)
+                      : null,
+                  boxShadow: const [
+                    BoxShadow(
+                      blurRadius: 4,
+                      color: Colors.black12,
+                      offset: Offset(0, 2),
+                    )
+                  ],
+                ),
+                child: InkWell(
+                  onTap: () => onSelect(opt),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 16, horizontal: 20),
+                    child: Text(txt,
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: isSel
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color: isSel
+                                ? Colors.blue.shade700
+                                : Colors.black87)),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        const SizedBox(height: 20),
       ],
     );
   }
@@ -229,62 +257,64 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        DropdownButtonFormField<String>(
-          decoration: const InputDecoration(
-              labelText: 'التصنيف', border: OutlineInputBorder()),
-          items: categories
-              .map((cat) => DropdownMenuItem(value: cat, child: Text(cat)))
-              .toList(),
-          onChanged: (val) => setState(() => selectedCategory = val),
-          value: selectedCategory,
-        ),
-        const SizedBox(height: 10),
-        DropdownButtonFormField<String>(
-          decoration: const InputDecoration(
-              labelText: 'نوع الوقود', border: OutlineInputBorder()),
-          items: fuelTypes
-              .map((fuel) => DropdownMenuItem(value: fuel, child: Text(fuel)))
-              .toList(),
-          onChanged: (val) => setState(() => selectedFuel = val),
-          value: selectedFuel,
-        ),
-        const SizedBox(height: 10),
-        TextFormField(
+        TextField(
           controller: priceController,
+          keyboardType: TextInputType.number,
           decoration: const InputDecoration(
             labelText: 'السعر (بالدولار)',
             border: OutlineInputBorder(),
-            suffixText: '\$',
           ),
-          keyboardType: TextInputType.number,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         ElevatedButton.icon(
           onPressed: _pickImage,
           icon: const Icon(Icons.image),
           label: const Text('اختيار صورة'),
-          style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey[200], foregroundColor: Colors.black),
         ),
-        const SizedBox(height: 10),
-        if (_pickedImage != null)
-          Center(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: Image.file(_pickedImage!,
-                  width: 120, height: 120, fit: BoxFit.cover),
-            ),
-          ),
-        const SizedBox(height: 16),
+        if (_pickedImage != null) ...[
+          const SizedBox(height: 12),
+          Image.file(_pickedImage!,
+              width: 120, height: 120, fit: BoxFit.cover),
+        ],
+        const SizedBox(height: 20),
         ElevatedButton.icon(
-          onPressed: _submitPart,
+          onPressed: _submit,
           icon: const Icon(Icons.send),
-          label: const Text('إرسال القطعة'),
+          label: const Text('إرسال'),
           style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue,
               padding: const EdgeInsets.symmetric(vertical: 14)),
-        ),
+        )
       ],
     );
   }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('إضافة قطعة')),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : AnimatedSwitcher(
+        duration: const Duration(milliseconds: 400),
+        transitionBuilder: (child, anim) => SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(1, 0),
+            end: Offset.zero,
+          ).animate(anim),
+          child: child,
+        ),
+        child: SingleChildScrollView(
+          key: ValueKey<int>(_currentStep),
+          padding: const EdgeInsets.all(16),
+          child: _buildCurrentStep(_currentStep),
+        ),
+      ),
+    );
+  }
+}
+
+extension StringExt on String {
+  String capitalize() =>
+      isEmpty ? this : '${this[0].toUpperCase()}${substring(1)}';
 }
