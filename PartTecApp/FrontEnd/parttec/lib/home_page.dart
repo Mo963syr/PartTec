@@ -5,6 +5,7 @@ import 'package:parttec/Widgets/parts_widgets.dart';
 import 'package:provider/provider.dart';
 import 'cart_page.dart';
 import 'my_order_page.dart';
+import 'favorite_parts_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -231,7 +232,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               height: MediaQuery.of(context).size.height * 0.44,
               child: TabBarView(
                 children: categories
-                    .map((cat) => CategoryTabView(category: cat['label']))
+                    .map((cat) => CategoryTabView(category: cat['label'] ?? ''))
                     .toList(),
               ),
             ),
@@ -270,9 +271,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ),
             SizedBox(width: 40),
             IconButton(
-                icon: Icon(Icons.receipt_long,
-                    color: _selectedIndex == 3 ? Colors.blue : Colors.grey),
-                onPressed: () => setState(() => _selectedIndex = 3)),
+              icon: Icon(Icons.favorite,
+                  color: _selectedIndex == 3 ? Colors.blue : Colors.grey),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => FavoritePartsPage()),
+                );
+                setState(() => _selectedIndex = 3);
+              },
+            ),
             IconButton(
                 icon: Icon(Icons.home,
                     color: _selectedIndex == 2 ? Colors.blue : Colors.grey),
