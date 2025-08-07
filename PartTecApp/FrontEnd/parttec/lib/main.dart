@@ -9,9 +9,7 @@ import 'providers/parts_provider.dart';
 import 'providers/add_part_provider.dart';
 import 'package:provider/provider.dart';
 import '/providers/seller_orders_provider.dart';
-
 import 'providers/cart_provider.dart';
-
 import 'package:parttec/ChooseDestinationPage.dart';
 
 void main() {
@@ -40,6 +38,6 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: HomePage());
+        home: SupplierDashboard());
   }
 }

@@ -38,6 +38,7 @@ class AddPartProvider extends ChangeNotifier {
     request.fields['fuelType'] = fuelType;
     request.fields['user'] = '68761cf7f92107b8288158c2';
     request.fields['category'] = category;
+
     request.fields['status'] = status;
     request.fields['price'] = price;
     request.fields['quantity'] = quantity.toString();
