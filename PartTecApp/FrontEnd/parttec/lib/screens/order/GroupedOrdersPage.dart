@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:parttec/providers/seller_orders_provider.dart';
-import 'package:parttec/SellerOrderDetailsPage.dart';
+import '../../providers/seller_orders_provider.dart';
+import 'SellerOrderDetailsPage.dart';
 import 'package:provider/provider.dart';
 
 class GroupedOrdersPage extends StatefulWidget {

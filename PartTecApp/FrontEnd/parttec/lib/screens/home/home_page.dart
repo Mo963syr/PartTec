@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'add_part_page.dart';
-import 'providers/home_provider.dart';
-import 'package:parttec/Widgets/parts_widgets.dart';
+
+import '../part/add_part_page.dart';
+import '../../providers/home_provider.dart';
+import '../../widgets/parts_widgets.dart';
 import 'package:provider/provider.dart';
-import 'cart_page.dart';
-import 'my_order_page.dart';
-import 'favorite_parts_page.dart';
+import '../cart/cart_page.dart';
+import '../order/my_order_page.dart';
+import '../favorites/favorite_parts_page.dart';
 
 class HomePage extends StatefulWidget {
   @override

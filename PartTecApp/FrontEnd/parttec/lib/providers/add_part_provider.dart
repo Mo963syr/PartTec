@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:parttec/setting.dart';
+import '../utils/app_settings.dart';
 import 'package:http_parser/http_parser.dart';
 import 'dart:convert';
 

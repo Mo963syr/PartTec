@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:parttec/supplier_dashboard.dart';
-import 'home_page.dart';
-import 'package:parttec/groupedorderspage.dart'; // تأكد من وجود هذا الملف
+import '../supplier/supplier_dashboard.dart';
+import '../home/home_page.dart';
+
+import '../order/GroupedOrdersPage.dart';
 
 class ChooseDestinationPage extends StatelessWidget {
   const ChooseDestinationPage({super.key});

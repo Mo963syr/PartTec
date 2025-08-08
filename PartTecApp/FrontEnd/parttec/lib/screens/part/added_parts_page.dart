@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:parttec/setting.dart';
+import '../../utils/app_settings.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 

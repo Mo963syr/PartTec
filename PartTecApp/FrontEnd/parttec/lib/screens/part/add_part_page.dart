@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'request_recommendation_page.dart';
+
+import '../recommendation/request_recommendation_page.dart';
 
 class AddPartPage extends StatelessWidget {
   const AddPartPage({super.key});

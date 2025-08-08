@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:parttec/setting.dart';
+import '../utils/app_settings.dart';
+import '../models/part.dart';
 
 class HomeProvider with ChangeNotifier {
   String userid = '687ff5a6bf0de81878ed94f5';
-
 
   bool showCars = true;
   String? selectedMake;
@@ -13,10 +13,9 @@ class HomeProvider with ChangeNotifier {
   String? selectedYear;
   String? selectedFuel;
   List<dynamic> userCars = [];
-  List<dynamic> availableParts = [];
+  List<Part> availableParts = [];
   bool isLoadingAvailable = true;
 
-  // قوائم البيانات
   final List<String> makes = [
     'Hyundai',
     'All',
@@ -75,7 +74,7 @@ class HomeProvider with ChangeNotifier {
   final Map<String, List<String>> modelsByMake = {
     'Kia': ['Sportage', 'Sorento', 'Cerato'],
     'Toyota': ['Corolla', 'Camry', 'Land Cruiser'],
-    'Hyundai': ['Elantra', 'Sonata', 'Tucson','Azera'],
+    'Hyundai': ['Elantra', 'Sonata', 'Tucson', 'Azera'],
   };
 
   final List<String> years = [
@@ -109,20 +108,20 @@ class HomeProvider with ChangeNotifier {
       print('خطأ أثناء تحميل السيارات: $e');
     }
   }
+
   bool isPrivate = true;
   void toggleIsPrivate() {
     isPrivate = !isPrivate;
     notifyListeners();
     fetchAvailableParts();
   }
+
   Future<void> fetchAvailableParts() async {
     try {
-
       WidgetsBinding.instance.addPostFrameCallback((_) {
         isLoadingAvailable = true;
         notifyListeners();
       });
-
 
       final String url = isPrivate
           ? '${AppSettings.serverurl}/part/viewPrivateParts/$userid'
@@ -133,10 +132,12 @@ class HomeProvider with ChangeNotifier {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> decoded = json.decode(response.body);
-        final parts = decoded['compatibleParts'] ?? [];
+        final dynamic list =
+            decoded['compatibleParts'] ?? decoded['parts'] ?? [];
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          availableParts = parts;
+          final List<dynamic> jsonList = list is List ? list : [];
+          availableParts = jsonList.map((e) => Part.fromJson(e)).toList();
           isLoadingAvailable = false;
           notifyListeners();
         });
@@ -155,7 +156,6 @@ class HomeProvider with ChangeNotifier {
       });
     }
   }
-
 
   void submitCar(BuildContext context) async {
     if (selectedMake == null ||

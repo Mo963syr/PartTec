@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../models/part.dart';
+
 class FavoritesProvider extends ChangeNotifier {
-  final List<Map<String, dynamic>> _favorites = [];
+  final List<Part> _favorites = [];
 
-  List<Map<String, dynamic>> get favorites => _favorites;
+  List<Part> get favorites => List.unmodifiable(_favorites);
 
-  void toggleFavorite(Map<String, dynamic> part) {
-    final exists = _favorites.any((p) => p['_id'] == part['_id']);
+  void toggleFavorite(Part part) {
+    final exists = _favorites.any((p) => p.id == part.id);
     if (exists) {
-      _favorites.removeWhere((p) => p['_id'] == part['_id']);
+      _favorites.removeWhere((p) => p.id == part.id);
     } else {
       _favorites.add(part);
     }
@@ -16,6 +18,6 @@ class FavoritesProvider extends ChangeNotifier {
   }
 
   bool isFavorite(String id) {
-    return _favorites.any((p) => p['_id'] == id);
+    return _favorites.any((p) => p.id == id);
   }
 }

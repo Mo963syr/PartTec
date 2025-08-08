@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:parttec/providers/seller_orders_provider.dart';
+import '../../providers/seller_orders_provider.dart';
 
 class SellerOrderDetailsPage extends StatelessWidget {
   final String customerName;

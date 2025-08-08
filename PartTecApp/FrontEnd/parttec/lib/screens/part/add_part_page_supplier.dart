@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
-import '../providers/add_part_provider.dart';
-import '../setting.dart';
-import 'qr_scan_page.dart';
+import '../../providers/add_part_provider.dart';
+import '../../utils/app_settings.dart';
+import '../qr/qr_scan_page.dart';
 
 class KiaPartAddPage extends StatefulWidget {
   const KiaPartAddPage({super.key});

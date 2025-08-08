@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/favorites_provider.dart';
-import '../Widgets/parts_widgets.dart';
+import '../../providers/favorites_provider.dart';
+import '../../widgets/parts_widgets.dart';
 
 class FavoritePartsPage extends StatelessWidget {
   @override

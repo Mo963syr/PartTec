@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'add_part_page_supplier.dart';
-import 'manage_parts_page.dart';
-import 'GroupedOrdersPage.dart';
-import 'added_parts_page.dart';
-import 'recommendation_requests_page.dart';
+import '../part/add_part_page_supplier.dart';
+import '../part/manage_parts_page.dart';
+import '../order/GroupedOrdersPage.dart';
+import '../part/added_parts_page.dart';
+import '../recommendation/recommendation_requests_page.dart';
 
 class SupplierDashboard extends StatelessWidget {
   const SupplierDashboard({super.key});
@@ -16,7 +16,6 @@ class SupplierDashboard extends StatelessWidget {
         centerTitle: true,
         backgroundColor: Colors.blue,
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: GridView.count(
@@ -32,7 +31,7 @@ class SupplierDashboard extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>  KiaPartAddPage(),
+                    builder: (_) => KiaPartAddPage(),
                   ),
                 );
               },
@@ -74,13 +73,13 @@ class SupplierDashboard extends StatelessWidget {
               },
             ),
             _buildCard(
-              icon: Icons.recommend, // أيقونة تدل على توصية
+              icon: Icons.recommend,
               title: 'طلبات التوصية',
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => RecommendationRequestsPage(), // صفحة جديدة
+                    builder: (_) => RecommendationRequestsPage(),
                   ),
                 );
               },

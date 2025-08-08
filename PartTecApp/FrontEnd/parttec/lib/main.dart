@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:parttec/supplier_dashboard.dart';
-import 'home_page.dart';
-import 'employee/DeliveryDashboard.dart';
-import 'package:parttec/GroupedOrdersPage.dart';
-import 'providers/cart_provider.dart';
+import 'package:parttec/screens/supplier/supplier_dashboard.dart';
+import 'package:provider/provider.dart';
+
 import 'providers/home_provider.dart';
 import 'providers/parts_provider.dart';
 import 'providers/add_part_provider.dart';
-import 'package:provider/provider.dart';
-import '/providers/seller_orders_provider.dart';
 import 'providers/cart_provider.dart';
-import 'package:parttec/ChooseDestinationPage.dart';
-import './providers/favorites_provider.dart';
+import 'providers/favorites_provider.dart';
+import 'providers/seller_orders_provider.dart';
+import 'providers/order_provider.dart';
+
+import 'screens/home/home_page.dart';
 
 void main() {
   runApp(
@@ -21,25 +20,31 @@ void main() {
         ChangeNotifierProvider(create: (_) => PartsProvider()),
         ChangeNotifierProvider(create: (_) => AddPartProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => OrderProvider()),
         ChangeNotifierProvider(create: (_) => FavoritesProvider()),
         ChangeNotifierProvider(
           create: (_) =>
               SellerOrdersProvider('68761cf7f92107b8288158c2')..fetchOrders(),
         ),
       ],
-      child: MyApp(),
+      child: const MyApp(),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        title: 'PartTec',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-        ),
-        home: HomePage());
+      title: 'PartTec',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        fontFamily: 'Cairo',
+      ),
+      home: HomePage(),
+    );
   }
 }

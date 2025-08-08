@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'providers/parts_provider.dart';
+import '../../providers/parts_provider.dart';
+import '../../models/part.dart';
 
 class ManagePartsPage extends StatefulWidget {
   const ManagePartsPage({super.key});
@@ -32,13 +33,12 @@ class _ManagePartsPageState extends State<ManagePartsPage> {
               padding: const EdgeInsets.all(16),
               itemCount: provider.parts.length,
               itemBuilder: (context, index) {
-                final part = provider.parts[index];
+                final Part part = provider.parts[index];
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   child: ListTile(
-                    title: Text(part['name'] ?? ''),
-                    subtitle: Text(
-                        "${part['manufacturer'] ?? ''} - ${part['model'] ?? ''}"),
+                    title: Text(part.name),
+                    subtitle: Text("${part.manufacturer} - ${part.model}"),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
                       onPressed: () async {
@@ -63,7 +63,7 @@ class _ManagePartsPageState extends State<ManagePartsPage> {
                         );
 
                         if (confirm == true) {
-                          await provider.deletePart(part['_id']);
+                          await provider.deletePart(part.id);
                         }
                       },
                     ),
