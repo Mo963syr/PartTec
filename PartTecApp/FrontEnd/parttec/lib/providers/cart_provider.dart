@@ -60,7 +60,6 @@ class CartProvider extends ChangeNotifier {
         body: jsonEncode({
           'userId': userid,
           'partId': part['id'],
-          "coordinates": [44.1910, 15.3694]
         }),
       );
 
