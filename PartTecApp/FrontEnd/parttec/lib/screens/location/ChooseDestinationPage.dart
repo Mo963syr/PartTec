@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:parttec/supplier_dashboard.dart';
-import 'home_page.dart';
-
+import '../supplier/supplier_dashboard.dart';
+import '../home/home_page.dart';
 
 class ChooseDestinationPage extends StatelessWidget {
   const ChooseDestinationPage({super.key});
@@ -18,7 +17,7 @@ class ChooseDestinationPage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ElevatedButton.icon(
-              icon: const Icon(Icons.home),
+              icon: Icon(Icons.home),
               label: Text('الذهاب إلى الصفحة الرئيسية'),
               onPressed: () {
                 Navigator.push(
