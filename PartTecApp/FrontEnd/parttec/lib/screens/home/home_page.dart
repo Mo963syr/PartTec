@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../../models/part.dart';
 import '../part/add_part_page.dart';
 import '../../providers/home_provider.dart';
 import '../../widgets/parts_widgets.dart';
@@ -17,9 +17,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late final TabController _tabController;
   int _selectedIndex = 2;
 
+  late final TextEditingController _serialController;
+  String _serialSearchQuery = '';
+  List<Part> _serialSearchResults = [];
   @override
   void initState() {
     super.initState();
+    _serialController = TextEditingController();
     _tabController = TabController(length: 3, vsync: this);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -33,6 +37,23 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _performSerialSearch() {
+    final provider = Provider.of<HomeProvider>(context, listen: false);
+    final query = _serialController.text.trim();
+    setState(() {
+      _serialSearchQuery = query;
+      if (query.isNotEmpty) {
+        _serialSearchResults = provider.availableParts
+            .where((part) =>
+                part.serialNumber != null &&
+                part.serialNumber!.trim().toLowerCase() == query.toLowerCase())
+            .toList();
+      } else {
+        _serialSearchResults = [];
+      }
+    });
   }
 
   @override
@@ -104,16 +125,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               ],
             ),
           ),
-
           if (provider.showCars)
             ...provider.userCars
                 .map((c) =>
                     Text('• ${c['manufacturer']} ${c['model']} (${c['year']})'))
                 .toList(),
-
           SizedBox(height: 16),
-
-          // 🔁 زر التبديل بين القطع الخاصة والعامة
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -210,35 +227,59 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
     return Padding(
       padding: const EdgeInsets.all(12),
-      child: DefaultTabController(
-        length: categories.length,
-        child: Column(
-          children: [
-            Container(
-              alignment: Alignment.centerLeft,
-              child: TabBar(
-                isScrollable: true,
-                labelColor: Colors.blue,
-                unselectedLabelColor: Colors.grey,
-                indicatorColor: Colors.blue,
-                tabs: categories
-                    .map((cat) => Tab(
-                          icon: Icon(cat['icon']),
-                          text: cat['label'],
-                        ))
-                    .toList(),
+      child: Column(
+        children: [
+          TextField(
+            controller: _serialController,
+            decoration: InputDecoration(
+              labelText: 'ابحث بالرقم التسلسلي',
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.search),
+                onPressed: _performSerialSearch,
               ),
             ),
+            onSubmitted: (_) => _performSerialSearch(),
+          ),
+          const SizedBox(height: 10),
+          if (_serialSearchQuery.isNotEmpty)
             Container(
               height: MediaQuery.of(context).size.height * 0.44,
-              child: TabBarView(
-                children: categories
-                    .map((cat) => CategoryTabView(category: cat['label'] ?? ''))
-                    .toList(),
+              child: PartsGrid(parts: _serialSearchResults),
+            )
+          else
+            DefaultTabController(
+              length: categories.length,
+              child: Column(
+                children: [
+                  Container(
+                    alignment: Alignment.centerLeft,
+                    child: TabBar(
+                      isScrollable: true,
+                      labelColor: Colors.blue,
+                      unselectedLabelColor: Colors.grey,
+                      indicatorColor: Colors.blue,
+                      tabs: categories
+                          .map((cat) => Tab(
+                                icon: Icon(cat['icon']),
+                                text: cat['label'],
+                              ))
+                          .toList(),
+                    ),
+                  ),
+                  Container(
+                    height: MediaQuery.of(context).size.height * 0.44,
+                    child: TabBarView(
+                      children: categories
+                          .map((cat) =>
+                              CategoryTabView(category: cat['label'] ?? ''))
+                          .toList(),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
