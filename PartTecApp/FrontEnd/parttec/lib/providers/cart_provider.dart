@@ -63,19 +63,22 @@ class CartProvider extends ChangeNotifier {
         body: jsonEncode({
           'userId': userid,
           'partId': part.id,
-          'coordinates': [44.1910, 15.3694],
+          'coordinates': [
+            44.1910,
+            15.3694
+          ], // TODO: استبدلها بإحداثيات صحيحة (lat, lon)
         }),
       );
 
-      if (response.statusCode == 201) {
-        return false;
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return true; // ✅ نجاح
       } else {
         print('فشل في الإرسال: ${response.statusCode}, ${response.body}');
-        return true;
+        return false; // ❌ فشل
       }
     } catch (e) {
       print('حدث خطأ أثناء الإرسال إلى السلة: $e');
-      return true;
+      return false; // ❌ فشل
     }
   }
 }
