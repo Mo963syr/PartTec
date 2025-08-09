@@ -6,6 +6,9 @@ import '../providers/home_provider.dart';
 import '../providers/favorites_provider.dart';
 import '../screens/part/part_details_page.dart';
 
+// 🆕 يوزر افتراضي
+const String defaultUserId = "687ff5a6bf0de81878ed94f5"; // أو أي قيمة منطقية مؤقتة
+
 class PartCard extends StatelessWidget {
   final Part part;
 
@@ -15,6 +18,7 @@ class PartCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final favProvider = Provider.of<FavoritesProvider>(context);
     final bool isFav = favProvider.isFavorite(part.id);
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -39,18 +43,18 @@ class PartCard extends StatelessWidget {
                   Expanded(
                     child: part.imageUrl.isNotEmpty
                         ? ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              part.imageUrl,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                            ),
-                          )
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        part.imageUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                      ),
+                    )
                         : const Icon(
-                            Icons.image,
-                            size: 50,
-                            color: Colors.grey,
-                          ),
+                      Icons.image,
+                      size: 50,
+                      color: Colors.grey,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -66,7 +70,7 @@ class PartCard extends StatelessWidget {
                         child: Text(
                           part.manufacturer ?? '',
                           style:
-                              TextStyle(color: Colors.grey[600], fontSize: 12),
+                          TextStyle(color: Colors.grey[600], fontSize: 12),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -97,8 +101,8 @@ class PartCard extends StatelessWidget {
                   isFav ? Icons.favorite : Icons.favorite_border,
                   color: isFav ? Colors.red : Colors.grey,
                 ),
-                onPressed: () {
-                  favProvider.toggleFavorite(part);
+                onPressed: () async { // 🆕 خليها async
+                  await favProvider.toggleFavorite(part, defaultUserId); // 🆕 مرر اليوزر الافتراضي
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
@@ -118,7 +122,6 @@ class PartCard extends StatelessWidget {
     );
   }
 }
-
 class PartsGrid extends StatelessWidget {
   final List<Part> parts;
 
@@ -129,10 +132,9 @@ class PartsGrid extends StatelessWidget {
     if (parts.isEmpty) {
       return const Center(child: Text('لا توجد قطع في هذا القسم'));
     }
+
     return GridView.builder(
       padding: const EdgeInsets.only(top: 10),
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
       itemCount: parts.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
@@ -140,9 +142,7 @@ class PartsGrid extends StatelessWidget {
         mainAxisSpacing: 10,
         childAspectRatio: 0.8,
       ),
-      itemBuilder: (context, index) {
-        return PartCard(part: parts[index]);
-      },
+      itemBuilder: (ctx, index) => PartCard(part: parts[index]),
     );
   }
 }
@@ -156,16 +156,14 @@ class CategoryTabView extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = Provider.of<HomeProvider>(context);
     final filtered = provider.availableParts
-        .where((part) => part.category.toLowerCase() == category.toLowerCase())
+        .where((p) => p.category.toLowerCase() == category.toLowerCase())
         .toList();
+
     return RefreshIndicator(
       displacement: 200.0,
       strokeWidth: 3.0,
       onRefresh: () => provider.fetchAvailableParts(),
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: PartsGrid(parts: filtered),
-      ),
+      child: PartsGrid(parts: filtered),
     );
   }
 }

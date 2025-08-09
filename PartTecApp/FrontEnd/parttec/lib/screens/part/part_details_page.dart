@@ -102,10 +102,10 @@ class PartDetailsPage extends StatelessWidget {
                 SnackBar(
                   content: Text(
                     success
-                        ? '❌ فشل في إضافة القطعة، تحقق من الاتصال أو البيانات'
-                        : 'تمت الاضافة الى السلة بنجاح',
+                        ? 'اصبحت القطعة في السلة'
+                        : 'فشلت الاضافة الى السلة',
                   ),
-                  backgroundColor: success ? Colors.red : Colors.green,
+                  backgroundColor: success ? Colors.green : Colors.red,
                   duration: const Duration(seconds: 3),
                 ),
               );

@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
-
-import '../part/add_part_page.dart';
-
-import '../../models/part.dart';
-import '../../providers/home_provider.dart';
-import '../../widgets/parts_widgets.dart';
 import 'package:provider/provider.dart';
+// PartsGrid & CategoryTabView
+import 'package:parttec/models/part.dart';
+import '../../Widgets/parts_widgets.dart';
+import '../part/add_part_page.dart';
+import '../../providers/home_provider.dart';
 import '../cart/cart_page.dart';
 import '../order/my_order_page.dart';
 import '../favorites/favorite_parts_page.dart';
 
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
-  late final TabController _tabController;
+class _HomePageState extends State<HomePage> {
   int _selectedIndex = 2;
 
   late final TextEditingController _serialController;
@@ -28,7 +28,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     super.initState();
 
     _serialController = TextEditingController();
-    _tabController = TabController(length: 3, vsync: this);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<HomeProvider>(context, listen: false);
@@ -39,7 +38,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _tabController.dispose();
     _serialController.dispose();
     super.dispose();
   }
@@ -47,13 +45,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   void _performSerialSearch() {
     final provider = Provider.of<HomeProvider>(context, listen: false);
     final query = _serialController.text.trim();
+
     setState(() {
       _serialSearchQuery = query;
       if (query.isNotEmpty) {
         _serialSearchResults = provider.availableParts
             .where((part) =>
-                part.serialNumber != null &&
-                part.serialNumber!.trim().toLowerCase() == query.toLowerCase())
+        part.serialNumber != null &&
+            part.serialNumber!.trim().toLowerCase() ==
+                query.toLowerCase())
             .toList();
       } else {
         _serialSearchResults = [];
@@ -67,11 +67,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('قطع الغيار'),
+        title: const Text('قطع الغيار'),
         backgroundColor: Colors.blue,
         actions: [
           IconButton(
-            icon: Icon(Icons.shopping_cart),
+            icon: const Icon(Icons.shopping_cart),
             onPressed: () {
               Navigator.push(
                 context,
@@ -86,14 +86,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         strokeWidth: 3.0,
         onRefresh: () => provider.fetchAvailableParts(),
         child: SingleChildScrollView(
-          physics: BouncingScrollPhysics(),
+          physics: const BouncingScrollPhysics(),
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).padding.bottom + 160,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (provider.userCars.isNotEmpty) _buildUserCarsSection(provider),
+              if (provider.userCars.isNotEmpty)
+                _buildUserCarsSection(provider),
               _buildCarFormSection(context, provider),
               _buildPartsSection(),
             ],
@@ -102,9 +103,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(
-            context, MaterialPageRoute(builder: (_) => AddPartPage())),
+          context,
+          MaterialPageRoute(builder: (_) => const AddPartPage()),
+        ),
         backgroundColor: Colors.blue,
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: _buildBottomAppBar(),
@@ -121,8 +124,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             onTap: provider.toggleShowCars,
             child: Row(
               children: [
-                Text('🚗 سياراتك:',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  '🚗 سياراتك:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 Icon(
                   provider.showCars ? Icons.expand_less : Icons.expand_more,
                   color: Colors.blue,
@@ -132,16 +137,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ),
           if (provider.showCars)
             ...provider.userCars
-                .map((c) =>
-                    Text('• ${c['manufacturer']} ${c['model']} (${c['year']})'))
-                .toList(),
-          SizedBox(height: 16),
+                .map((c) => Text(
+                '• ${c['manufacturer']} ${c['model']} (${c['year']})'))
+                ,
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'عرض قطع ${provider.isPrivate ? "خاصة" : "عامة"}',
-                style: TextStyle(fontWeight: FontWeight.bold),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               Switch(
                 value: provider.isPrivate,
@@ -162,8 +167,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           DropdownButtonFormField<String>(
-            decoration: InputDecoration(
-                labelText: 'ماركة السيارة', border: OutlineInputBorder()),
+            decoration: const InputDecoration(
+              labelText: 'ماركة السيارة',
+              border: OutlineInputBorder(),
+            ),
             value: provider.selectedMake,
             items: provider.makes
                 .map((m) => DropdownMenuItem(value: m, child: Text(m)))
@@ -171,10 +178,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             onChanged: provider.setSelectedMake,
           ),
           if (provider.selectedMake != null) ...[
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                  labelText: 'الموديل', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: 'الموديل',
+                border: OutlineInputBorder(),
+              ),
               value: provider.selectedModel,
               items: (provider.modelsByMake[provider.selectedMake] ?? [])
                   .map((m) => DropdownMenuItem(value: m, child: Text(m)))
@@ -183,10 +192,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ),
           ],
           if (provider.selectedModel != null) ...[
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                  labelText: 'سنة الصنع', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: 'سنة الصنع',
+                border: OutlineInputBorder(),
+              ),
               value: provider.selectedYear,
               items: provider.years
                   .map((y) => DropdownMenuItem(value: y, child: Text(y)))
@@ -195,10 +206,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ),
           ],
           if (provider.selectedYear != null) ...[
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                  labelText: 'نوع الوقود', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: 'نوع الوقود',
+                border: OutlineInputBorder(),
+              ),
               value: provider.selectedFuel,
               items: provider.fuelTypes
                   .map((f) => DropdownMenuItem(value: f, child: Text(f)))
@@ -207,12 +220,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ),
           ],
           if (provider.selectedFuel != null) ...[
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton.icon(
-              icon: Icon(Icons.save),
-              label: Text('حفظ السيارة'),
+              icon: const Icon(Icons.save),
+              label: const Text('حفظ السيارة'),
               onPressed: () => provider.submitCar(context),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              style:
+              ElevatedButton.styleFrom(backgroundColor: Colors.green),
             ),
           ],
         ],
@@ -229,6 +243,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       {'label': 'إطارات', 'icon': Icons.circle},
       {'label': 'نظام التعليق', 'icon': Icons.sync_alt},
     ];
+
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -246,8 +261,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             onSubmitted: (_) => _performSerialSearch(),
           ),
           const SizedBox(height: 10),
+
+          /// نتائج البحث بالرقم التسلسلي
           if (_serialSearchQuery.isNotEmpty)
-            Container(
+            SizedBox(
               height: MediaQuery.of(context).size.height * 0.44,
               child: PartsGrid(parts: _serialSearchResults),
             )
@@ -265,18 +282,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       indicatorColor: Colors.blue,
                       tabs: categories
                           .map((cat) => Tab(
-                                icon: Icon(cat['icon']),
-                                text: cat['label'],
-                              ))
+                        icon: Icon(cat['icon'] as IconData),
+                        text: cat['label'] as String,
+                      ))
                           .toList(),
                     ),
                   ),
-                  Container(
+                  SizedBox(
                     height: MediaQuery.of(context).size.height * 0.44,
                     child: TabBarView(
                       children: categories
-                          .map((cat) =>
-                              CategoryTabView(category: cat['label'] ?? ''))
+                          .map<Widget>((cat) => CategoryTabView(
+                          category: (cat['label'] ?? '') as String))
                           .toList(),
                     ),
                   ),
@@ -290,7 +307,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   Widget _buildBottomAppBar() {
     return BottomAppBar(
-      shape: CircularNotchedRectangle(),
+      shape: const CircularNotchedRectangle(),
       notchMargin: 6,
       child: SizedBox(
         height: 60,
@@ -298,12 +315,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             IconButton(
-                icon: Icon(Icons.notifications,
-                    color: _selectedIndex == 0 ? Colors.blue : Colors.grey),
-                onPressed: () => setState(() => _selectedIndex = 0)),
+              icon: Icon(
+                Icons.notifications,
+                color: _selectedIndex == 0 ? Colors.blue : Colors.grey,
+              ),
+              onPressed: () => setState(() => _selectedIndex = 0),
+            ),
             IconButton(
-              icon: Icon(Icons.history,
-                  color: _selectedIndex == 1 ? Colors.blue : Colors.grey),
+              icon: Icon(
+                Icons.history,
+                color: _selectedIndex == 1 ? Colors.blue : Colors.grey,
+              ),
               onPressed: () {
                 showModalBottomSheet(
                   context: context,
@@ -315,10 +337,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 );
               },
             ),
-            SizedBox(width: 40),
+            const SizedBox(width: 40),
             IconButton(
-              icon: Icon(Icons.favorite,
-                  color: _selectedIndex == 3 ? Colors.blue : Colors.grey),
+              icon: Icon(
+                Icons.favorite,
+                color: _selectedIndex == 3 ? Colors.blue : Colors.grey,
+              ),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -328,9 +352,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               },
             ),
             IconButton(
-                icon: Icon(Icons.home,
-                    color: _selectedIndex == 2 ? Colors.blue : Colors.grey),
-                onPressed: () => setState(() => _selectedIndex = 2)),
+              icon: Icon(
+                Icons.home,
+                color: _selectedIndex == 2 ? Colors.blue : Colors.grey,
+              ),
+              onPressed: () => setState(() => _selectedIndex = 2),
+            ),
           ],
         ),
       ),
