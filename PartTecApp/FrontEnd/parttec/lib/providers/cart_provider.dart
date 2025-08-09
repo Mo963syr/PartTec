@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:parttec/setting.dart';
+import '../utils/app_settings.dart';
+import '../models/part.dart';
+import '../models/cart_item.dart';
 
 class CartProvider extends ChangeNotifier {
   String userid = '687ff5a6bf0de81878ed94f5';
 
-  List<Map<String, dynamic>> _fetchedCartItems = [];
+  List<CartItem> _cartItems = [];
 
-  List<Map<String, dynamic>> get fetchedCartItems => _fetchedCartItems;
+  List<CartItem> get cartItems => List.unmodifiable(_cartItems);
 
   bool isLoading = false;
   String? error;
 
-  // ✅ تحميل السلة من السيرفر
   Future<void> fetchCartFromServer() async {
-    final url =
-        Uri.parse('https://parttec.onrender.com/cart/viewcartitem/$userid');
+    final url = Uri.parse('${AppSettings.serverurl}/cart/viewcartitem/$userid');
 
     try {
       isLoading = true;
@@ -28,17 +28,21 @@ class CartProvider extends ChangeNotifier {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['cart'] != null) {
-          _fetchedCartItems = List<Map<String, dynamic>>.from(data['cart']);
+          final List<dynamic> list = data['cart'];
+          _cartItems = list
+              .where((e) => e is Map<String, dynamic>)
+              .map((e) => CartItem.fromJson(e as Map<String, dynamic>))
+              .toList();
         } else {
-          _fetchedCartItems = [];
+          _cartItems = [];
         }
       } else {
         error = 'فشل التحميل: ${response.statusCode}';
-        _fetchedCartItems = [];
+        _cartItems = [];
       }
     } catch (e) {
       error = 'خطأ في تحميل السلة: $e';
-      _fetchedCartItems = [];
+      _cartItems = [];
     } finally {
       isLoading = false;
       notifyListeners();
@@ -46,25 +50,24 @@ class CartProvider extends ChangeNotifier {
   }
 
   void removeAt(int index) {
-    _fetchedCartItems.removeAt(index);
+    _cartItems.removeAt(index);
     notifyListeners();
   }
 
-  Future<bool> addToCartToServer(Map<String, dynamic> part) async {
+  Future<bool> addToCartToServer(Part part) async {
     final url = Uri.parse('${AppSettings.serverurl}/cart/addToCart');
-    print(part);
     try {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'userId': userid,
-          'partId': part['id'],
+          'partId': part.id,
+          'coordinates': [44.1910, 15.3694],
         }),
       );
 
       if (response.statusCode == 201) {
-        print(response.body);
         return false;
       } else {
         print('فشل في الإرسال: ${response.statusCode}, ${response.body}');
@@ -72,7 +75,7 @@ class CartProvider extends ChangeNotifier {
       }
     } catch (e) {
       print('حدث خطأ أثناء الإرسال إلى السلة: $e');
-      return false;
+      return true;
     }
   }
 }

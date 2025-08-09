@@ -1,8 +1,7 @@
-// provider/seller_orders_provider.dart
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:parttec/setting.dart';
+import '../utils/app_settings.dart';
 
 class SellerOrdersProvider with ChangeNotifier {
   String sellerId = "68761cf7f92107b8288158c2";

@@ -43,10 +43,10 @@ class SellerOrderDetailsPage extends StatelessWidget {
               child: ListTile(
                 leading: (part['imageUrl'] != null && part['imageUrl'] != '')
                     ? Image.network(
-                  part['imageUrl'],
-                  width: 50,
-                  errorBuilder: (_, __, ___) => Icon(Icons.image),
-                )
+                        part['imageUrl'],
+                        width: 50,
+                        errorBuilder: (_, __, ___) => Icon(Icons.image),
+                      )
                     : Icon(Icons.image),
                 title: Text(part['name'] ?? 'اسم غير معروف'),
                 subtitle: Column(
@@ -67,8 +67,6 @@ class SellerOrderDetailsPage extends StatelessWidget {
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
-
-          // أزرار الحالة (تظهر فقط عندما تكون الحالة "مؤكد")
           if (status == 'مؤكد')
             Wrap(
               spacing: 10,
@@ -98,7 +96,8 @@ class SellerOrderDetailsPage extends StatelessWidget {
                       );
                     }
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                  style:
+                      ElevatedButton.styleFrom(backgroundColor: Colors.green),
                   child: const Text('على الطريق'),
                 ),
               ],

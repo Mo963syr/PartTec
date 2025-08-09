@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../models/part.dart';
+
 import '../part/add_part_page.dart';
+
+import '../../models/part.dart';
 import '../../providers/home_provider.dart';
 import '../../widgets/parts_widgets.dart';
 import 'package:provider/provider.dart';
@@ -20,9 +22,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late final TextEditingController _serialController;
   String _serialSearchQuery = '';
   List<Part> _serialSearchResults = [];
+
   @override
   void initState() {
     super.initState();
+
     _serialController = TextEditingController();
     _tabController = TabController(length: 3, vsync: this);
 
@@ -36,6 +40,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   @override
   void dispose() {
     _tabController.dispose();
+    _serialController.dispose();
     super.dispose();
   }
 
@@ -47,11 +52,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       if (query.isNotEmpty) {
         _serialSearchResults = provider.availableParts
             .where((part) =>
-        part.serialNumber != null &&
-            part.serialNumber!.trim().toLowerCase() == query.toLowerCase())
-            .cast<Part>()
+                part.serialNumber != null &&
+                part.serialNumber!.trim().toLowerCase() == query.toLowerCase())
             .toList();
-
       } else {
         _serialSearchResults = [];
       }
@@ -226,7 +229,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       {'label': 'إطارات', 'icon': Icons.circle},
       {'label': 'نظام التعليق', 'icon': Icons.sync_alt},
     ];
-
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
