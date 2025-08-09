@@ -29,7 +29,7 @@ class Part {
 
   factory Part.fromJson(Map<String, dynamic> json) {
     return Part(
-      id: json['_id']?.toString() ?? '',
+      id: (json['_id'] ?? json['id'])?.toString() ?? '',
       name: json['name'] ?? '',
       manufacturer: json['manufacturer'],
       model: json['model'] ?? '',

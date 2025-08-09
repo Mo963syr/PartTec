@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../models/part.dart';
+import 'package:parttec/models/part.dart';
 
 class FavoritesProvider extends ChangeNotifier {
   final List<Part> _favorites = [];

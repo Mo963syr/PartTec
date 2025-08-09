@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parttec/screens/location/ChooseDestinationPage.dart';
 import 'package:parttec/screens/supplier/supplier_dashboard.dart';
 import 'package:provider/provider.dart';
 
@@ -44,7 +45,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         fontFamily: 'Cairo',
       ),
-      home: HomePage(),
+      home: ChooseDestinationPage(),
     );
   }
 }
