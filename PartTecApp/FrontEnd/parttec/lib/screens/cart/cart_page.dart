@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/cart_provider.dart';
+import '../../models/cart_item.dart';
 import 'package:latlong2/latlong.dart';
 import '../location/add_location.dart';
 import '../order/order_summary_page.dart';
@@ -9,17 +10,19 @@ class CartPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cart = Provider.of<CartProvider>(context);
+
     String userId = "687ff5a6bf0de81878ed94f5";
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (cart.fetchedCartItems.isEmpty && !cart.isLoading) {
+      if (cart.cartItems.isEmpty && !cart.isLoading) {
         cart.fetchCartFromServer();
       }
     });
 
-    double total = cart.fetchedCartItems.fold(0, (sum, item) {
-      final part = item['partId'];
-      final quantity = item['quantity'] ?? 1;
-      final price = part?['price'] ?? 0;
+    double total = cart.cartItems.fold(0.0, (sum, CartItem item) {
+      final part = item.part;
+      final quantity = item.quantity;
+      final price = part.price;
       return sum + (price * quantity);
     });
 
@@ -28,34 +31,28 @@ class CartPage extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(title: Text('سلة المشتريات')),
         body: cart.isLoading
-            ? Center(child: CircularProgressIndicator())
-            : cart.fetchedCartItems.isEmpty
-                ? Center(child: Text('السلة فارغة 🛒'))
+            ? const Center(child: CircularProgressIndicator())
+            : cart.cartItems.isEmpty
+                ? const Center(child: Text('السلة فارغة 🛒'))
                 : RefreshIndicator(
                     onRefresh: () => cart.fetchCartFromServer(),
                     child: Column(
                       children: [
                         Expanded(
                           child: ListView.builder(
-                            itemCount: cart.fetchedCartItems.length,
+                            itemCount: cart.cartItems.length,
                             itemBuilder: (context, index) {
-                              final item = cart.fetchedCartItems[index];
-                              final part = item['partId'];
-
-                              if (part == null) {
-                                return ListTile(
-                                  title: Text('⚠️ لا توجد معلومات عن القطعة'),
-                                );
-                              }
+                              final CartItem item = cart.cartItems[index];
+                              final part = item.part;
 
                               return Container(
-                                margin: EdgeInsets.symmetric(
+                                margin: const EdgeInsets.symmetric(
                                     vertical: 8, horizontal: 16),
-                                padding: EdgeInsets.all(12),
+                                padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
+                                  boxShadow: const [
                                     BoxShadow(
                                       color: Colors.black12,
                                       blurRadius: 5,
@@ -67,42 +64,40 @@ class CartPage extends StatelessWidget {
                                     ClipRRect(
                                       borderRadius: BorderRadius.circular(8),
                                       child: Image.network(
-                                        part['imageUrl'] ?? '',
+                                        part.imageUrl,
                                         width: 60,
                                         height: 60,
                                         fit: BoxFit.cover,
                                         errorBuilder: (_, __, ___) =>
-                                            Icon(Icons.broken_image),
+                                            const Icon(Icons.broken_image),
                                       ),
                                     ),
-                                    SizedBox(width: 12),
+                                    const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            part['name'] ?? 'بدون اسم',
-                                            style: TextStyle(
+                                            part.name,
+                                            style: const TextStyle(
                                               fontWeight: FontWeight.bold,
                                               fontSize: 16,
                                             ),
                                           ),
-                                          SizedBox(height: 4),
+                                          const SizedBox(height: 4),
                                           Text(
-                                            '${part['price']} \$',
-                                            style: TextStyle(
-                                              color: Colors.green,
-                                            ),
+                                            '${part.price} \$',
+                                            style: const TextStyle(
+                                                color: Colors.green),
                                           ),
-                                          Text(
-                                              'الكمية: ${item['quantity'] ?? 1}')
+                                          Text('الكمية: ${item.quantity}')
                                         ],
                                       ),
                                     ),
                                     IconButton(
-                                      icon:
-                                          Icon(Icons.delete, color: Colors.red),
+                                      icon: const Icon(Icons.delete,
+                                          color: Colors.red),
                                       onPressed: () =>
                                           _confirmDelete(context, cart, index),
                                     )
@@ -112,17 +107,17 @@ class CartPage extends StatelessWidget {
                             },
                           ),
                         ),
-                        Divider(),
+                        const Divider(),
                         Padding(
                           padding: const EdgeInsets.all(12.0),
                           child: Column(
                             children: [
                               Text(
                                 'الإجمالي: \$${total.toStringAsFixed(2)}',
-                                style: TextStyle(
+                                style: const TextStyle(
                                     fontSize: 18, fontWeight: FontWeight.bold),
                               ),
-                              SizedBox(height: 10),
+                              const SizedBox(height: 10),
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceAround,
@@ -141,16 +136,16 @@ class CartPage extends StatelessWidget {
                                             location, 'الدفع عند الاستلام');
                                       }
                                     },
-                                    icon: Icon(Icons.delivery_dining),
-                                    label: Text('الدفع عند الاستلام'),
+                                    icon: const Icon(Icons.delivery_dining),
+                                    label: const Text('الدفع عند الاستلام'),
                                     style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.orange),
                                   ),
                                   ElevatedButton.icon(
                                     onPressed: () => _confirmOrder(
                                         context, 'الدفع الإلكتروني'),
-                                    icon: Icon(Icons.credit_card),
-                                    label: Text('الدفع بالبطاقة'),
+                                    icon: const Icon(Icons.credit_card),
+                                    label: const Text('الدفع بالبطاقة'),
                                     style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.green),
                                   ),
@@ -219,17 +214,15 @@ class CartPage extends StatelessWidget {
   void _confirmOrderWithLocation(
       BuildContext context, LatLng location, String method) {
     final cart = Provider.of<CartProvider>(context, listen: false);
-    final total = cart.fetchedCartItems.fold(0.0, (sum, item) {
-      final part = item['partId'];
-      final quantity = item['quantity'] ?? 1;
-      final price = part?['price'] ?? 0;
-      return sum + (price * quantity);
+    // Compute the total cost using the typed cart items
+    final total = cart.cartItems.fold<double>(0.0, (sum, CartItem item) {
+      return sum + (item.part.price * item.quantity);
     });
 
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => OrderSummaryPage(
-          items: cart.fetchedCartItems,
+          items: cart.cartItems,
           total: total,
           location: location,
           paymentMethod: method,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+// Import the recommendation request page from the recommendation module
 import '../recommendation/request_recommendation_page.dart';
 
 class AddPartPage extends StatelessWidget {

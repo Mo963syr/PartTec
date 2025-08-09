@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import '../../models/cart_item.dart';
 
 class OrderSummaryPage extends StatelessWidget {
-  final List<Map<String, dynamic>> items;
+  final List<CartItem> items;
+
   final double total;
+
   final LatLng location;
+
   final String paymentMethod;
 
   const OrderSummaryPage({
@@ -12,7 +16,8 @@ class OrderSummaryPage extends StatelessWidget {
     required this.total,
     required this.location,
     required this.paymentMethod,
-  });
+    Key? key,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -28,16 +33,15 @@ class OrderSummaryPage extends StatelessWidget {
               child: ListView.builder(
                 itemCount: items.length,
                 itemBuilder: (_, index) {
-                  final item = items[index];
-                  final part = item['partId'];
-                  final quantity = item['quantity'] ?? 1;
-                  final price = part?['price'] ?? 0;
-                  final name = part?['name'] ?? 'بدون اسم';
+                  final CartItem item = items[index];
+                  final part = item.part;
+                  final int quantity = item.quantity;
 
                   return ListTile(
-                    title: Text(name),
+                    title: Text(part.name),
                     subtitle: Text('الكمية: $quantity'),
-                    trailing: Text('\$${price * quantity}'),
+                    trailing:
+                        Text('\$${(part.price * quantity).toStringAsFixed(2)}'),
                   );
                 },
               ),
@@ -55,14 +59,13 @@ class OrderSummaryPage extends StatelessWidget {
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.of(context).pop(); // إلغاء
+                    Navigator.of(context).pop();
                   },
                   child: Text('إلغاء'),
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    // 👇 هنا ترسل الطلب إلى السيرفر أو تنفذه فعليًا
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('تم تأكيد الطلب ✅')),
                     );

@@ -97,7 +97,7 @@ class PartDetailsPage extends StatelessWidget {
           child: ElevatedButton(
             onPressed: () async {
               final success = await Provider.of<CartProvider>(context, listen: false)
-                  .addToCartToServer(part.toJson());
+                  .addToCartToServer(part);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
