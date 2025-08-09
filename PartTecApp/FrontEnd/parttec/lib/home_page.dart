@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../models/part.dart';
-import '../part/add_part_page.dart';
+import 'package:parttec/screens/part/add_part_page.dart';
 import '../../providers/home_provider.dart';
 import '../../widgets/parts_widgets.dart';
 import 'package:provider/provider.dart';
-import '../cart/cart_page.dart';
-import '../order/my_order_page.dart';
-import '../favorites/favorite_parts_page.dart';
+import 'package:parttec/screens/cart/cart_page.dart';
+import 'package:parttec/screens/order/my_order_page.dart';
+import 'package:parttec/screens/favorites/favorite_parts_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -45,12 +45,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     setState(() {
       _serialSearchQuery = query;
       if (query.isNotEmpty) {
-        _serialSearchResults = provider.availableParts
-            .where((part) =>
-        part.serialNumber != null &&
-            part.serialNumber!.trim().toLowerCase() == query.toLowerCase())
-            .cast<Part>()
-            .toList();
+        _serialSearchResults = List<Part>.from(
+          provider.availableParts.where((part) =>
+          part.serialNumber != null &&
+              part.serialNumber!.trim().toLowerCase() == query.toLowerCase()),
+        );
 
       } else {
         _serialSearchResults = [];
@@ -130,7 +129,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           if (provider.showCars)
             ...provider.userCars
                 .map((c) =>
-                    Text('• ${c['manufacturer']} ${c['model']} (${c['year']})'))
+                Text('• ${c['manufacturer']} ${c['model']} (${c['year']})'))
                 .toList(),
           SizedBox(height: 16),
           Row(
@@ -263,9 +262,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       indicatorColor: Colors.blue,
                       tabs: categories
                           .map((cat) => Tab(
-                                icon: Icon(cat['icon']),
-                                text: cat['label'],
-                              ))
+                        icon: Icon(cat['icon']),
+                        text: cat['label'],
+                      ))
                           .toList(),
                     ),
                   ),
@@ -274,7 +273,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     child: TabBarView(
                       children: categories
                           .map((cat) =>
-                              CategoryTabView(category: cat['label'] ?? ''))
+                          CategoryTabView(category: cat['label'] ?? ''))
                           .toList(),
                     ),
                   ),

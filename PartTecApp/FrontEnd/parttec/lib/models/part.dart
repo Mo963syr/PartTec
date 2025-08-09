@@ -47,4 +47,21 @@ class Part {
       description: json['description'],
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'name': name,
+      'manufacturer': manufacturer,
+      'model': model,
+      'year': year,
+      'fuelType': fuelType,
+      'status': status,
+      'price': price,
+      'imageUrl': imageUrl,
+      'category': category,
+      'serialNumber': serialNumber,
+      'description': description,
+    };
+  }
 }

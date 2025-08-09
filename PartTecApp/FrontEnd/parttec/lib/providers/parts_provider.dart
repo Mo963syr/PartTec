@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
-import '../models/part.dart';
-import '../utils/app_settings.dart';
+import '../setting.dart';
 
 class PartsProvider extends ChangeNotifier {
-  List<Part> _parts = [];
+  List<dynamic> _parts = [];
   bool _isLoading = false;
 
-  List<Part> get parts => _parts;
-
+  List<dynamic> get parts => _parts;
   bool get isLoading => _isLoading;
 
   Future<void> fetchParts() async {
@@ -22,8 +19,8 @@ class PartsProvider extends ChangeNotifier {
       final response = await http.get(uri);
       if (response.statusCode == 200) {
         final Map<String, dynamic> decoded = json.decode(response.body);
-        final List<dynamic> list = decoded['parts'] ?? [];
-        _parts = list.map((json) => Part.fromJson(json)).toList();
+        _parts = decoded['parts'] ?? [];
+        print(_parts);
       } else {
         throw Exception('فشل تحميل البيانات');
       }
@@ -40,14 +37,13 @@ class PartsProvider extends ChangeNotifier {
     try {
       final response = await http.delete(uri);
       if (response.statusCode == 200) {
-        _parts.removeWhere((part) => part.id == id);
+        _parts.removeWhere((part) => part['_id'] == id);
+        notifyListeners();
       } else {
         throw Exception('فشل الحذف');
       }
     } catch (e) {
       print('❌ خطأ أثناء حذف القطعة: $e');
-    } finally {
-      notifyListeners();
     }
   }
 }

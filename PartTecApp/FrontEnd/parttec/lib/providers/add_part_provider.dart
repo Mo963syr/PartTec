@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../utils/app_settings.dart';
+import 'package:parttec/setting.dart';
 import 'package:http_parser/http_parser.dart';
-import 'dart:convert';
+
 
 class AddPartProvider extends ChangeNotifier {
   bool isLoading = false;
@@ -32,7 +32,7 @@ class AddPartProvider extends ChangeNotifier {
     request.fields['name'] = name;
     request.fields['manufacturer'] = manufacturer;
     request.fields['model'] = model;
-    if (year != null && year.isNotEmpty) {
+    if (year.isNotEmpty) {
       request.fields['year'] = year;
     }
     request.fields['fuelType'] = fuelType;

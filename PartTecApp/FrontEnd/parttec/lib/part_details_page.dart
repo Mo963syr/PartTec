@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import '../../providers/cart_provider.dart';
+import 'providers/cart_provider.dart';
 import 'package:provider/provider.dart';
-import '../../models/part.dart';
 
 class PartDetailsPage extends StatelessWidget {
-  final Part part;
+  final Map<String, dynamic> part;
 
   const PartDetailsPage({Key? key, required this.part}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = part.imageUrl;
+    final imageUrl = part['imageUrl'];
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -22,22 +22,22 @@ class PartDetailsPage extends StatelessWidget {
                 Container(
                   height: 250,
                   width: double.infinity,
-                  child: imageUrl.isNotEmpty
+                  child: imageUrl != null
                       ? Image.network(
                           imageUrl,
                           fit: BoxFit.cover,
                         )
                       : Container(
                           color: Colors.grey[300],
-                          child: const Icon(Icons.image,
-                              size: 100, color: Colors.grey),
+                          child:
+                              Icon(Icons.image, size: 100, color: Colors.grey),
                         ),
                 ),
                 Positioned(
                   top: 40,
                   left: 16,
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                    icon: Icon(Icons.arrow_back_ios, color: Colors.white),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ),
@@ -46,11 +46,12 @@ class PartDetailsPage extends StatelessWidget {
             Expanded(
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-                  boxShadow: const [
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                  boxShadow: [
                     BoxShadow(
                       color: Colors.black12,
                       blurRadius: 10,
@@ -60,26 +61,27 @@ class PartDetailsPage extends StatelessWidget {
                 ),
                 child: ListView(
                   children: [
-                    _buildDetailRow('اسم القطعة', part.name),
-                    _buildDetailRow('الموديل', part.model),
-                    _buildDetailRow('الماركة', part.manufacturer),
-                    _buildDetailRow('سنة الصنع',
-                        part.year != 0 ? part.year.toString() : null),
-                    _buildDetailRow('الرقم التسلسلي', part.serialNumber),
-                    _buildDetailRow('نوع الوقود', part.fuelType),
-                    _buildDetailRow('الحالة', part.status),
-                    _buildDetailRow('السعر', '${part.price} \$'),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'الوصف:',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 6),
+                    _buildDetailRow('اسم القطعة', part['name']),
+                    _buildDetailRow('الموديل', part['model']),
+                    _buildDetailRow('الماركة', part['manufacturer']),
+                    _buildDetailRow('سنة الصنع', part['year']),
+                    _buildDetailRow('الرقم التسلسلي', part['serialNumber']),
+                    _buildDetailRow('نوع الوقود', part['fuelType']),
+                    _buildDetailRow('الحالة', part['status']),
+                    _buildDetailRow('السعر',
+                        part['price'] != null ? '${part['price']} \$' : null),
+                    SizedBox(height: 16),
                     Text(
-                      part.description ?? 'لا يوجد وصف',
-                      style: const TextStyle(fontSize: 15),
+                      'الوصف:',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 80),
+                    SizedBox(height: 6),
+                    Text(
+                      part['description'] ?? 'لا يوجد وصف',
+                      style: TextStyle(fontSize: 15),
+                    ),
+                    SizedBox(height: 80),
                   ],
                 ),
               ),
@@ -90,14 +92,17 @@ class PartDetailsPage extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
             color: Colors.white,
-            boxShadow: const [
-              BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, -1)),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black12, blurRadius: 6, offset: Offset(0, -1)),
             ],
           ),
           child: ElevatedButton(
             onPressed: () async {
-              final success = await Provider.of<CartProvider>(context, listen: false)
-                  .addToCartToServer(part.toJson());
+              final success =
+                  await Provider.of<CartProvider>(context, listen: false)
+                      .addToCartToServer(part);
+              print(success);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
@@ -106,7 +111,7 @@ class PartDetailsPage extends StatelessWidget {
                         : 'تمت الاضافة الى السلة بنجاح',
                   ),
                   backgroundColor: success ? Colors.red : Colors.green,
-                  duration: const Duration(seconds: 3),
+                  duration: Duration(seconds: 3),
                 ),
               );
             },
@@ -116,7 +121,7 @@ class PartDetailsPage extends StatelessWidget {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text(
+            child: Text(
               'إضافة إلى السلة',
               style: TextStyle(fontSize: 18, color: Colors.white),
             ),

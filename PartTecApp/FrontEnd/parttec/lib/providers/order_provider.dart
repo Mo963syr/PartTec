@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../utils/app_settings.dart';
+import 'package:parttec/setting.dart';
 
 class OrderProvider with ChangeNotifier {
   String userId = "687ff5a6bf0de81878ed94f5";
