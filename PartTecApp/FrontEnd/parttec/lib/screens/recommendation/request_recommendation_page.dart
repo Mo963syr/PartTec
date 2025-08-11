@@ -14,8 +14,8 @@ class _RequestRecommendationPageState extends State<RequestRecommendationPage> {
   String? carMake;
   String? model;
   String? year;
-  String? fuelType;
-  String? description;
+  String? serialNumber;
+  String? note;
   File? _pickedImage;
 
   final List<String> makes = ['Toyota', 'Hyundai', 'Kia'];
@@ -36,8 +36,6 @@ class _RequestRecommendationPageState extends State<RequestRecommendationPage> {
   void _submitRequest() {
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
-
-    // TODO: إرسال الطلب للسيرفر
 
     showDialog(
       context: context,
@@ -88,6 +86,14 @@ class _RequestRecommendationPageState extends State<RequestRecommendationPage> {
                 validator: (val) => val == null || val.isEmpty ? 'مطلوب' : null,
               ),
               SizedBox(height: 12),
+              TextFormField(
+                decoration: InputDecoration(
+                    labelText: 'الرقم التسلسلي(اختياري)',
+                    border: OutlineInputBorder()),
+                onSaved: (val) => model = val,
+                validator: (val) => val == null || val.isEmpty ? 'مطلوب' : null,
+              ),
+              SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 decoration: InputDecoration(
                     labelText: 'سنة الصنع', border: OutlineInputBorder()),
@@ -98,21 +104,11 @@ class _RequestRecommendationPageState extends State<RequestRecommendationPage> {
                 validator: (val) => val == null ? 'مطلوب' : null,
               ),
               SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                    labelText: 'نوع الوقود', border: OutlineInputBorder()),
-                items: fuelTypes
-                    .map((f) => DropdownMenuItem(value: f, child: Text(f)))
-                    .toList(),
-                onChanged: (val) => fuelType = val,
-                validator: (val) => val == null ? 'مطلوب' : null,
-              ),
-              SizedBox(height: 12),
               TextFormField(
                 maxLines: 3,
                 decoration: InputDecoration(
                     labelText: 'وصف مكان العطل', border: OutlineInputBorder()),
-                onSaved: (val) => description = val,
+                onSaved: (val) => note = val,
               ),
               SizedBox(height: 12),
               GestureDetector(
