@@ -58,6 +58,8 @@ class _RequestRecommendationPageState extends State<RequestRecommendationPage> {
       carModel: model!.trim(),
       carYear: year!,
       notes: mergedNotes.isEmpty ? null : mergedNotes,
+      image: _pickedImage,
+      serialNumber: serialNumber ?? '',
     );
 
     if (!mounted) return;

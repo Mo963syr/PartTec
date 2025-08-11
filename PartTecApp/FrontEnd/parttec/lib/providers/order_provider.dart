@@ -1,10 +1,12 @@
+// providers/order_provider.dart
 import 'dart:convert';
+import 'dart:io'; // ← مهم
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../utils/app_settings.dart';
 
 class OrderProvider with ChangeNotifier {
-  String userId = "687ff5a6bf0de81878ed94f5";
+
 
   bool isLoading = false;
   String? error;
@@ -29,7 +31,7 @@ class OrderProvider with ChangeNotifier {
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'userId': userId,
+          'userId': AppSettings.user,
           'coordinates': coordinates,
         }),
       );
@@ -49,11 +51,14 @@ class OrderProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // ⬅︎ أضفنا imageFile وأرسلنا Multipart
   Future<bool> createSpecificOrder({
     required String brandCode,
     required String partName,
     required String carModel,
     required String carYear,
+    required String serialNumber,
+    File? image,            // ← جديد
     String? notes,
     String? authToken,
   }) async {
@@ -64,28 +69,40 @@ class OrderProvider with ChangeNotifier {
 
     final uri = Uri.parse('${AppSettings.serverurl}/order/addspicificorder');
 
-    final payload = {
-      'brand': brandCode,
-      'partName': partName,
-      'model': carModel,
-      'year': carYear,
-      if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
-    };
-
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-      if (authToken != null && authToken.isNotEmpty)
-        'Authorization': 'Bearer $authToken',
-    };
-
     try {
-      final res =
-          await http.post(uri, headers: headers, body: json.encode(payload));
+      final req = http.MultipartRequest('POST', uri);
+
+      // هيدرات (لا تضع Content-Type يدوياً مع Multipart)
+      if (authToken != null && authToken.isNotEmpty) {
+        req.headers['Authorization'] = 'Bearer $authToken';
+      }
+
+      // الحقول النصية
+      req.fields.addAll({
+        'manufacturer': brandCode.toLowerCase(),
+        'name': partName,
+        'user': AppSettings.user,
+        'model': carModel,
+        'year': carYear,
+        'serialNumber': serialNumber,
+        if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
+      });
+
+      // ملف الصورة تحت الإسم "image"
+      if (image != null) {
+        req.files.add(
+          await http.MultipartFile.fromPath('image', image.path),
+          // لو بدك تحدد نوع الملف:
+          // contentType: MediaType('image', 'jpeg'),
+        );
+      }
+
+      final streamed = await req.send();
+      final res = await http.Response.fromStream(streamed);
 
       if (res.statusCode == 200 || res.statusCode == 201) {
         final decoded = json.decode(res.body);
 
-        // حاول استخراج الـ id بأكثر من احتمال
         _lastOrderId = decoded['order']?['_id']?.toString() ??
             decoded['orderId']?.toString() ??
             decoded['_id']?.toString() ??
