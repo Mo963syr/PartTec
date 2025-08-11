@@ -16,7 +16,6 @@ class SupplierDashboard extends StatelessWidget {
         centerTitle: true,
         backgroundColor: Colors.blue,
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: GridView.count(
@@ -32,7 +31,7 @@ class SupplierDashboard extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>  KiaPartAddPage(),
+                    builder: (_) => KiaPartAddPage(),
                   ),
                 );
               },
@@ -74,7 +73,7 @@ class SupplierDashboard extends StatelessWidget {
               },
             ),
             _buildCard(
-              icon: Icons.recommend, // أيقونة تدل على توصية
+              icon: Icons.recommend,
               title: 'طلبات التوصية',
               onTap: () {
                 Navigator.push(

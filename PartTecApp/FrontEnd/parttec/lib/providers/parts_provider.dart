@@ -50,4 +50,31 @@ class PartsProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<bool> updatePart(String id, Map<String, dynamic> data) async {
+    final uri = Uri.parse('${AppSettings.serverurl}/part/update/$id');
+    try {
+      final response = await http.put(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(data),
+      );
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        final updatedJson = decoded['part'] ?? decoded;
+        final idx = _parts.indexWhere((p) => p.id == id);
+        if (idx != -1) {
+          _parts[idx] = Part.fromJson(updatedJson);
+          notifyListeners();
+        }
+        return true;
+      } else {
+        print('❌ فشل التعديل: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('❌ خطأ أثناء تعديل القطعة: $e');
+      return false;
+    }
+  }
 }
