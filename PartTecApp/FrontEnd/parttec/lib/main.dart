@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parttec/providers/recommendations_provider.dart';
 import 'package:parttec/screens/location/ChooseDestinationPage.dart';
 import 'package:provider/provider.dart';
 
@@ -24,6 +25,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => FavoritesProvider()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
+        ChangeNotifierProvider(create: (_) => RecommendationsProvider()),
         ChangeNotifierProvider(
           create: (_) =>
               SellerOrdersProvider('68761cf7f92107b8288158c2')..fetchOrders(),
