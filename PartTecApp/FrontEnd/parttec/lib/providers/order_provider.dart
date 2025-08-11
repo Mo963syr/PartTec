@@ -9,7 +9,7 @@ class OrderProvider with ChangeNotifier {
   String? error;
   Map<String, dynamic>? orderResponse;
 
-  Future<void> sendOrder( List<double> coordinates) async {
+  Future<void> sendOrder(List<double> coordinates) async {
     isLoading = true;
     error = null;
     notifyListeners();
