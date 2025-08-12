@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:parttec/providers/recommendations_provider.dart';
 import 'package:parttec/screens/location/ChooseDestinationPage.dart';
+import 'package:parttec/screens/order/recommendation_orders_page.dart';
 import 'package:provider/provider.dart';
 import 'providers/home_provider.dart';
 import 'providers/parts_provider.dart';
@@ -21,7 +22,11 @@ void main() {
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => FavoritesProvider()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
-        ChangeNotifierProvider(create: (_) => RecommendationsProvider()),
+        ChangeNotifierProvider(
+          create: (_) => RecommendationsProvider('6891009147d76ee5e1b22647'),
+          child: RecommendationOrdersPage(),
+        )
+,
         ChangeNotifierProvider(create: (_) => ReviewsProvider()),
         ChangeNotifierProvider(
           create: (_) =>

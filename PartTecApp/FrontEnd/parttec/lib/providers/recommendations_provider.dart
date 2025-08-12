@@ -7,6 +7,9 @@ class RecommendationsProvider extends ChangeNotifier {
   bool isLoading = false;
   String? lastError;
 
+  String userId; // <-- مرّر المعرف هنا
+  RecommendationsProvider(this.userId);
+
   List<Map<String, dynamic>> _orders = [];
   List<Map<String, dynamic>> get orders => _orders;
 
@@ -15,7 +18,9 @@ class RecommendationsProvider extends ChangeNotifier {
     lastError = null;
     notifyListeners();
 
-    final uri = Uri.parse('${AppSettings.serverurl}/order/my-specific-orders');
+    final uri = Uri.parse(
+      '${AppSettings.serverurl}/order/getUserBrandOrders/$userId',
+    );
 
     try {
       final res = await http.get(uri, headers: {
@@ -26,8 +31,14 @@ class RecommendationsProvider extends ChangeNotifier {
 
       if (res.statusCode == 200) {
         final decoded = json.decode(res.body);
-        final list = (decoded['orders'] as List?) ?? (decoded as List? ?? []);
-        _orders = list.map((e) => Map<String, dynamic>.from(e)).toList();
+
+        // الاستجابة هنا عبارة عن List مباشرة (كما في الصورة)
+        final List list = decoded is List
+            ? decoded
+            : (decoded['orders'] as List? ?? const []);
+
+        _orders = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+
         isLoading = false;
         notifyListeners();
         return true;
@@ -37,8 +48,15 @@ class RecommendationsProvider extends ChangeNotifier {
     } catch (e) {
       lastError = 'خطأ اتصال: $e';
     }
+
     isLoading = false;
     notifyListeners();
     return false;
+  }
+
+  // لتغيير المستخدم لاحقاً إن احتجت
+  void setUserId(String id) {
+    userId = id;
+    notifyListeners();
   }
 }
