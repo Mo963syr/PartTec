@@ -19,29 +19,32 @@ class SellerOrdersProvider with ChangeNotifier {
     error = null;
     notifyListeners();
 
-    final url = Uri.parse(
-        '${AppSettings.serverurl}/order/getOrderForSellrer/$sellerId');
+    final url = Uri.parse('${AppSettings.serverurl}/order/getOrderForSellrer/68761cf7f92107b8288158c2');
 
     try {
       final response = await http.get(url);
-      final data = jsonDecode(response.body);
+      final raw = response.body;
+      final data = jsonDecode(raw);
+print(raw);
+      final items = (data is Map && data['orders'] is List) ? data['orders'] as List : <dynamic>[];
 
-      if (data['success']) {
-        _orders = List<Map<String, dynamic>>.from(data['items']);
-        totalAmount = data['totalAmount']?.toDouble() ?? 0;
+      if (response.statusCode == 200 && data['success'] == true) {
+        _orders = List<Map<String, dynamic>>.from(items);
+        totalAmount = (data['totalAmount'] as num?)?.toDouble() ?? 0.0;
       } else {
-        error = data['message'];
+        error = (data is Map ? (data['message']?.toString()) : null) ?? 'فشل تحميل الطلبات';
         _orders = [];
+        totalAmount = 0.0;
       }
     } catch (e) {
       error = 'حدث خطأ في تحميل الطلبات: $e';
       _orders = [];
+      totalAmount = 0.0;
     }
 
     isLoading = false;
     notifyListeners();
   }
-
   Future<void> updateStatus(
       String orderId, String newStatus, BuildContext context) async {
     final url =
@@ -71,17 +74,14 @@ class SellerOrdersProvider with ChangeNotifier {
       );
     }
   }
-
   Map<String, List<Map<String, dynamic>>> get groupedOrdersByCustomer {
-    Map<String, List<Map<String, dynamic>>> grouped = {};
-    for (var item in _orders) {
-      final user = item['user'];
-      final userId = user['_id'];
-      if (!grouped.containsKey(userId)) {
-        grouped[userId] = [];
-      }
-      grouped[userId]!.add(item);
+    final Map<String, List<Map<String, dynamic>>> grouped = {};
+    for (var order in _orders) {
+      final customer = order['customer'] as Map?;
+      final customerId = (customer?['_id'] ?? 'unknown').toString();
+      grouped.putIfAbsent(customerId, () => []).add(order);
     }
     return grouped;
   }
+
 }
