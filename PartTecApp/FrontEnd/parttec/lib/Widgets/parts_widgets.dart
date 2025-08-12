@@ -6,8 +6,7 @@ import '../providers/home_provider.dart';
 import '../providers/favorites_provider.dart';
 import '../screens/part/part_details_page.dart';
 
-// 🆕 يوزر افتراضي
-const String defaultUserId = "687ff5a6bf0de81878ed94f5"; // أو أي قيمة منطقية مؤقتة
+const String defaultUserId = "687ff5a6bf0de81878ed94f5";
 
 class PartCard extends StatelessWidget {
   final Part part;
@@ -43,18 +42,18 @@ class PartCard extends StatelessWidget {
                   Expanded(
                     child: part.imageUrl.isNotEmpty
                         ? ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        part.imageUrl,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                      ),
-                    )
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              part.imageUrl,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                            ),
+                          )
                         : const Icon(
-                      Icons.image,
-                      size: 50,
-                      color: Colors.grey,
-                    ),
+                            Icons.image,
+                            size: 50,
+                            color: Colors.grey,
+                          ),
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -70,7 +69,7 @@ class PartCard extends StatelessWidget {
                         child: Text(
                           part.manufacturer ?? '',
                           style:
-                          TextStyle(color: Colors.grey[600], fontSize: 12),
+                              TextStyle(color: Colors.grey[600], fontSize: 12),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -101,8 +100,10 @@ class PartCard extends StatelessWidget {
                   isFav ? Icons.favorite : Icons.favorite_border,
                   color: isFav ? Colors.red : Colors.grey,
                 ),
-                onPressed: () async { // 🆕 خليها async
-                  await favProvider.toggleFavorite(part, defaultUserId); // 🆕 مرر اليوزر الافتراضي
+                onPressed: () async {
+                  // 🆕 خليها async
+                  await favProvider.toggleFavorite(
+                      part, defaultUserId); // 🆕 مرر اليوزر الافتراضي
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
@@ -122,6 +123,7 @@ class PartCard extends StatelessWidget {
     );
   }
 }
+
 class PartsGrid extends StatelessWidget {
   final List<Part> parts;
 
