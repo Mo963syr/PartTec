@@ -19,7 +19,8 @@ class _FavoritePartsPageState extends State<FavoritePartsPage> {
   @override
   void initState() {
     super.initState();
-    _loadFuture = context.read<FavoritesProvider>().fetchFavorites(kDefaultUserId);
+    _loadFuture =
+        context.read<FavoritesProvider>().fetchFavorites(kDefaultUserId);
   }
 
   Future<void> _refresh() {
