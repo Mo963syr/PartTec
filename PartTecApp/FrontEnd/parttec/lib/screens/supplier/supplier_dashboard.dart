@@ -4,6 +4,7 @@ import '../part/manage_parts_page.dart';
 import '../order/GroupedOrdersPage.dart';
 import '../part/added_parts_page.dart';
 import '../recommendation/recommendation_requests_page.dart';
+import 'seller_reviews_page.dart';
 
 class SupplierDashboard extends StatelessWidget {
   const SupplierDashboard({super.key});
@@ -80,6 +81,19 @@ class SupplierDashboard extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => RecommendationRequestsPage(), // صفحة جديدة
+                  ),
+                );
+              },
+            ),
+            _buildCard(
+              icon: Icons.recommend,
+              title: 'التقييمات',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        SellerReviewsPage(sellerId: '68761cf7f92107b8288158c2'),
                   ),
                 );
               },

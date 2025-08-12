@@ -9,7 +9,7 @@ import 'providers/cart_provider.dart';
 import 'providers/favorites_provider.dart';
 import 'providers/seller_orders_provider.dart';
 import 'providers/order_provider.dart';
-import 'screens/home/home_page.dart';
+import 'providers/reviews_provider.dart';
 
 void main() {
   runApp(
@@ -22,6 +22,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => FavoritesProvider()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
         ChangeNotifierProvider(create: (_) => RecommendationsProvider()),
+        ChangeNotifierProvider(create: (_) => ReviewsProvider()),
         ChangeNotifierProvider(
           create: (_) =>
               SellerOrdersProvider('68761cf7f92107b8288158c2')..fetchOrders(),

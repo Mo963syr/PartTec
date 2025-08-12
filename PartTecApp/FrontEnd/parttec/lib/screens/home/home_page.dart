@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:parttec/models/part.dart';
-import '../../Widgets/parts_widgets.dart';
+import '../../widgets/parts_widgets.dart';
 import '../part/add_part_page.dart';
 import '../../providers/home_provider.dart';
 import '../cart/cart_page.dart';

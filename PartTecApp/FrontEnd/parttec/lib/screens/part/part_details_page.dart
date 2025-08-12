@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../providers/cart_provider.dart';
 import 'package:provider/provider.dart';
 import '../../models/part.dart';
+import 'part_reviews_section.dart';
+import '../../providers/home_provider.dart';
 
 class PartDetailsPage extends StatelessWidget {
   final Part part;
@@ -11,6 +13,8 @@ class PartDetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final imageUrl = part.imageUrl;
+    final userId = Provider.of<HomeProvider>(context, listen: false).userid;
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -46,10 +50,12 @@ class PartDetailsPage extends StatelessWidget {
             Expanded(
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(32)),
                   boxShadow: const [
                     BoxShadow(
                       color: Colors.black12,
@@ -72,12 +78,25 @@ class PartDetailsPage extends StatelessWidget {
                     const SizedBox(height: 16),
                     const Text(
                       'الوصف:',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       part.description ?? 'لا يوجد وصف',
                       style: const TextStyle(fontSize: 15),
+                    ),
+                    const SizedBox(height: 20),
+                    const Divider(),
+                    const Text(
+                      'تقييمات الزبائن',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    PartReviewsSection(
+                      partId: part.id,
+                      userId: userId,
                     ),
                     const SizedBox(height: 80),
                   ],
@@ -91,13 +110,15 @@ class PartDetailsPage extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             boxShadow: const [
-              BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, -1)),
+              BoxShadow(
+                  color: Colors.black12, blurRadius: 6, offset: Offset(0, -1)),
             ],
           ),
           child: ElevatedButton(
             onPressed: () async {
-              final success = await Provider.of<CartProvider>(context, listen: false)
-                  .addToCartToServer(part);
+              final success =
+                  await Provider.of<CartProvider>(context, listen: false)
+                      .addToCartToServer(part);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(

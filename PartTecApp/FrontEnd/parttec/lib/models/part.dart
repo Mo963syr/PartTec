@@ -11,6 +11,8 @@ class Part {
   final String category;
   final String? serialNumber;
   final String? description;
+  final double averageRating;
+  final int reviewsCount;
 
   Part({
     required this.id,
@@ -25,6 +27,8 @@ class Part {
     required this.category,
     this.serialNumber,
     this.description,
+    this.averageRating = 0.0,
+    this.reviewsCount = 0,
   });
 
   factory Part.fromJson(Map<String, dynamic> json) {
@@ -45,6 +49,8 @@ class Part {
       category: json['category'] ?? '',
       serialNumber: json['serialNumber'] ?? json['serial_number'],
       description: json['description'],
+      averageRating: (json['averageRating'] ?? 0).toDouble(),
+      reviewsCount: (json['reviewsCount'] ?? 0).toInt(),
     );
   }
 }
