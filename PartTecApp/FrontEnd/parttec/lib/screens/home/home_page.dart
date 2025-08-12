@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-// PartsGrid & CategoryTabView
 import 'package:parttec/models/part.dart';
 import '../../Widgets/parts_widgets.dart';
 import '../part/add_part_page.dart';
@@ -30,9 +29,7 @@ class _HomePageState extends State<HomePage> {
     _serialController = TextEditingController();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = Provider.of<HomeProvider>(context, listen: false);
-      provider.fetchUserCars();
-      provider.fetchAvailableParts();
+      _refresh();
     });
   }
 
@@ -51,14 +48,19 @@ class _HomePageState extends State<HomePage> {
       if (query.isNotEmpty) {
         _serialSearchResults = provider.availableParts
             .where((part) =>
-        part.serialNumber != null &&
-            part.serialNumber!.trim().toLowerCase() ==
-                query.toLowerCase())
+                part.serialNumber != null &&
+                part.serialNumber!.trim().toLowerCase() == query.toLowerCase())
             .toList();
       } else {
         _serialSearchResults = [];
       }
     });
+  }
+
+  Future<void> _refresh() async {
+    final provider = Provider.of<HomeProvider>(context, listen: false);
+    await provider.fetchUserCars();
+    await provider.fetchAvailableParts();
   }
 
   @override
@@ -74,38 +76,40 @@ class _HomePageState extends State<HomePage> {
             icon: const Icon(Icons.shopping_cart),
             onPressed: () {
               Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => CartPage()),
-              );
+                      context, MaterialPageRoute(builder: (_) => CartPage()))
+                  .then((_) => _refresh());
             },
           ),
         ],
       ),
-      body: RefreshIndicator(
-        displacement: 200.0,
-        strokeWidth: 3.0,
-        onRefresh: () => provider.fetchAvailableParts(),
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).padding.bottom + 160,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (provider.userCars.isNotEmpty)
-                _buildUserCarsSection(provider),
-              _buildCarFormSection(context, provider),
-              _buildPartsSection(),
-            ],
-          ),
-        ),
-      ),
+      body: (provider.isLoadingAvailable && provider.availableParts.isEmpty)
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              displacement: 200.0,
+              strokeWidth: 3.0,
+              onRefresh: _refresh,
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).padding.bottom + 160,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (provider.userCars.isNotEmpty)
+                      _buildUserCarsSection(provider),
+                    _buildCarFormSection(context, provider),
+                    _buildPartsSection(),
+                  ],
+                ),
+              ),
+            ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AddPartPage()),
-        ),
+        onPressed: () {
+          Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const AddPartPage()))
+              .then((_) => _refresh());
+        },
         backgroundColor: Colors.blue,
         child: const Icon(Icons.add),
       ),
@@ -136,10 +140,8 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           if (provider.showCars)
-            ...provider.userCars
-                .map((c) => Text(
-                '• ${c['manufacturer']} ${c['model']} (${c['year']})'))
-                ,
+            ...provider.userCars.map((c) =>
+                Text('• ${c['manufacturer']} ${c['model']} (${c['year']})')),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -225,8 +227,7 @@ class _HomePageState extends State<HomePage> {
               icon: const Icon(Icons.save),
               label: const Text('حفظ السيارة'),
               onPressed: () => provider.submitCar(context),
-              style:
-              ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
             ),
           ],
         ],
@@ -261,8 +262,6 @@ class _HomePageState extends State<HomePage> {
             onSubmitted: (_) => _performSerialSearch(),
           ),
           const SizedBox(height: 10),
-
-          /// نتائج البحث بالرقم التسلسلي
           if (_serialSearchQuery.isNotEmpty)
             SizedBox(
               height: MediaQuery.of(context).size.height * 0.44,
@@ -282,9 +281,9 @@ class _HomePageState extends State<HomePage> {
                       indicatorColor: Colors.blue,
                       tabs: categories
                           .map((cat) => Tab(
-                        icon: Icon(cat['icon'] as IconData),
-                        text: cat['label'] as String,
-                      ))
+                                icon: Icon(cat['icon'] as IconData),
+                                text: cat['label'] as String,
+                              ))
                           .toList(),
                     ),
                   ),
@@ -293,7 +292,7 @@ class _HomePageState extends State<HomePage> {
                     child: TabBarView(
                       children: categories
                           .map<Widget>((cat) => CategoryTabView(
-                          category: (cat['label'] ?? '') as String))
+                              category: (cat['label'] ?? '') as String))
                           .toList(),
                     ),
                   ),
@@ -334,7 +333,7 @@ class _HomePageState extends State<HomePage> {
                     height: MediaQuery.of(context).size.height * 0.85,
                     child: MyOrdersPage(),
                   ),
-                );
+                ).whenComplete(() => _refresh());
               },
             ),
             const SizedBox(width: 40),
@@ -344,10 +343,9 @@ class _HomePageState extends State<HomePage> {
                 color: _selectedIndex == 3 ? Colors.blue : Colors.grey,
               ),
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => FavoritePartsPage()),
-                );
+                Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => FavoritePartsPage()))
+                    .then((_) => _refresh());
                 setState(() => _selectedIndex = 3);
               },
             ),

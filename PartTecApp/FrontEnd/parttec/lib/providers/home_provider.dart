@@ -7,7 +7,6 @@ import '../models/part.dart';
 class HomeProvider with ChangeNotifier {
   String userid = '687ff5a6bf0de81878ed94f5';
 
-
   bool showCars = true;
   String? selectedMake;
   String? selectedModel;
@@ -17,7 +16,6 @@ class HomeProvider with ChangeNotifier {
   List<Part> availableParts = [];
   bool isLoadingAvailable = true;
 
-  // قوائم البيانات
   final List<String> makes = [
     'Hyundai',
     'All',
@@ -76,7 +74,7 @@ class HomeProvider with ChangeNotifier {
   final Map<String, List<String>> modelsByMake = {
     'Kia': ['Sportage', 'Sorento', 'Cerato'],
     'Toyota': ['Corolla', 'Camry', 'Land Cruiser'],
-    'Hyundai': ['Elantra', 'Sonata', 'Tucson','Azera'],
+    'Hyundai': ['Elantra', 'Sonata', 'Tucson', 'Azera'],
   };
 
   final List<String> years = [
@@ -100,30 +98,25 @@ class HomeProvider with ChangeNotifier {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          userCars = data;
-          notifyListeners();
-        });
-      }
+        userCars = data;
+        notifyListeners();
+      } else {}
     } catch (e) {
       print('خطأ أثناء تحميل السيارات: $e');
     }
   }
+
   bool isPrivate = true;
   void toggleIsPrivate() {
     isPrivate = !isPrivate;
     notifyListeners();
     fetchAvailableParts();
   }
+
   Future<void> fetchAvailableParts() async {
     try {
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        isLoadingAvailable = true;
-        notifyListeners();
-      });
-
+      isLoadingAvailable = true;
+      notifyListeners();
 
       final String url = isPrivate
           ? '${AppSettings.serverurl}/part/viewPrivateParts/$userid'
@@ -134,30 +127,22 @@ class HomeProvider with ChangeNotifier {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> decoded = json.decode(response.body);
-        final dynamic list = decoded['compatibleParts'] ?? decoded['parts'] ?? [];
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          final List<dynamic> jsonList = list is List ? list : [];
-          availableParts = jsonList.map((e) => Part.fromJson(e)).toList();
-          isLoadingAvailable = false;
-          notifyListeners();
-        });
+        final dynamic list =
+            decoded['compatibleParts'] ?? decoded['parts'] ?? [];
+        final List<dynamic> jsonList = list is List ? list : [];
+        availableParts = jsonList.map((e) => Part.fromJson(e)).toList();
       } else {
         print('❌ فشل تحميل القطع: ${response.body}');
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          isLoadingAvailable = false;
-          notifyListeners();
-        });
+        availableParts = [];
       }
     } catch (e) {
       print('❌ خطأ أثناء تحميل القطع: $e');
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        isLoadingAvailable = false;
-        notifyListeners();
-      });
+      availableParts = [];
+    } finally {
+      isLoadingAvailable = false;
+      notifyListeners();
     }
   }
-
 
   void submitCar(BuildContext context) async {
     if (selectedMake == null ||
