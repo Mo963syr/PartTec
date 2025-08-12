@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/seller_orders_provider.dart';
-import 'order_item_details_page.dart'; // <-- الصفحة الجديدة
+import 'order_item_details_page.dart';
 
 class SellerOrderDetailsPage extends StatelessWidget {
   final String customerName;
@@ -43,7 +43,6 @@ class SellerOrderDetailsPage extends StatelessWidget {
         ? _numToDouble(order['totalAmount'])
         : items.fold<double>(0.0, (s, it) => s + _numToDouble(it['total']));
 
-    // أخفي الأزرار إذا الطلب "على الطريق"
     final shouldShowActions = status != 'على الطريق';
 
     return Scaffold(

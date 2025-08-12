@@ -58,7 +58,7 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
                   final status = (o['status'] ?? 'pending').toString();
                   final createdAt = (o['createdAt'] ?? '').toString();
 
-                  // قائمة التوصيات/العروض القادمة من المورّدين
+
                   final recs = (o['recommendations'] as List?) ??
                       (o['offers'] as List?) ??
                       [];
