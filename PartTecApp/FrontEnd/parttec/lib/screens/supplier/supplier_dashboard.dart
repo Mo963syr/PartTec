@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../order/recommendation_orders_page.dart';
 import '../part/add_part_page_supplier.dart';
 import '../part/manage_parts_page.dart';
 import '../order/GroupedOrdersPage.dart';
@@ -80,7 +81,7 @@ class SupplierDashboard extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => RecommendationRequestsPage(), // صفحة جديدة
+                    builder: (_) => RecommendationOrdersPage(), // صفحة جديدة
                   ),
                 );
               },
