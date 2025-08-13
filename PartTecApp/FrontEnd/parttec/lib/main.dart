@@ -25,8 +25,7 @@ void main() {
         ChangeNotifierProvider(
           create: (_) => RecommendationsProvider('6891009147d76ee5e1b22647'),
           child: RecommendationOrdersPage(),
-        )
-,
+        ),
         ChangeNotifierProvider(create: (_) => ReviewsProvider()),
         ChangeNotifierProvider(
           create: (_) =>

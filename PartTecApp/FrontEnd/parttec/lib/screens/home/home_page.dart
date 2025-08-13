@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:parttec/models/part.dart';
@@ -19,9 +18,21 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   int _selectedIndex = 2;
 
+  // بحث بالرقم التسلسلي
   late final TextEditingController _serialController;
   String _serialSearchQuery = '';
   List<Part> _serialSearchResults = [];
+
+  // فلاتر الفئات (نسخة واحدة فقط)
+  final List<Map<String, dynamic>> _categories = const [
+    {'label': 'محرك', 'icon': Icons.settings},
+    {'label': 'هيكل', 'icon': Icons.car_repair},
+    {'label': 'فرامل', 'icon': Icons.settings_input_component},
+    {'label': 'كهرباء', 'icon': Icons.electrical_services},
+    {'label': 'إطارات', 'icon': Icons.circle},
+    {'label': 'نظام التعليق', 'icon': Icons.sync_alt},
+  ];
+  int _selectedCategoryIndex = 0;
 
   @override
   void initState() {
@@ -60,21 +71,27 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     });
   }
 
+  List<Part> _filterByCategory(List<Part> parts) {
+    final selectedLabel =
+        _categories[_selectedCategoryIndex]['label'] as String;
+    return parts
+        .where((p) => (p.category ?? '').trim() == selectedLabel)
+        .toList();
+  }
+
+  void _clearSerialSearch() {
+    _serialController.clear();
+    setState(() {
+      _serialSearchQuery = '';
+      _serialSearchResults = [];
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<HomeProvider>(context);
 
-    final categories = [
-      {'label': 'محرك', 'icon': Icons.settings},
-      {'label': 'هيكل', 'icon': Icons.car_repair},
-      {'label': 'فرامل', 'icon': Icons.settings_input_component},
-      {'label': 'كهرباء', 'icon': Icons.electrical_services},
-      {'label': 'إطارات', 'icon': Icons.circle},
-      {'label': 'نظام التعليق', 'icon': Icons.sync_alt},
-    ];
-
     return Scaffold(
-      // خلفية متدرجة عصرية
       body: Stack(
         children: [
           const _GradientBackground(),
@@ -92,7 +109,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         stretch: true,
                         elevation: 0,
                         backgroundColor: Colors.transparent,
-                        expandedHeight: 190,
+                        expandedHeight: 150,
                         leading: IconButton(
                           icon: const Icon(Icons.menu, color: Colors.white),
                           onPressed: () {},
@@ -103,49 +120,76 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 color: Colors.white),
                             onPressed: () {
                               Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => CartPage()),
-                              ).then((_) => _refresh());
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (_) => CartPage()))
+                                  .then((_) => _refresh());
                             },
                           ),
                         ],
-                        flexibleSpace: FlexibleSpaceBar(
-                          stretchModes: const [
-                            StretchMode.zoomBackground,
-                            StretchMode.blurBackground,
-                            StretchMode.fadeTitle,
-                          ],
-                          titlePadding: const EdgeInsetsDirectional.only(
+                        flexibleSpace: const FlexibleSpaceBar(
+                          titlePadding: EdgeInsetsDirectional.only(
                               start: 16, bottom: 12, end: 16),
-                          title: const Text('قطع الغيار',
+                          title: Text('قطع الغيار',
                               style: TextStyle(fontWeight: FontWeight.w700)),
-                          background: const _HeaderGlow(),
+                          background: _HeaderGlow(),
                         ),
                       ),
 
-                      // بطاقة معلومات سريعة + تبديل عامة/خاصة + سياراتك
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                          child: _QuickInfoCard(
-                              provider: provider,
-                              onToggle: provider.toggleIsPrivate),
-                        ),
-                      ),
-
-                      // شريط البحث الطافي
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
-                          child: _FloatingSearchBar(
-                            controller: _serialController,
-                            onSearch: _performSerialSearch,
+                      // 🔎 شريط البحث + زر عامة/خاصة — مثبّت بارتفاع ثابت
+                      SliverPersistentHeader(
+                        pinned: true,
+                        delegate: _SearchBarHeader(
+                          minExtent: 120,
+                          maxExtent: 120,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // تنسيق أجمل للبحث
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                child: _FloatingSearchBar(
+                                  controller: _serialController,
+                                  onSearch: _performSerialSearch,
+                                  onClear: _clearSerialSearch,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              // زر عامة/خاصة بشكل Segmented Control خفيف
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                child: _VisibilityToggle(
+                                  isPrivate: provider.isPrivate,
+                                  onChanged: (val) =>
+                                      provider.toggleIsPrivate(),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
 
-                      // نتائج البحث (إن وجدت)
-                      if (_serialSearchQuery.isNotEmpty)
+                      // ===== الفئات (Chips) نسخة واحدة متكاملة =====
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                          child: _SectionTitle(title: 'الفئات'),
+                        ),
+                      ),
+                      SliverToBoxAdapter(
+                        child: _CategoryChipsBar(
+                          categories: _categories,
+                          selectedIndex: _selectedCategoryIndex,
+                          onChanged: (i) =>
+                              setState(() => _selectedCategoryIndex = i),
+                        ),
+                      ),
+
+                      // ===== النتائج =====
+                      if (_serialSearchQuery.isNotEmpty) ...[
+                        // نتائج البحث بالرقم التسلسلي
                         SliverToBoxAdapter(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
@@ -161,7 +205,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             ),
                           ),
                         ),
-                      if (_serialSearchQuery.isNotEmpty)
                         SliverToBoxAdapter(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -171,35 +214,35 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             ),
                           ),
                         ),
-
-                      // تبويبات الفئات (Chips)
-                      if (_serialSearchQuery.isEmpty) ...[
+                      ] else ...[
+                        // عرض القطع حسب الفئة المختارة
                         SliverToBoxAdapter(
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-                            child: _SectionTitle(title: 'الفئات'),
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                            child: _SectionTitle(
+                                title: _categories[_selectedCategoryIndex]
+                                    ['label'] as String),
                           ),
                         ),
                         SliverToBoxAdapter(
-                          child: _ScrollableChips(
-                            categories: categories,
-                          ),
-                        ),
-
-                        // المحتوى حسب التبويب
-                        SliverToBoxAdapter(
                           child: Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                            child: _TabbedCategories(categories: categories),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.48,
+                              child: PartsGrid(
+                                parts:
+                                    _filterByCategory(provider.availableParts),
+                              ),
+                            ),
                           ),
                         ),
                       ],
 
-                      // نموذج إضافة سيارة (مبسّط ضمن بطاقة)
+                      // 🚗 "سياراتي" — سلايدر جذّاب + تبويب الإضافة
                       SliverToBoxAdapter(
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 140),
-                          child: _CarFormCard(),
+                          child: _MyCarsSection(),
                         ),
                       ),
                     ],
@@ -221,7 +264,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
-      // شريط سفلي عصري
+      // شريط سفلي
       bottomNavigationBar: _buildBottomAppBar(),
     );
   }
@@ -315,7 +358,7 @@ class _GradientBackground extends StatelessWidget {
           colors: [
             Colors.blue.shade700,
             Colors.blue.shade400,
-            Colors.indigo.shade400,
+            Colors.indigo.shade400
           ],
           stops: const [0.0, 0.45, 1.0],
         ),
@@ -331,11 +374,7 @@ class _HeaderGlow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        Positioned.fill(
-          child: Opacity(
-            opacity: 0.15,
-          ),
-        ),
+        const Positioned.fill(child: Opacity(opacity: 0.15)),
         Positioned(
           right: -40,
           bottom: -20,
@@ -343,9 +382,7 @@ class _HeaderGlow extends StatelessWidget {
             width: 180,
             height: 180,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.08),
-              shape: BoxShape.circle,
-            ),
+                color: Colors.white.withOpacity(0.08), shape: BoxShape.circle),
           ),
         ),
         Positioned(
@@ -355,9 +392,7 @@ class _HeaderGlow extends StatelessWidget {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.06),
-              shape: BoxShape.circle,
-            ),
+                color: Colors.white.withOpacity(0.06), shape: BoxShape.circle),
           ),
         ),
       ],
@@ -365,84 +400,55 @@ class _HeaderGlow extends StatelessWidget {
   }
 }
 
-class _QuickInfoCard extends StatelessWidget {
-  final HomeProvider provider;
-  final VoidCallback onToggle;
+// ===== شريط البحث المثبّت (مع ضبط الارتفاع) =====
+class _SearchBarHeader extends SliverPersistentHeaderDelegate {
+  final double _minExtent;
+  final double _maxExtent;
+  final Widget child;
 
-  const _QuickInfoCard({required this.provider, required this.onToggle});
+  _SearchBarHeader({
+    required double minExtent,
+    required double maxExtent,
+    required this.child,
+  })  : _minExtent = minExtent,
+        _maxExtent = maxExtent;
 
   @override
-  Widget build(BuildContext context) {
-    final cars = provider.userCars;
-    return Card(
-      elevation: 8,
-      shadowColor: Colors.black12,
-      color: Colors.white.withOpacity(0.96),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // العنوان + سويتش عامة/خاصة
-            Row(
-              children: [
-                const Icon(Icons.directions_car, color: Colors.blue),
-                const SizedBox(width: 8),
-                const Text('سياراتك',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                const Spacer(),
-                Text(
-                  provider.isPrivate ? 'خاصة' : 'عامة',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(width: 8),
-                Switch(
-                  value: provider.isPrivate,
-                  onChanged: (_) => onToggle(),
-                  activeColor: Colors.blue,
-                ),
-              ],
-            ),
+  double get minExtent => _minExtent;
 
-            const SizedBox(height: 8),
-            if (cars.isNotEmpty)
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: cars
-                    .map((c) => Chip(
-                          backgroundColor: Colors.blue.shade50,
-                          label: Text(
-                            '${c['manufacturer']} ${c['model']} (${c['year']})',
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          avatar: const Icon(Icons.directions_car,
-                              size: 18, color: Colors.blue),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30)),
-                        ))
-                    .toList(),
-              )
-            else
-              Text(
-                'أضِف سيارتك لتحصل على توصيات أدق.',
-                style: TextStyle(
-                    color: Colors.grey[700], fontWeight: FontWeight.w500),
-              ),
-          ],
-        ),
-      ),
+  @override
+  double get maxExtent => _maxExtent;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      height: maxExtent,
+      color: Colors.white.withOpacity(0.95),
+      alignment: Alignment.center,
+      child: child,
     );
+  }
+
+  @override
+  bool shouldRebuild(covariant _SearchBarHeader oldDelegate) {
+    return oldDelegate._minExtent != _minExtent ||
+        oldDelegate._maxExtent != _maxExtent ||
+        oldDelegate.child != child;
   }
 }
 
+// ===== شريط بحث مُحسّن مع زر مسح =====
 class _FloatingSearchBar extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSearch;
+  final VoidCallback? onClear;
 
-  const _FloatingSearchBar({required this.controller, required this.onSearch});
+  const _FloatingSearchBar({
+    required this.controller,
+    required this.onSearch,
+    this.onClear,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -452,15 +458,29 @@ class _FloatingSearchBar extends StatelessWidget {
       color: Colors.white,
       child: TextField(
         controller: controller,
+        textInputAction: TextInputAction.search,
         onSubmitted: (_) => onSearch(),
         decoration: InputDecoration(
           hintText: 'ابحث بالرقم التسلسلي...',
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          suffixIcon: IconButton(
-            onPressed: onSearch,
-            icon: const Icon(Icons.search),
+          prefixIcon: const Icon(Icons.qr_code_scanner_rounded),
+          suffixIcon: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if ((controller.text).isNotEmpty)
+                IconButton(
+                  tooltip: 'مسح',
+                  icon: const Icon(Icons.clear),
+                  onPressed: onClear,
+                ),
+              IconButton(
+                tooltip: 'بحث',
+                onPressed: onSearch,
+                icon: const Icon(Icons.search),
+              ),
+            ],
           ),
         ),
       ),
@@ -468,6 +488,7 @@ class _FloatingSearchBar extends StatelessWidget {
   }
 }
 
+// ===== عنوان قسم بسيط =====
 class _SectionTitle extends StatelessWidget {
   final String title;
   final Widget? trailing;
@@ -487,32 +508,88 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-class _ScrollableChips extends StatefulWidget {
-  final List<Map<String, dynamic>> categories;
-
-  const _ScrollableChips({required this.categories});
+// ===== زر عامة/خاصة (Segmented) =====
+class _VisibilityToggle extends StatelessWidget {
+  final bool isPrivate;
+  final ValueChanged<bool> onChanged;
+  const _VisibilityToggle({required this.isPrivate, required this.onChanged});
 
   @override
-  State<_ScrollableChips> createState() => _ScrollableChipsState();
+  Widget build(BuildContext context) {
+    return Container(
+      height: 36,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        children: [
+          _segBtn(
+              label: 'عامة',
+              selected: !isPrivate,
+              onTap: () => onChanged(false)),
+          _segBtn(
+              label: 'خاصة', selected: isPrivate, onTap: () => onChanged(true)),
+        ],
+      ),
+    );
+  }
+
+  Expanded _segBtn(
+      {required String label,
+      required bool selected,
+      required VoidCallback onTap}) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? const Color(0x1A2196F3) : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? Colors.blue : Colors.black87,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _ScrollableChipsState extends State<_ScrollableChips>
-    with SingleTickerProviderStateMixin {
-  int selected = 0;
+// ===== شريط الفئات (نسخة واحدة فقط) =====
+class _CategoryChipsBar extends StatelessWidget {
+  final List<Map<String, dynamic>> categories;
+  final int selectedIndex;
+  final ValueChanged<int> onChanged;
+
+  const _CategoryChipsBar({
+    required this.categories,
+    required this.selectedIndex,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 44,
+      height: 46,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
         itemBuilder: (_, i) {
-          final label = widget.categories[i]['label'] as String;
-          final isSel = selected == i;
+          final label = categories[i]['label'] as String;
+          final isSel = selectedIndex == i;
           return GestureDetector(
-            onTap: () => setState(() => selected = i),
+            onTap: () => onChanged(i),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 220),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -524,86 +601,263 @@ class _ScrollableChipsState extends State<_ScrollableChips>
                     BoxShadow(
                         color: Colors.blue.withOpacity(0.25),
                         blurRadius: 16,
-                        offset: const Offset(0, 6)),
+                        offset: const Offset(0, 6))
                 ],
                 border: Border.all(
                     color: isSel ? Colors.blue : Colors.grey.shade300),
               ),
               child: Center(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: isSel ? Colors.white : Colors.black87,
-                    fontWeight: FontWeight.w700,
-                  ),
+                child: Row(
+                  children: [
+                    Icon(categories[i]['icon'] as IconData,
+                        size: 18, color: isSel ? Colors.white : Colors.black87),
+                    const SizedBox(width: 6),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: isSel ? Colors.white : Colors.black87,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           );
         },
         separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemCount: widget.categories.length,
+        itemCount: categories.length,
       ),
     );
   }
 }
 
-class _TabbedCategories extends StatelessWidget {
-  final List<Map<String, dynamic>> categories;
+// ===== قسم تبويبات "سياراتك" =====
+class _MyCarsSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final provider = Provider.of<HomeProvider>(context);
+    final cars = provider.userCars;
 
-  const _TabbedCategories({required this.categories});
+    return Card(
+      elevation: 8,
+      shadowColor: Colors.black12,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: DefaultTabController(
+          length: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _CardHeader(title: 'سياراتي'),
+              const SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(12)),
+                child: const TabBar(
+                  labelColor: Colors.blue,
+                  unselectedLabelColor: Colors.black54,
+                  indicator: BoxDecoration(
+                      color: Color(0x1A2196F3),
+                      borderRadius: BorderRadius.all(Radius.circular(10))),
+                  tabs: [
+                    Tab(icon: Icon(Icons.directions_car), text: 'قائمتي'),
+                    Tab(
+                        icon: Icon(Icons.add_circle_outline),
+                        text: 'إضافة/تحديث'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 260,
+                child: TabBarView(
+                  physics: const BouncingScrollPhysics(),
+                  children: [
+                    // سلايدر جذّاب للسيارات
+                    cars.isEmpty
+                        ? Center(
+                            child: Text(
+                                'لا توجد سيارات بعد — أضِف سيارتك من التبويب التالي.',
+                                style: TextStyle(color: Colors.grey[700])))
+                        : _CarsSlider(cars: cars),
+                    // نموذج الإضافة/التحديث (كما هو)
+                    const SingleChildScrollView(child: _CarFormCard()),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CarsSlider extends StatefulWidget {
+  final List<dynamic> cars;
+  const _CarsSlider({required this.cars});
+
+  @override
+  State<_CarsSlider> createState() => _CarsSliderState();
+}
+
+class _CarsSliderState extends State<_CarsSlider> {
+  final PageController _page = PageController(viewportFraction: 0.86);
+  int _index = 0;
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: categories.length,
-      child: Column(
-        children: [
-          Container(
-            margin: const EdgeInsets.only(bottom: 12, top: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.9),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: TabBar(
-              isScrollable: true,
-              labelColor: Colors.blue,
-              unselectedLabelColor: Colors.grey[600],
-              indicator: BoxDecoration(
-                color: Colors.blue.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(14),
+    return Column(
+      children: [
+        Expanded(
+          child: PageView.builder(
+            controller: _page,
+            itemCount: widget.cars.length,
+            onPageChanged: (i) => setState(() => _index = i),
+            physics: const BouncingScrollPhysics(),
+            itemBuilder: (_, i) {
+              final c = widget.cars[i];
+              final title = '${c['manufacturer']} ${c['model']}';
+              final sub = 'سنة ${c['year']} • ${c['fuel'] ?? 'غير محدد'}';
+
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                margin: EdgeInsets.only(
+                    right: 10,
+                    left: i == 0 ? 2 : 0,
+                    bottom: _index == i ? 0 : 10,
+                    top: _index == i ? 0 : 10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(18),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF2196F3), Color(0xFF3949AB)],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.12),
+                        blurRadius: 18,
+                        offset: const Offset(0, 10))
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 66,
+                        height: 66,
+                        decoration: const BoxDecoration(
+                            color: Colors.white24, shape: BoxShape.circle),
+                        child: const Icon(Icons.directions_car,
+                            color: Colors.white, size: 34),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 16)),
+                            const SizedBox(height: 6),
+                            Text(sub,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: -6,
+                              children: [
+                                if (c['vin'] != null &&
+                                    (c['vin'] as String).isNotEmpty)
+                                  _pill('VIN: ${c['vin']}'),
+                                if (c['engine'] != null)
+                                  _pill('محرك: ${c['engine']}'),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      // أزرار سريعة (شكل فقط)
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _miniBtn(icon: Icons.edit, tooltip: 'تعديل'),
+                          const SizedBox(height: 8),
+                          _miniBtn(icon: Icons.delete, tooltip: 'حذف'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(widget.cars.length, (i) {
+            final active = i == _index;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: active ? 18 : 8,
+              height: 8,
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              decoration: BoxDecoration(
+                color: active ? const Color(0xFF2196F3) : Colors.grey.shade400,
+                borderRadius: BorderRadius.circular(10),
               ),
-              labelStyle: const TextStyle(fontWeight: FontWeight.w800),
-              tabs: categories
-                  .map(
-                    (cat) => Tab(
-                      icon: Icon(cat['icon'] as IconData),
-                      text: cat['label'] as String,
-                    ),
-                  )
-                  .toList(),
-            ),
-          ),
-          SizedBox(
-            height: MediaQuery.of(context).size.height * 0.48,
-            child: TabBarView(
-              physics: const BouncingScrollPhysics(),
-              children: categories
-                  .map<Widget>(
-                    (cat) => CategoryTabView(
-                        category: (cat['label'] ?? '') as String),
-                  )
-                  .toList(),
-            ),
-          ),
-        ],
-      ),
+            );
+          }),
+        ),
+      ],
     );
   }
+
+  Widget _pill(String t) => Chip(
+        label: Text(t,
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.w700)),
+        backgroundColor: Colors.white24,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+      );
+
+  Widget _miniBtn({required IconData icon, String? tooltip}) => Tooltip(
+        message: tooltip ?? '',
+        child: InkWell(
+          onTap: () {},
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+                color: Colors.white24, borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, size: 20, color: Colors.white),
+          ),
+        ),
+      );
 }
 
 class _CarFormCard extends StatelessWidget {
+  const _CarFormCard();
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<HomeProvider>(context);
@@ -696,13 +950,10 @@ class _CardHeader extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 8,
-          height: 22,
-          decoration: BoxDecoration(
-            color: Colors.blue,
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
+            width: 8,
+            height: 22,
+            decoration: BoxDecoration(
+                color: Colors.blue, borderRadius: BorderRadius.circular(8))),
         const SizedBox(width: 8),
         Text(title,
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
