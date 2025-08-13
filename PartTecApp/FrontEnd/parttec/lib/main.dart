@@ -12,6 +12,7 @@ import 'providers/seller_orders_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/reviews_provider.dart';
 import 'theme/app_theme.dart';
+import './screens/auth/auth_page.dart';
 
 void main() {
   runApp(
@@ -47,7 +48,7 @@ class MyApp extends StatelessWidget {
       title: 'PartTec',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: ChooseDestinationPage(),
+      home: AuthPage(),
     );
   }
 }
