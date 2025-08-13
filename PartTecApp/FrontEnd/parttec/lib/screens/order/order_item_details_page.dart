@@ -17,7 +17,8 @@ class OrderItemDetailsPage extends StatelessWidget {
     final img = (item['imageUrl'] ?? '').toString();
     final qty = (_numToDouble(item['quantity'])).toInt();
     final price = _numToDouble(item['price']);
-    final total = item['total'] != null ? _numToDouble(item['total']) : (price * qty);
+    final total =
+        item['total'] != null ? _numToDouble(item['total']) : (price * qty);
     final partId = (item['partId'] ?? '').toString();
 
     return Scaffold(
@@ -32,8 +33,10 @@ class OrderItemDetailsPage extends StatelessWidget {
                 img,
                 height: 220,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                const SizedBox(height: 220, child: Center(child: Icon(Icons.image_not_supported, size: 40))),
+                errorBuilder: (_, __, ___) => const SizedBox(
+                    height: 220,
+                    child: Center(
+                        child: Icon(Icons.image_not_supported, size: 40))),
               ),
             )
           else
@@ -62,7 +65,6 @@ class OrderItemDetailsPage extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          // مكان مناسب لأزرار إضافية لاحقًا (فتح صفحة القطعة الكاملة من السيرفر لو وفّرت endpoint)
         ],
       ),
     );

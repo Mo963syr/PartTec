@@ -300,18 +300,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     initialChildSize: 0.88,
                     maxChildSize: 0.95,
                     minChildSize: 0.6,
-                    builder: (_, controller) => ClipRRect(
+                    builder: (ctx, controller) => ClipRRect(
                       borderRadius:
                           const BorderRadius.vertical(top: Radius.circular(24)),
                       child: Material(
                         color: Colors.white,
-                        child: SingleChildScrollView(
-                          controller: controller,
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 24),
-                            child: MyOrdersPage(),
-                          ),
-                        ),
+                        child: const MyOrdersBottomSheetView(),
                       ),
                     ),
                   ),
@@ -342,8 +336,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 }
-
-/* ======================= عناصر الواجهة المخصّصة ======================= */
 
 class _GradientBackground extends StatelessWidget {
   const _GradientBackground();
@@ -508,7 +500,6 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-// ===== زر عامة/خاصة (Segmented) =====
 class _VisibilityToggle extends StatelessWidget {
   final bool isPrivate;
   final ValueChanged<bool> onChanged;
@@ -565,7 +556,6 @@ class _VisibilityToggle extends StatelessWidget {
   }
 }
 
-// ===== شريط الفئات (نسخة واحدة فقط) =====
 class _CategoryChipsBar extends StatelessWidget {
   final List<Map<String, dynamic>> categories;
   final int selectedIndex;
@@ -632,7 +622,6 @@ class _CategoryChipsBar extends StatelessWidget {
   }
 }
 
-// ===== قسم تبويبات "سياراتك" =====
 class _MyCarsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
