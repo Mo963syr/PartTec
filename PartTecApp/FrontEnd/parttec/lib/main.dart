@@ -11,6 +11,7 @@ import 'providers/favorites_provider.dart';
 import 'providers/seller_orders_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/reviews_provider.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   runApp(
@@ -45,10 +46,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'PartTec',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        fontFamily: 'Cairo',
-      ),
+      theme: buildAppTheme(),
       home: ChooseDestinationPage(),
     );
   }
