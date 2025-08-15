@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:parttec/providers/recommendations_provider.dart';
-import 'package:parttec/screens/location/ChooseDestinationPage.dart';
 import 'package:parttec/screens/order/recommendation_orders_page.dart';
 import 'package:provider/provider.dart';
 import 'providers/home_provider.dart';
@@ -12,12 +11,21 @@ import 'providers/seller_orders_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/reviews_provider.dart';
 import 'theme/app_theme.dart';
-import './screens/auth/auth_page.dart';
 
-void main() {
+import 'providers/auth_provider.dart';
+import './screens/auth/auth_page.dart';
+import 'screens/auth/shared_preference.dart';
+
+void main()async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final auth = AuthProvider();
+  await auth.loadSession();
   runApp(
+
     MultiProvider(
       providers: [
+        ChangeNotifierProvider.value(value: auth),
+        ChangeNotifierProvider(create: (_) => AddPartProvider()),
         ChangeNotifierProvider(create: (_) => HomeProvider()),
         ChangeNotifierProvider(create: (_) => PartsProvider()),
         ChangeNotifierProvider(create: (_) => AddPartProvider()),
@@ -40,9 +48,11 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+
   const MyApp({super.key});
 
   @override
+
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'PartTec',

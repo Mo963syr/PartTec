@@ -94,7 +94,7 @@ class SupplierDashboard extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) =>
-                        SellerReviewsPage(sellerId: '68761cf7f92107b8288158c2'),
+                        SellerReviewsPage(),
                   ),
                 );
               },

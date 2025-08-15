@@ -4,7 +4,7 @@ import 'dart:convert';
 import '../utils/app_settings.dart';
 
 class SellerOrdersProvider with ChangeNotifier {
-  String sellerId = "68761cf7f92107b8288158c2";
+  String sellerId;
   SellerOrdersProvider(this.sellerId);
 
   List<Map<String, dynamic>> _orders = [];
@@ -19,36 +19,37 @@ class SellerOrdersProvider with ChangeNotifier {
     error = null;
     notifyListeners();
 
-    final url = Uri.parse('${AppSettings.serverurl}/order/getOrderForSellrer/68761cf7f92107b8288158c2');
+    final url = Uri.parse('${AppSettings.serverurl}/order/getOrderForSellrer/$sellerId');
 
     try {
       final response = await http.get(url);
       final raw = response.body;
       final data = jsonDecode(raw);
-print(raw);
-      final items = (data is Map && data['orders'] is List) ? data['orders'] as List : <dynamic>[];
 
-      if (response.statusCode == 200 && data['success'] == true) {
-        _orders = List<Map<String, dynamic>>.from(items);
+      if (response.statusCode == 200 && data is Map && data['success'] == true) {
+        final items = (data['orders'] as List?) ?? [];
+        _orders = items
+            .whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList();
         totalAmount = (data['totalAmount'] as num?)?.toDouble() ?? 0.0;
       } else {
-        error = (data is Map ? (data['message']?.toString()) : null) ?? 'فشل تحميل الطلبات';
-        _orders = [];
+        error = (data is Map ? data['message']?.toString() : null) ?? 'فشل تحميل الطلبات';
+        _orders.clear();
         totalAmount = 0.0;
       }
     } catch (e) {
       error = 'حدث خطأ في تحميل الطلبات: $e';
-      _orders = [];
+      _orders.clear();
       totalAmount = 0.0;
     }
 
     isLoading = false;
     notifyListeners();
   }
-  Future<void> updateStatus(
-      String orderId, String newStatus, BuildContext context) async {
-    final url =
-        Uri.parse('${AppSettings.serverurl}/order/updateOrderStatus/$orderId');
+
+  Future<void> updateStatus(String orderId, String newStatus, BuildContext context) async {
+    final url = Uri.parse('${AppSettings.serverurl}/order/updateOrderStatus/$orderId');
 
     try {
       final response = await http.put(
@@ -58,14 +59,14 @@ print(raw);
       );
 
       final data = jsonDecode(response.body);
-      if (response.statusCode == 200 && data['success']) {
+      if (response.statusCode == 200 && data is Map && data['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'])),
+          SnackBar(content: Text(data['message'] ?? 'تم التحديث بنجاح')),
         );
-        fetchOrders();
+        await fetchOrders();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? 'فشل في التحديث')),
+          SnackBar(content: Text((data is Map ? data['message'] : null) ?? 'فشل في التحديث')),
         );
       }
     } catch (e) {
@@ -74,6 +75,7 @@ print(raw);
       );
     }
   }
+
   Map<String, List<Map<String, dynamic>>> get groupedOrdersByCustomer {
     final Map<String, List<Map<String, dynamic>>> grouped = {};
     for (var order in _orders) {
@@ -83,5 +85,4 @@ print(raw);
     }
     return grouped;
   }
-
 }

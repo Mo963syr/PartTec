@@ -6,8 +6,6 @@ import '../providers/home_provider.dart';
 import '../providers/favorites_provider.dart';
 import '../screens/part/part_details_page.dart';
 
-const String defaultUserId = "687ff5a6bf0de81878ed94f5";
-
 class PartCard extends StatelessWidget {
   final Part part;
 
@@ -22,16 +20,12 @@ class PartCard extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => PartDetailsPage(part: part),
-          ),
+          MaterialPageRoute(builder: (_) => PartDetailsPage(part: part)),
         );
       },
       child: Card(
         elevation: 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Stack(
           children: [
             Padding(
@@ -42,18 +36,25 @@ class PartCard extends StatelessWidget {
                   Expanded(
                     child: part.imageUrl.isNotEmpty
                         ? ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              part.imageUrl,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                            ),
-                          )
-                        : const Icon(
-                            Icons.image,
-                            size: 50,
-                            color: Colors.grey,
-                          ),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        part.imageUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.broken_image,
+                          size: 50,
+                          color: Colors.grey,
+                        ),
+                        loadingBuilder: (ctx, child, progress) {
+                          if (progress == null) return child;
+                          return const Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          );
+                        },
+                      ),
+                    )
+                        : const Icon(Icons.image, size: 50, color: Colors.grey),
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -68,8 +69,7 @@ class PartCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           part.manufacturer ?? '',
-                          style:
-                              TextStyle(color: Colors.grey[600], fontSize: 12),
+                          style: TextStyle(color: Colors.grey[600], fontSize: 12),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -77,8 +77,7 @@ class PartCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           part.model,
-                          style: const TextStyle(
-                              fontSize: 13, color: Colors.black87),
+                          style: const TextStyle(fontSize: 13, color: Colors.black87),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -101,15 +100,15 @@ class PartCard extends StatelessWidget {
                   color: isFav ? Colors.red : Colors.grey,
                 ),
                 onPressed: () async {
-                  // 🆕 خليها async
-                  await favProvider.toggleFavorite(
-                      part, defaultUserId); // 🆕 مرر اليوزر الافتراضي
+                  // بدّل الحالة في الباك والواجهة
+                  await favProvider.toggleFavorite(part);
+
+                  // تحقّق من الحالة بعد التبديل لرسالة أدق
+                  final nowFav = favProvider.isFavorite(part.id);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        isFav
-                            ? 'تمت الإزالة من المفضلة'
-                            : 'تمت الإضافة إلى المفضلة',
+                        nowFav ? 'تمت الإضافة إلى المفضلة' : 'تمت الإزالة من المفضلة',
                       ),
                       duration: const Duration(seconds: 1),
                     ),

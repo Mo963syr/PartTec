@@ -1,8 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
+
 import 'package:parttec/theme/app_theme.dart';
 import 'package:parttec/widgets/ui_kit.dart';
+import 'package:parttec/utils/app_settings.dart';
+import 'package:parttec/utils/session_store.dart';
 
 class MyOrdersPage extends StatefulWidget {
   const MyOrdersPage({super.key});
@@ -15,6 +18,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
   bool isLoading = true;
   List<Map<String, dynamic>> groupedOrders = [];
   String? errorMessage;
+  String? _uid; // نحتفظ بالمعرّف محليًا بعد قراءته أول مرة
 
   @override
   void initState() {
@@ -29,12 +33,21 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
     });
 
     try {
-      final res1 = await http.get(Uri.parse(
-          'https://parttec.onrender.com/order/viewuserorder/687ff5a6bf0de81878ed94f5'));
-      final res2 = await http.get(Uri.parse(
-          'https://parttec.onrender.com/order/viewuserspicificorder/687ff5a6bf0de81878ed94f5'));
+      _uid ??= await SessionStore.userId();
+      if (_uid == null || _uid!.isEmpty) {
+        setState(() {
+          errorMessage = '⚠️ يُرجى تسجيل الدخول أولًا لعرض الطلبات.';
+          isLoading = false;
+        });
+        return;
+      }
 
-      final list = <Map<String, dynamic>>[];
+      final base = AppSettings.serverurl;
+      final res1 = await http.get(Uri.parse('$base/order/viewuserorder/$_uid'));
+      final res2 = await http
+          .get(Uri.parse('$base/order/viewuserspicificorder/$_uid'));
+
+      final List<Map<String, dynamic>> list = [];
       if (res1.statusCode == 200) {
         list.addAll(_parseAndMapOrders(res1.body, isSpecific: false));
       }
@@ -44,7 +57,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
 
       if (list.isEmpty && (res1.statusCode != 200 || res2.statusCode != 200)) {
         errorMessage =
-            'فشل تحميل الطلبات (${res1.statusCode}/${res2.statusCode})';
+        'فشل تحميل الطلبات (${res1.statusCode}/${res2.statusCode})';
       }
 
       setState(() {
@@ -59,58 +72,73 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
     }
   }
 
-  List<Map<String, dynamic>> _parseAndMapOrders(String responseBody,
-      {required bool isSpecific}) {
-    final decoded = json.decode(responseBody);
-    List raw = [];
+  List<Map<String, dynamic>> _parseAndMapOrders(
+      String responseBody, {
+        required bool isSpecific,
+      }) {
+    final raw = json.decode(responseBody);
+    List rawList = [];
 
     if (isSpecific) {
-      if (decoded is Map && decoded['orders'] is List) {
-        raw = decoded['orders'];
+      if (raw is Map && raw['orders'] is List) {
+        rawList = raw['orders'];
       }
     } else {
-      if (decoded is Map && decoded['orders'] is List) {
-        raw = decoded['orders'];
-      } else if (decoded is List) {
-        raw = decoded;
+      if (raw is Map && raw['orders'] is List) {
+        rawList = raw['orders'];
+      } else if (raw is List) {
+        rawList = raw;
       }
     }
 
-    return raw.whereType<Map>().map<Map<String, dynamic>>((o) {
+    return rawList.whereType<Map>().map<Map<String, dynamic>>((o) {
+      final map = Map<String, dynamic>.from(o as Map);
+
       if (isSpecific) {
         return {
-          'orderId': o['_id'] ?? '',
-          'status': o['status'] ?? 'غير محدد',
+          'orderId': map['_id'] ?? '',
+          'status': map['status'] ?? 'غير محدد',
           'expanded': false,
           'items': [
             {
-              'name': o['name'] ?? 'اسم غير معروف',
-              'image': o['imageUrl'],
-              'price': o['price'],
-              'status': o['status'] ?? 'غير محدد',
+              'name': map['name'] ?? 'اسم غير معروف',
+              'image': map['imageUrl'],
+              'price': map['price'],
+              'status': map['status'] ?? 'غير محدد',
               'canCancel': false,
-              'cartId': o['_id'] ?? '',
+              'cartId': map['_id'] ?? '',
             }
           ],
         };
       } else {
-        final src = (o['cartIds'] ?? o['items'] ?? []) as List?;
-        final items =
-            (src ?? []).whereType<Map>().map<Map<String, dynamic>>((it) {
-          final part = (it['partId'] ?? it);
+        final src = (map['cartIds'] ?? map['items'] ?? []) as List?;
+        final items = (src ?? []).whereType<Map>().map<Map<String, dynamic>>((it) {
+          final itm = Map<String, dynamic>.from(it as Map);
+          final part = (itm['partId'] ?? itm);
+
+          String? name;
+          String? image;
+          dynamic price;
+          if (part is Map) {
+            final pMap = Map<String, dynamic>.from(part);
+            name = pMap['name']?.toString();
+            image = pMap['imageUrl']?.toString();
+            price = pMap['price'];
+          }
+
           return {
-            'name': (part is Map ? part['name'] : null) ?? 'اسم غير معروف',
-            'image': (part is Map ? part['imageUrl'] : null),
-            'price': (part is Map ? part['price'] : null),
-            'status': it['status'] ?? o['status'] ?? 'غير متوفر',
-            'canCancel': (o['status'] == 'قيد التجهيز'),
-            'cartId': it['_id'] ?? '',
+            'name': name ?? 'اسم غير معروف',
+            'image': image,
+            'price': price,
+            'status': itm['status'] ?? map['status'] ?? 'غير متوفر',
+            'canCancel': (map['status'] == 'قيد التجهيز'),
+            'cartId': itm['_id'] ?? '',
           };
         }).toList();
 
         return {
-          'orderId': o['_id'] ?? '',
-          'status': o['status'] ?? 'غير معروف',
+          'orderId': map['_id'] ?? '',
+          'status': map['status'] ?? 'غير معروف',
           'expanded': false,
           'items': items,
         };
@@ -146,8 +174,8 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                     onPressed: () => Navigator.pop(context),
                   ),
                   flexibleSpace: const FlexibleSpaceBar(
-                    titlePadding: EdgeInsetsDirectional.only(
-                        start: 16, bottom: 12, end: 16),
+                    titlePadding:
+                    EdgeInsetsDirectional.only(start: 16, bottom: 12, end: 16),
                     title: Text('طلباتي',
                         style: TextStyle(fontWeight: FontWeight.w700)),
                     background: _HeaderGlow(),
@@ -161,41 +189,40 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                 else if (errorMessage != null && groupedOrders.isEmpty)
                   SliverFillRemaining(
                     hasScrollBody: false,
-                    child: Center(child: Text(errorMessage!)),
+                    child: Center(child: Text('$errorMessage')),
                   )
                 else if (groupedOrders.isEmpty)
-                  const SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(child: Text('لا توجد طلبات لعرضها حاليًا.')),
-                  )
-                else ...[
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
-                    sliver: SliverList.builder(
-                      itemCount: groupedOrders.length,
-                      itemBuilder: (_, index) {
-                        final order = groupedOrders[index];
-                        final expanded = (order['expanded'] as bool?) ?? false;
-                        final status =
-                            order['status'] as String? ?? 'غير معروف';
-                        final items = (order['items'] as List?)
-                                ?.cast<Map<String, dynamic>>() ??
-                            const [];
+                    const SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(child: Text('لا توجد طلبات لعرضها حاليًا.')),
+                    )
+                  else ...[
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+                        sliver: SliverList.builder(
+                          itemCount: groupedOrders.length,
+                          itemBuilder: (_, index) {
+                            final order = groupedOrders[index];
+                            final expanded = (order['expanded'] as bool?) ?? false;
+                            final status = order['status'] as String? ?? 'غير معروف';
+                            final items =
+                                (order['items'] as List?)?.cast<Map<String, dynamic>>() ??
+                                    const [];
 
-                        return _OrderCard(
-                          index: index,
-                          status: status,
-                          expanded: expanded,
-                          items: items,
-                          onToggle: (v) => setState(
-                              () => groupedOrders[index]['expanded'] = v),
-                          onCancel: (id) => cancelOrder(id),
-                        );
-                      },
-                    ),
-                  ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 140)),
-                ],
+                            return _OrderCard(
+                              index: index,
+                              status: status,
+                              expanded: expanded,
+                              items: items,
+                              onToggle: (v) =>
+                                  setState(() => groupedOrders[index]['expanded'] = v),
+                              onCancel: (id) => cancelOrder(id),
+                            );
+                          },
+                        ),
+                      ),
+                      const SliverToBoxAdapter(child: SizedBox(height: 140)),
+                    ],
               ],
             ),
             if (!isLoading)
@@ -229,6 +256,7 @@ class _MyOrdersBottomSheetViewState extends State<MyOrdersBottomSheetView> {
   bool isLoading = true;
   List<Map<String, dynamic>> grouped = [];
   String? errorMsg;
+  String? _uid;
 
   @override
   void initState() {
@@ -243,18 +271,24 @@ class _MyOrdersBottomSheetViewState extends State<MyOrdersBottomSheetView> {
     });
 
     try {
-      final res1 = await http.get(Uri.parse(
-          'https://parttec.onrender.com/order/viewuserorder/687ff5a6bf0de81878ed94f5'));
-      final res2 = await http.get(Uri.parse(
-          'https://parttec.onrender.com/order/viewuserspicificorder/687ff5a6bf0de81878ed94f5'));
+      _uid ??= await SessionStore.userId();
+      if (_uid == null || _uid!.isEmpty) {
+        setState(() {
+          errorMsg = '⚠️ يُرجى تسجيل الدخول أولًا لعرض الطلبات.';
+          isLoading = false;
+        });
+        return;
+      }
 
-      final list = <Map<String, dynamic>>[];
-      if (res1.statusCode == 200) {
-        list.addAll(_parse(res1.body, false));
-      }
-      if (res2.statusCode == 200) {
-        list.addAll(_parse(res2.body, true));
-      }
+      final base = AppSettings.serverurl;
+      final res1 = await http.get(Uri.parse('$base/order/viewuserorder/$_uid'));
+      final res2 =
+      await http.get(Uri.parse('$base/order/viewuserspicificorder/$_uid'));
+
+      final List<Map<String, dynamic>> list = [];
+      if (res1.statusCode == 200) list.addAll(_parse(res1.body, false));
+      if (res2.statusCode == 200) list.addAll(_parse(res2.body, true));
+
       if (list.isEmpty && (res1.statusCode != 200 || res2.statusCode != 200)) {
         errorMsg = 'فشل تحميل الطلبات (${res1.statusCode}/${res2.statusCode})';
       }
@@ -283,38 +317,51 @@ class _MyOrdersBottomSheetViewState extends State<MyOrdersBottomSheetView> {
         raw = decoded;
       }
     }
+
     return raw.whereType<Map>().map<Map<String, dynamic>>((o) {
+      final map = Map<String, dynamic>.from(o as Map);
+
       if (specific) {
         return {
-          'status': o['status'] ?? 'غير محدد',
+          'status': map['status'] ?? 'غير محدد',
           'expanded': false,
           'items': [
             {
-              'name': o['name'] ?? 'اسم غير معروف',
-              'image': o['imageUrl'],
-              'price': o['price'],
-              'status': o['status'] ?? 'غير محدد',
+              'name': map['name'] ?? 'اسم غير معروف',
+              'image': map['imageUrl'],
+              'price': map['price'],
+              'status': map['status'] ?? 'غير محدد',
               'canCancel': false,
-              'cartId': o['_id'] ?? '',
+              'cartId': map['_id'] ?? '',
             }
           ],
         };
       } else {
-        final src = (o['cartIds'] ?? o['items'] ?? []) as List?;
+        final src = (map['cartIds'] ?? map['items'] ?? []) as List?;
         final items =
-            (src ?? []).whereType<Map>().map<Map<String, dynamic>>((it) {
-          final part = (it['partId'] ?? it);
+        (src ?? []).whereType<Map>().map<Map<String, dynamic>>((it) {
+          final itm = Map<String, dynamic>.from(it as Map);
+          final part = (itm['partId'] ?? itm);
+          String? name, image;
+          dynamic price;
+          if (part is Map) {
+            final pMap = Map<String, dynamic>.from(part);
+            name = pMap['name']?.toString();
+            image = pMap['imageUrl']?.toString();
+            price = pMap['price'];
+          }
           return {
-            'name': (part is Map ? part['name'] : null) ?? 'اسم غير معروف',
-            'image': (part is Map ? part['imageUrl'] : null),
-            'price': (part is Map ? part['price'] : null),
-            'status': it['status'] ?? o['status'] ?? 'غير متوفر',
-            'canCancel': (o['status'] == 'قيد التجهيز'),
-            'cartId': it['_id'] ?? '',
+            'name': name ?? 'اسم غير معروف',
+            'image': image,
+            'price': price,
+            'status': itm['status'] ?? map['status'] ?? 'غير متوفر',
+            'canCancel': (map['status'] == 'قيد التجهيز'),
+            'cartId': itm['_id'] ?? '',
           };
         }).toList();
+
         return {
-          'status': o['status'] ?? 'غير معروف',
+          'status': map['status'] ?? 'غير معروف',
           'expanded': false,
           'items': items,
         };
@@ -332,13 +379,14 @@ class _MyOrdersBottomSheetViewState extends State<MyOrdersBottomSheetView> {
   Widget build(BuildContext context) {
     if (isLoading) {
       return const Center(
-          child: Padding(
-        padding: EdgeInsets.all(24.0),
-        child: CircularProgressIndicator(),
-      ));
+        child: Padding(
+          padding: EdgeInsets.all(24.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
     }
     if (errorMsg != null && grouped.isEmpty) {
-      return Center(child: Text(errorMsg!));
+      return Center(child: Text('$errorMsg'));
     }
     if (grouped.isEmpty) {
       return const Center(child: Text('لا توجد طلبات لعرضها حاليًا.'));
@@ -410,9 +458,9 @@ class _OrderCard extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.w800)),
             subtitle: Text('الحالة: $status'),
             trailing: IconButton(
-              icon: Icon(expanded
-                  ? Icons.keyboard_arrow_up
-                  : Icons.keyboard_arrow_down),
+              icon: Icon(
+                expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+              ),
               onPressed: () => onToggle(!expanded),
             ),
           ),
@@ -440,35 +488,34 @@ class _OrderCard extends StatelessWidget {
                     ),
                     leading: (image != null && image.isNotEmpty)
                         ? ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              image,
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Icon(
-                                  Icons.broken_image,
-                                  color: Colors.grey[300]),
-                            ),
-                          )
-                        : Icon(Icons.image_not_supported,
-                            color: Colors.grey[300]),
-                    title: Text(name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        image,
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            Icon(Icons.broken_image, color: Colors.grey[300]),
+                      ),
+                    )
+                        : Icon(Icons.image_not_supported, color: Colors.grey[300]),
+                    title: Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
                     subtitle: Text(
                       'السعر: ${price != null ? '\$${price}' : 'غير متوفر'}',
                     ),
                     trailing: canCancel
                         ? TextButton(
-                            onPressed: () =>
-                                onCancel((it['cartId'] as String?) ?? ''),
-                            child: const Text('إلغاء',
-                                style: TextStyle(color: Colors.red)),
-                          )
+                      onPressed: () => onCancel((it['cartId'] as String?) ?? ''),
+                      child: const Text('إلغاء',
+                          style: TextStyle(color: Colors.red)),
+                    )
                         : Text(displayStatus,
-                            style: const TextStyle(color: Colors.grey)),
+                        style: const TextStyle(color: Colors.grey)),
                   );
                 },
               ),
@@ -508,7 +555,7 @@ class _HeaderGlow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        const Positioned.fill(child: Opacity(opacity: 0.15)),
+        const Positioned( child: Opacity(opacity: 0.15)),
         Positioned(
           right: -40,
           bottom: -20,

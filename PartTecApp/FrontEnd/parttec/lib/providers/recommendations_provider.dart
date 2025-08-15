@@ -32,7 +32,6 @@ class RecommendationsProvider extends ChangeNotifier {
       if (res.statusCode == 200) {
         final decoded = json.decode(res.body);
 
-        // الاستجابة هنا عبارة عن List مباشرة (كما في الصورة)
         final List list = decoded is List
             ? decoded
             : (decoded['orders'] as List? ?? const []);

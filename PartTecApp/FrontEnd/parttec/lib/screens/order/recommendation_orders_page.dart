@@ -42,7 +42,7 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
               return Center(child: Text(provider.lastError!));
             }
 
-            final orders = provider.orders; // نتوقع List<Map<String,dynamic>>
+            final orders = provider.orders;
             if (orders.isEmpty) {
               return RefreshIndicator(
                 onRefresh: () => provider.fetchMyRecommendationOrders(),
@@ -62,7 +62,7 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
                 itemBuilder: (context, i) {
                   final o = Map<String, dynamic>.from(orders[i] as Map);
 
-                  // الحقول حسب ردّك الجديد:
+
                   final id = (o['_id'] ?? '').toString();
                   final name = (o['name'] ?? '').toString();
                   final serial = (o['serialNumber'] ?? '').toString();
@@ -80,7 +80,7 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
                   final phone = (o['phoneNumber'] ?? '').toString();
                   final createdAt = _fmtDate((o['createdAt'] ?? '').toString());
 
-                  // لدعم مستقبلي: مصفوفة عروض/توصيات إن وجدت
+
                   final recs = (o['recommendations'] as List?) ??
                       (o['offers'] as List?) ??
                       const [];
@@ -115,7 +115,7 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
                         maxLines: 2,
                       ),
                       children: [
-                        // سطر الحالة/التاريخ/المعرف
+
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                           child: Column(

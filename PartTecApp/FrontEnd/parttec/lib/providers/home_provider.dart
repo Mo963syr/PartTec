@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+
 import '../utils/app_settings.dart';
 import '../models/part.dart';
+import '../utils/session_store.dart';
 
 class HomeProvider with ChangeNotifier {
-  String userid = '687ff5a6bf0de81878ed94f5';
+  String? _userId; // نخزن المعرف هنا
 
   bool showCars = true;
   String? selectedMake;
@@ -90,17 +92,30 @@ class HomeProvider with ChangeNotifier {
 
   final List<String> fuelTypes = ['بترول', 'ديزل'];
 
+  Future<String?> _getUserId() async {
+    _userId ??= await SessionStore.userId();
+    return _userId;
+  }
+
   Future<void> fetchUserCars() async {
+    final uid = await _getUserId();
+    if (uid == null || uid.isEmpty) {
+      print('⚠️ لم يتم العثور على userId. يرجى تسجيل الدخول.');
+      return;
+    }
+
     try {
       final response = await http.get(
-        Uri.parse('${AppSettings.serverurl}/cars/veiwCars/$userid'),
+        Uri.parse('${AppSettings.serverurl}/cars/veiwCars/$uid'),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         userCars = data;
         notifyListeners();
-      } else {}
+      } else {
+        print('❌ فشل تحميل السيارات: ${response.body}');
+      }
     } catch (e) {
       print('خطأ أثناء تحميل السيارات: $e');
     }
@@ -114,12 +129,20 @@ class HomeProvider with ChangeNotifier {
   }
 
   Future<void> fetchAvailableParts() async {
+    final uid = await _getUserId();
+    if (uid == null || uid.isEmpty) {
+      print('⚠️ لا يوجد userId، لا يمكن تحميل القطع الخاصة.');
+      availableParts = [];
+      notifyListeners();
+      return;
+    }
+
     try {
       isLoadingAvailable = true;
       notifyListeners();
 
       final String url = isPrivate
-          ? '${AppSettings.serverurl}/part/viewPrivateParts/$userid'
+          ? '${AppSettings.serverurl}/part/viewPrivateParts/$uid'
           : '${AppSettings.serverurl}/part/viewAllParts';
 
       final response = await http.get(Uri.parse(url));
@@ -145,6 +168,14 @@ class HomeProvider with ChangeNotifier {
   }
 
   void submitCar(BuildContext context) async {
+    final uid = await _getUserId();
+    if (uid == null || uid.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('⚠️ يرجى تسجيل الدخول أولاً')),
+      );
+      return;
+    }
+
     if (selectedMake == null ||
         selectedModel == null ||
         selectedYear == null ||
@@ -157,7 +188,7 @@ class HomeProvider with ChangeNotifier {
 
     try {
       final response = await http.post(
-        Uri.parse('${AppSettings.serverurl}/cars/add/$userid'),
+        Uri.parse('${AppSettings.serverurl}/cars/add/$uid'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'manufacturer': selectedMake,

@@ -3,82 +3,88 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/part.dart';
-import '../utils/app_settings.dart'; // تأكد أن هذا يحتوي serverurl و userId
+import '../utils/app_settings.dart';
+import '../utils/session_store.dart';
 
 class FavoritesProvider extends ChangeNotifier {
   final List<Part> _favorites = [];
+  String? _userId;
 
   List<Part> get favorites => List.unmodifiable(_favorites);
 
-  Future<void> toggleFavorite(Part part, String userId) async {
-    final exists = _favorites.any((p) => p.id == part.id);
+  Future<String?> _getUserId() async {
+    _userId ??= await SessionStore.userId(); // ✅ الصحيح
+    return _userId;
+  }
 
-    try {
-      if (exists) {
-        // 🗑 إزالة من المفضلة في الباك إند
-        final response = await http.post(
-          Uri.parse('${AppSettings.serverurl}/favorites/remove'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'userId': userId,
-            'partId': part.id,
-          }),
-        );
-
-        if (response.statusCode == 200) {
-          _favorites.removeWhere((p) => p.id == part.id);
-          notifyListeners();
-        } else {
-          print('فشل حذف المفضلة: ${response.body}');
-        }
-      } else {
-        // ➕ إضافة إلى المفضلة في الباك إند
-        final response = await http.post(
-          Uri.parse('${AppSettings.serverurl}/favorites/add'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'userId': userId,
-            'partId': part.id,
-          }),
-        );
-
-        if (response.statusCode == 200) {
-          _favorites.add(part);
-          notifyListeners();
-        } else {
-          print('فشل إضافة المفضلة: ${response.body}');
-        }
-      }
-    } catch (e) {
-      print('خطأ أثناء تحديث المفضلة: $e');
+  Future<void> toggleFavorite(Part part) async {
+    final uid = await _getUserId();
+    if (uid == null || uid.isEmpty) {
+      debugPrint('⚠️ لا يوجد userId، الرجاء تسجيل الدخول أولاً.');
+      return;
     }
-  }
 
-  bool isFavorite(String id) {
-    return _favorites.any((p) => p.id == id);
-  }
+    final exists = _favorites.any((p) => p.id == part.id);
+    final endpoint = exists ? 'favorites/remove' : 'favorites/add';
 
-  // 📌 تحميل المفضلة من الباك إند عند فتح التطبيق
-  Future<void> fetchFavorites(String userId) async {
     try {
-      final response = await http.get(
-        Uri.parse('${AppSettings.serverurl}/favorites/view/$userId'),
+      final response = await http.post(
+        Uri.parse('${AppSettings.serverurl}/$endpoint'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'userId': uid, 'partId': part.id}),
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        _favorites.clear();
-        _favorites.addAll(
-          (data['favorites'] as List)
-              .map((item) => Part.fromJson(item))
-              .toList(),
-        );
+        if (exists) {
+          _favorites.removeWhere((p) => p.id == part.id);
+        } else {
+          _favorites.add(part);
+        }
         notifyListeners();
       } else {
-        print('فشل تحميل المفضلة: ${response.body}');
+        debugPrint('❌ فشل تحديث المفضلة: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
-      print('خطأ أثناء تحميل المفضلة: $e');
+      debugPrint('خطأ أثناء تحديث المفضلة: $e');
     }
+  }
+
+  bool isFavorite(String id) => _favorites.any((p) => p.id == id);
+
+  Future<void> fetchFavorites() async {
+    final uid = await _getUserId(); // ✅ بدّلنا إلى userId()
+    if (uid == null || uid.isEmpty) {
+      debugPrint('⚠️ لا يوجد مستخدم مسجل دخول');
+      return;
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse('${AppSettings.serverurl}/favorites/view/$uid'),
+      );
+
+      if (response.statusCode == 200) {
+        final raw = jsonDecode(response.body);
+        final Map<String, dynamic> data =
+        (raw is Map) ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+
+        // دعم كلا المفتاحين إذا اختلف عندك في الباك
+        final list = (data['favorites'] as List?) ?? (data['items'] as List?) ?? <dynamic>[];
+
+        _favorites
+          ..clear()
+          ..addAll(list.whereType<Map<String, dynamic>>().map(Part.fromJson));
+        notifyListeners();
+      } else {
+        debugPrint('فشل تحميل المفضلة: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('خطأ أثناء تحميل المفضلة: $e');
+    }
+  }
+
+  /// نادِها عند تسجيل خروج لتصفير الكاش الداخلي
+  void resetCachedUser() {
+    _userId = null;
   }
 }
