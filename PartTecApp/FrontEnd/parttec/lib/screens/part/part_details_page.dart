@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
+
+import '../../theme/app_theme.dart';
+import '../../widgets/ui_kit.dart';
 
 import '../../providers/cart_provider.dart';
 import '../../models/part.dart';
@@ -8,7 +12,6 @@ import '../../utils/session_store.dart';
 
 class PartDetailsPage extends StatelessWidget {
   final Part part;
-
   const PartDetailsPage({Key? key, required this.part}) : super(key: key);
 
   @override
@@ -18,154 +21,258 @@ class PartDetailsPage extends StatelessWidget {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: Colors.grey[100],
-        body: Column(
+        body: Stack(
           children: [
-            Stack(
-              children: [
-                SizedBox(
-                  height: 250,
-                  width: double.infinity,
-                  child: imageUrl.isNotEmpty
-                      ? Image.network(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.broken_image, size: 80, color: Colors.grey),
+            const GradientBackground(child: SizedBox.expand()),
+            CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverAppBar(
+                  pinned: true,
+                  stretch: true,
+                  elevation: 0,
+                  backgroundColor: Colors.transparent,
+                  expandedHeight: 280,
+                  leading: Padding(
+                    padding:
+                        const EdgeInsetsDirectional.only(start: 12, top: 8),
+                    child: _CircleIconButton(
+                      icon: Icons.arrow_back,
+                      onTap: () => Navigator.pop(context),
                     ),
-                    loadingBuilder: (ctx, child, progress) {
-                      if (progress == null) return child;
-                      return Container(
-                        color: Colors.grey[200],
-                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                      );
-                    },
-                  )
-                      : Container(
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.image, size: 100, color: Colors.grey),
+                  ),
+                  flexibleSpace: FlexibleSpaceBar(
+                    collapseMode: CollapseMode.parallax,
+                    background: imageUrl.isNotEmpty
+                        ? Image.network(imageUrl, fit: BoxFit.cover)
+                        : Container(
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.image, size: 100)),
                   ),
                 ),
-                // زر رجوع
-                Positioned(
-                  top: MediaQuery.of(context).padding.top + 8,
-                  left: 12,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Material(
-                      color: Colors.black45,
-                      child: InkWell(
-                        onTap: () => Navigator.of(context).pop(),
-                        child: const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-                        ),
+                SliverToBoxAdapter(
+                  child: Transform.translate(
+                    offset: const Offset(0, -20),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: [
+                          _GlassCard(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(part.name,
+                                    style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w900,
+                                        color: AppColors.text)),
+                                const SizedBox(height: 10),
+                                Row(
+                                  children: [
+                                    Text('\$${part.price}',
+                                        style: const TextStyle(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.primary)),
+                                    const Spacer(),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(part.status ?? "غير محدد",
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w700)),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                if (part.serialNumber != null &&
+                                    part.serialNumber!.isNotEmpty)
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.qr_code_2,
+                                          size: 18, color: AppColors.primary),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                          child: Text(
+                                              "تسلسلي: ${part.serialNumber}")),
+                                      IconButton(
+                                        icon: const Icon(Icons.copy, size: 18),
+                                        onPressed: () async {
+                                          await Clipboard.setData(ClipboardData(
+                                              text: part.serialNumber!));
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(const SnackBar(
+                                                  content: Text(
+                                                      "تم نسخ الرقم التسلسلي")));
+                                        },
+                                      )
+                                    ],
+                                  )
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          _GlassCard(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildDetailRow(Icons.directions_car, "الموديل",
+                                    part.model),
+                                _buildDetailRow(Icons.factory, "الماركة",
+                                    part.manufacturer),
+                                _buildDetailRow(
+                                    Icons.event,
+                                    "سنة الصنع",
+                                    part.year != 0
+                                        ? part.year.toString()
+                                        : "غير محدد"),
+                                _buildDetailRow(Icons.local_gas_station,
+                                    "نوع الوقود", part.fuelType),
+                                _buildDetailRow(
+                                    Icons.category, "الفئة", part.category),
+                                const SizedBox(height: 10),
+                                const Text("الوصف",
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 6),
+                                Text(part.description ?? "لا يوجد وصف"),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          _GlassCard(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text("تقييمات الزبائن",
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 8),
+                                FutureBuilder<String?>(
+                                  future: SessionStore.userId(),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return const Center(
+                                          child: Padding(
+                                              padding: EdgeInsets.all(16.0),
+                                              child: CircularProgressIndicator(
+                                                  strokeWidth: 2)));
+                                    }
+                                    final uid = snapshot.data;
+                                    if (uid == null || uid.isEmpty) {
+                                      return const Text(
+                                          "⚠️ الرجاء تسجيل الدخول لعرض/إضافة التقييمات.");
+                                    }
+                                    return PartReviewsSection(
+                                        partId: part.id, userId: uid);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 100),
+                        ],
                       ),
                     ),
                   ),
                 ),
               ],
             ),
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -3)),
-                  ],
-                ),
-                child: ListView(
-                  children: [
-                    _buildDetailRow('اسم القطعة', part.name),
-                    _buildDetailRow('الموديل', part.model),
-                    _buildDetailRow('الماركة', part.manufacturer),
-                    _buildDetailRow('سنة الصنع', part.year != 0 ? part.year.toString() : null),
-                    _buildDetailRow('الرقم التسلسلي', part.serialNumber),
-                    _buildDetailRow('نوع الوقود', part.fuelType),
-                    _buildDetailRow('الحالة', part.status),
-                    _buildDetailRow('السعر', '${part.price} \$'),
-                    const SizedBox(height: 16),
-                    const Text('الوصف:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 6),
-                    Text(part.description ?? 'لا يوجد وصف', style: const TextStyle(fontSize: 15)),
-                    const SizedBox(height: 20),
-                    const Divider(),
-                    const Text('تقييمات الزبائن',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-
-                    // ↓↓↓ نجلب userId من SessionStore
-                    FutureBuilder<String?>(
-                      future: SessionStore.userId(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16.0),
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ));
-                        }
-                        final uid = snapshot.data;
-                        if (uid == null || uid.isEmpty) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 8.0),
-                            child: Text('⚠️ الرجاء تسجيل الدخول لعرض/إضافة التقييمات.'),
-                          );
-                        }
-                        return PartReviewsSection(
-                          partId: part.id,
-                          userId: uid,
-                        );
-                      },
-                    ),
-
-                    const SizedBox(height: 80),
-                  ],
-                ),
-              ),
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 16 + MediaQuery.of(context).padding.bottom,
+              child: _BottomAddToCart(part: part),
             ),
           ],
-        ),
-        bottomNavigationBar: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, -1))],
-          ),
-          child: ElevatedButton(
-            onPressed: () async {
-              final success = await context.read<CartProvider>().addToCartToServer(part);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(success ? 'أُضيفت القطعة إلى السلة' : 'فشلت الإضافة إلى السلة'),
-                  backgroundColor: success ? Colors.green : Colors.red,
-                  duration: const Duration(seconds: 3),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              backgroundColor: Colors.green[700],
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text('إضافة إلى السلة', style: TextStyle(fontSize: 18, color: Colors.white)),
-          ),
         ),
       ),
     );
   }
 
-  Widget _buildDetailRow(String label, dynamic value) {
+  Widget _buildDetailRow(IconData icon, String label, String? value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold)),
-          Expanded(child: Text(value?.toString() ?? 'غير متوفر')),
+          Icon(icon, size: 18, color: AppColors.primary),
+          const SizedBox(width: 8),
+          Text("$label: ", style: const TextStyle(fontWeight: FontWeight.bold)),
+          Expanded(child: Text(value ?? "غير متوفر")),
         ],
+      ),
+    );
+  }
+}
+
+class _GlassCard extends StatelessWidget {
+  final Widget child;
+  const _GlassCard({required this.child});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _CircleIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _CircleIconButton({required this.icon, required this.onTap});
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black45,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: Icon(icon, color: Colors.white),
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomAddToCart extends StatelessWidget {
+  final Part part;
+  const _BottomAddToCart({required this.part});
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton.icon(
+      onPressed: () async {
+        final success =
+            await context.read<CartProvider>().addToCartToServer(part);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(success ? "تمت الإضافة إلى السلة" : "فشلت الإضافة"),
+          backgroundColor: success ? Colors.green : Colors.red,
+        ));
+      },
+      icon: const Icon(Icons.add_shopping_cart),
+      label: const Text("إضافة إلى السلة"),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.success,
+        minimumSize: const Size.fromHeight(54),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }
