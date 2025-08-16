@@ -16,12 +16,11 @@ import 'providers/auth_provider.dart';
 import './screens/auth/auth_page.dart';
 import 'screens/auth/shared_preference.dart';
 
-void main()async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final auth = AuthProvider();
   await auth.loadSession();
   runApp(
-
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: auth),
@@ -47,12 +46,11 @@ void main()async {
   );
 }
 
+//
 class MyApp extends StatelessWidget {
-
   const MyApp({super.key});
 
   @override
-
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'PartTec',
