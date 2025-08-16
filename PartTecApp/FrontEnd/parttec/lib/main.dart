@@ -20,7 +20,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final auth = AuthProvider();
   await auth.loadSession();
-  runApp(
+  runApp(//
+
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: auth),
