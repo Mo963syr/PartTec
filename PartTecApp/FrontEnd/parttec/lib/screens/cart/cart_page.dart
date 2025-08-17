@@ -221,7 +221,8 @@ class _CartPageState extends State<CartPage> {
                                         onPressed: () async {
                                           // احضار userId الحقيقي من SessionStore قبل فتح صفحة تحديد الموقع
                                           final uid = await SessionStore.userId();
-                                          if (uid == null || uid.isEmpty) {
+                                          // إذا لم يكن هنالك جلسة أو كانت الجلسة للضيف فلا يسمح بالشراء
+                                          if (uid == null || uid.isEmpty || uid == 'guest') {
                                             ScaffoldMessenger.of(context).showSnackBar(
                                               const SnackBar(
                                                 content: Text('⚠️ الرجاء تسجيل الدخول أولاً'),
@@ -231,7 +232,7 @@ class _CartPageState extends State<CartPage> {
                                           }
 
                                           final LatLng? location =
-                                          await Navigator.of(context).push(
+                                              await Navigator.of(context).push(
                                             MaterialPageRoute(
                                               builder: (_) => LocationPickerPage(
                                                 userId: uid, // نمرره عند الحاجة
@@ -257,10 +258,22 @@ class _CartPageState extends State<CartPage> {
                                     const SizedBox(width: AppSpaces.md),
                                     Expanded(
                                       child: ElevatedButton.icon(
-                                        onPressed: () => _confirmOrder(
-                                          context,
-                                          'الدفع الإلكتروني',
-                                        ),
+                                        onPressed: () async {
+                                          // التحقق من الجلسة قبل الدفع الإلكتروني
+                                          final uid = await SessionStore.userId();
+                                          if (uid == null || uid.isEmpty || uid == 'guest') {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('⚠️ الرجاء تسجيل الدخول أولاً'),
+                                              ),
+                                            );
+                                            return;
+                                          }
+                                          _confirmOrder(
+                                            context,
+                                            'الدفع الإلكتروني',
+                                          );
+                                        },
                                         icon: const Icon(Icons.credit_card),
                                         label: const Text('الدفع بالبطاقة'),
                                         style: ElevatedButton.styleFrom(

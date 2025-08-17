@@ -2,7 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 Future<String?> getSavedUserId() async {
   final sp = await SharedPreferences.getInstance();
-  return sp.getString('userId'); // قد تكون null إذا ما في جلسة محفوظة
+  return sp.getString('userId');
 }
 
 Future<String?> getSavedRole() async {

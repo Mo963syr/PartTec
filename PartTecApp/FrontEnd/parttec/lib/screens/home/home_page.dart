@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 import 'package:parttec/models/part.dart';
 import '../../widgets/parts_widgets.dart';
 import '../part/add_part_page.dart';
@@ -7,6 +8,8 @@ import '../../providers/home_provider.dart';
 import '../cart/cart_page.dart';
 import '../order/my_order_page.dart';
 import '../favorites/favorite_parts_page.dart';
+import '../../widgets/dev_drawer.dart';
+import 'package:flutter/foundation.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -92,6 +95,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final provider = Provider.of<HomeProvider>(context);
 
     return Scaffold(
+      drawer: kDebugMode ? const DevDrawer() : null,
       body: Stack(
         children: [
           const _GradientBackground(),
@@ -136,7 +140,30 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         ),
                       ),
 
-                      // 🔎 شريط البحث + زر عامة/خاصة — مثبّت بارتفاع ثابت
+                      // تحذير للزائر إذا كان مسجلاً كزائر فقط
+                      SliverToBoxAdapter(
+                        child: Consumer<AuthProvider>(
+                          builder: (context, auth, _) {
+                            if (auth.role == 'guest') {
+                              return Container(
+                                margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.yellow.shade100,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Text(
+                                  'أنت تتصفح كزائر. التسجيل مطلوب لإتمام عمليات الشراء.',
+                                  style: TextStyle(color: Colors.black87),
+                                ),
+                              );
+                            } else {
+                              return const SizedBox.shrink();
+                            }
+                          },
+                        ),
+                      ),
+
                       SliverPersistentHeader(
                         pinned: true,
                         delegate: _SearchBarHeader(
