@@ -6,6 +6,8 @@ import '../order/GroupedOrdersPage.dart';
 import '../part/added_parts_page.dart';
 import '../recommendation/recommendation_requests_page.dart';
 import 'seller_reviews_page.dart';
+import 'package:flutter/foundation.dart';
+import '../../widgets/dev_drawer.dart';
 
 class SupplierDashboard extends StatelessWidget {
   const SupplierDashboard({super.key});
@@ -13,6 +15,7 @@ class SupplierDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: kDebugMode ? const DevDrawer() : null,
       appBar: AppBar(
         title: const Text('لوحة المورد'),
         centerTitle: true,
@@ -93,8 +96,7 @@ class SupplierDashboard extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        SellerReviewsPage(),
+                    builder: (_) => SellerReviewsPage(),
                   ),
                 );
               },
