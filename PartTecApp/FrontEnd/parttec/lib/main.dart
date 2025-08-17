@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:parttec/providers/recommendations_provider.dart';
+import 'package:parttec/screens/auth/splash_screen.dart';
 import 'package:parttec/screens/order/recommendation_orders_page.dart';
 import 'package:provider/provider.dart';
 import 'providers/home_provider.dart';
@@ -14,13 +15,13 @@ import 'theme/app_theme.dart';
 
 import 'providers/auth_provider.dart';
 import './screens/auth/auth_page.dart';
-import 'screens/auth/shared_preference.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final auth = AuthProvider();
   await auth.loadSession();
-  runApp(//
+  runApp(
+    //
 
     MultiProvider(
       providers: [
@@ -47,7 +48,6 @@ void main() async {
   );
 }
 
-//
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -57,7 +57,7 @@ class MyApp extends StatelessWidget {
       title: 'PartTec',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: AuthPage(),
+      home: SplashScreen(),
     );
   }
 }
