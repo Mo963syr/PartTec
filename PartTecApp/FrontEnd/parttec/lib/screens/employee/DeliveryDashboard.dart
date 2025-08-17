@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'delivery_orders_page.dart';
+import '../../widgets/dev_drawer.dart';
+import 'package:flutter/foundation.dart';
 
 class DeliveryDashboard extends StatelessWidget {
   const DeliveryDashboard({Key? key}) : super(key: key);
@@ -7,6 +9,7 @@ class DeliveryDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: kDebugMode ? const DevDrawer() : null,
       appBar: AppBar(
         title: Text('لوحة موظف التوصيل'),
         centerTitle: true,
