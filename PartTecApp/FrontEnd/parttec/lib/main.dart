@@ -12,7 +12,6 @@ import 'providers/seller_orders_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/reviews_provider.dart';
 import 'theme/app_theme.dart';
-
 import 'providers/auth_provider.dart';
 import './screens/auth/auth_page.dart';
 

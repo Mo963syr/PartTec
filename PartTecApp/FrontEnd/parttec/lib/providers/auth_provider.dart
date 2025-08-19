@@ -13,9 +13,8 @@ class AuthProvider extends ChangeNotifier {
   String? userId;
   String? role;
 
-  static Uri _registerUri() =>
-      Uri.parse('${AppSettings.serverurl}/auth/register');
-  static Uri _loginUri() => Uri.parse('${AppSettings.serverurl}/auth/login');
+  static Uri _registerUri() => Uri.parse('${AppSettings.serverurl}/auth/register');
+  static Uri _loginUri()    => Uri.parse('${AppSettings.serverurl}/auth/login');
 
   Future<void> _persistSession(String uid, String r) async {
     await SessionStore.save(userId: uid, role: r);
@@ -26,7 +25,7 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> loadSession() async {
     userId = await SessionStore.userId();
-    role = await SessionStore.role();
+    role   = await SessionStore.role();
     notifyListeners();
   }
 
@@ -37,13 +36,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loginAsGuest() async {
-    await SessionStore.save(userId: 'guest', role: 'guest');
-    userId = 'guest';
-    role = 'guest';
-    notifyListeners();
-  }
-
+  // -------- REGISTER --------
   Future<Map?> register({
     required String name,
     required String email,
@@ -63,15 +56,15 @@ class AuthProvider extends ChangeNotifier {
           'phoneNumber': phoneNumber,
           'email': email,
           'password': password,
-          'role': 'user',
+          'role': 'user', // يمكن تغييره إن أردت
         }),
       );
 
       final data = jsonDecode(utf8.decode(res.bodyBytes));
       if (res.statusCode == 201 && data is Map) {
-        final uid =
-            data['userId']?.toString() ?? data['user']?['_id']?.toString();
-        final r = (data['user']?['role'] ?? data['role'] ?? 'user').toString();
+        final uid = data['userId']?.toString()
+            ?? data['user']?['_id']?.toString();
+        final r   = (data['user']?['role'] ?? data['role'] ?? 'user').toString();
 
         if (uid != null) {
           await _persistSession(uid, r);
@@ -92,6 +85,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  // -------- LOGIN --------
   Future<Map?> login({
     required String email,
     required String password,
@@ -110,7 +104,7 @@ class AuthProvider extends ChangeNotifier {
       final data = jsonDecode(utf8.decode(res.bodyBytes));
       if (res.statusCode == 200 && data is Map) {
         final uid = data['userId']?.toString();
-        final r = data['role']?.toString() ?? '';
+        final r   = data['role']?.toString() ?? '';
         if (uid != null) {
           await _persistSession(uid, r);
         }
@@ -128,15 +122,5 @@ class AuthProvider extends ChangeNotifier {
       isLoggingIn = false;
       notifyListeners();
     }
-  }
-
-  @visibleForTesting
-  Future<void> debugSetRole(String role, {String? userId}) async {
-    final uid =
-        userId ?? (role == 'guest' ? 'guest' : (this.userId ?? 'dev-user'));
-    await SessionStore.save(userId: uid, role: role);
-    this.userId = uid;
-    this.role = role;
-    notifyListeners();
   }
 }
