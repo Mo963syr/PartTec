@@ -1,85 +1,93 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../utils/app_settings.dart';
 
-class ReviewItem {
+class Comment {
   final String id;
+  final String userId;
   final String userName;
-  final int rating;
-  final String comment;
+  final String content;
   final DateTime createdAt;
 
-  ReviewItem({
+  Comment({
     required this.id,
+    required this.userId,
     required this.userName,
-    required this.rating,
-    required this.comment,
+    required this.content,
     required this.createdAt,
   });
 
-  factory ReviewItem.fromJson(Map<String, dynamic> j) => ReviewItem(
-        id: j['_id'] ?? '',
-        userName: j['userId']?['name'] ?? j['user']?['name'] ?? 'مستخدم',
-        rating: (j['rating'] ?? 0).toInt(),
-        comment: j['comment'] ?? '',
-        createdAt: DateTime.tryParse(j['createdAt'] ?? '') ?? DateTime.now(),
-      );
+  factory Comment.fromJson(Map<String, dynamic> json) {
+    final user = (json['user'] is Map) ? Map<String, dynamic>.from(json['user']) : <String, dynamic>{};
+    final c = (json['content'] ?? json['comment'] ?? '').toString();
+    return Comment(
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
+      userId: (user['_id'] ?? json['userId'] ?? '').toString(),
+      userName: (user['name'] ?? json['userName'] ?? 'مستخدم').toString(),
+      content: c,
+      createdAt: DateTime.tryParse((json['createdAt'] ?? '').toString()) ?? DateTime.now(),
+    );
+  }
 }
 
 class ReviewsProvider extends ChangeNotifier {
   bool isLoading = false;
-  double averageRating = 0;
-  int reviewsCount = 0;
-  List<ReviewItem> reviews = [];
+  List<Comment> comments = [];
 
-  Future<void> fetchPartReviews(String partId) async {
+  Future<void> fetchPartComments(String partId) async {
     isLoading = true;
     notifyListeners();
     try {
-      final res = await http
-          .get(Uri.parse('${AppSettings.serverurl}/reviews/part/$partId'));
+      final uri = Uri.parse('${AppSettings.serverurl}/comment/comments/$partId');
+      final res = await http.get(uri);
       if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        averageRating = (data['part']?['averageRating'] ?? 0).toDouble();
-        reviewsCount = (data['part']?['reviewsCount'] ?? 0).toInt();
-        reviews = (data['reviews'] as List)
-            .map((e) => ReviewItem.fromJson(e))
+        final raw = jsonDecode(res.body);
+        final Map<String, dynamic> data = (raw is Map) ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+        final list = (data['comments'] as List?) ?? <dynamic>[];
+        comments = list
+            .whereType<Map>()
+            .map((e) => Comment.fromJson(Map<String, dynamic>.from(e)))
             .toList();
       } else {
-        reviews = [];
-        averageRating = 0;
-        reviewsCount = 0;
+        comments = [];
       }
-    } catch (e) {
-      reviews = [];
-      averageRating = 0;
-      reviewsCount = 0;
-    } finally {
-      isLoading = false;
-      notifyListeners();
+    } catch (_) {
+      comments = [];
     }
+    isLoading = false;
+    notifyListeners();
   }
 
-  Future<bool> upsertReview({
+  Future<bool> addComment({
     required String partId,
     required String userId,
-    required int rating,
-    required String comment,
+    required String content,
   }) async {
     try {
+      final uri = Uri.parse('${AppSettings.serverurl}/comment/comments');
       final res = await http.post(
-        Uri.parse('${AppSettings.serverurl}/reviews/upsert'),
+        uri,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'partId': partId,
           'userId': userId,
-          'rating': rating,
-          'comment': comment,
+          'content': content,
         }),
       );
-      if (res.statusCode == 200) {
-        await fetchPartReviews(partId);
+
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        try {
+          final raw = jsonDecode(res.body);
+          final Map<String, dynamic> data = (raw is Map) ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+          final cJson = (data['comment'] is Map) ? Map<String, dynamic>.from(data['comment']) : null;
+          if (cJson != null) {
+            comments = [Comment.fromJson(cJson), ...comments];
+            notifyListeners();
+            return true;
+          }
+        } catch (_) {}
+        await fetchPartComments(partId);
         return true;
       }
     } catch (_) {}

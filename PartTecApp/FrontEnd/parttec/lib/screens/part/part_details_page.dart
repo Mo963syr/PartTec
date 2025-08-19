@@ -171,7 +171,7 @@ class PartDetailsPage extends StatelessWidget {
                                           "⚠️ الرجاء تسجيل الدخول لعرض/إضافة التقييمات.");
                                     }
                                     return PartReviewsSection(
-                                        partId: part.id, userId: uid);
+                                        partId: part.id);
                                   },
                                 ),
                               ],

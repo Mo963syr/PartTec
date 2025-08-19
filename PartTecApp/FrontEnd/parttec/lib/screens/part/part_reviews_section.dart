@@ -1,30 +1,50 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../../providers/reviews_provider.dart';
-import '../../widgets/star_selector.dart';
+import '../../providers/auth_provider.dart';
 
-class PartReviewsSection extends StatefulWidget {
+class PartReviewsSection extends StatelessWidget {
   final String partId;
-  final String userId; // المستخدِم الحالي
-  const PartReviewsSection(
-      {super.key, required this.partId, required this.userId});
+  const PartReviewsSection({super.key, required this.partId});
 
   @override
-  State<PartReviewsSection> createState() => _PartReviewsSectionState();
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _CommentComposer(partId: partId),
+        const SizedBox(height: 8),
+        _CommentsList(partId: partId),
+      ],
+    );
+  }
 }
 
-class _PartReviewsSectionState extends State<PartReviewsSection> {
-  int _rating = 0;
-  final _ctrl = TextEditingController();
+class SafeTextController extends TextEditingController {
+  void setTextSafely(String text) {
+    value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+      composing: TextRange.empty,
+    );
+  }
+
+  void clearSafely() => setTextSafely('');
+}
+
+class _CommentComposer extends StatefulWidget {
+  final String partId;
+  const _CommentComposer({required this.partId});
 
   @override
-  void initState() {
-    super.initState();
-    Future.microtask(() {
-      final p = Provider.of<ReviewsProvider>(context, listen: false);
-      p.fetchPartReviews(widget.partId);
-    });
-  }
+  State<_CommentComposer> createState() => _CommentComposerState();
+}
+
+class _CommentComposerState extends State<_CommentComposer> {
+  final _ctrl = SafeTextController();
+
+  bool _sending = false;
 
   @override
   void dispose() {
@@ -32,129 +52,140 @@ class _PartReviewsSectionState extends State<PartReviewsSection> {
     super.dispose();
   }
 
+  Future<void> _send() async {
+    if (_sending) return;
+    final content = _ctrl.text.trim();
+    if (content.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('اكتب تعليقاً أولاً')),
+      );
+      return;
+    }
+    final uid = context.read<AuthProvider>().userId ?? '';
+    if (uid.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('سجّل الدخول أولاً')),
+      );
+      return;
+    }
+    setState(() => _sending = true);
+    final ok = await context.read<ReviewsProvider>().addComment(
+      partId: widget.partId,
+      userId: uid,
+      content: content,
+    );
+    setState(() => _sending = false);
+    if (ok) {
+      _ctrl.clear();
+      FocusScope.of(context).unfocus();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم حفظ تعليقك ✅')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('فشل حفظ التعليق ❌')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final p = Provider.of<ReviewsProvider>(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // ملخص
-        Row(
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.star, color: Colors.amber),
-            const SizedBox(width: 6),
-            Text('${p.averageRating.toStringAsFixed(1)} / 5'),
-            const SizedBox(width: 8),
-            Text('(${p.reviewsCount} تقييم)'),
+            const Text('أضف تعليقك:'),
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade400),
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.white,
+              ),
+              child: CupertinoTextField(
+                controller: _ctrl,
+                maxLines: 2,
+                padding: const EdgeInsets.all(12),
+                placeholder: 'اكتب تعليقًا ...',
+                textInputAction: TextInputAction.newline,
+                keyboardType: TextInputType.multiline,
+                clearButtonMode: OverlayVisibilityMode.never,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton.icon(
+              onPressed: _sending ? null : _send,
+              icon: const Icon(Icons.send),
+              label: Text(_sending ? 'جارٍ الإرسال...' : 'إرسال'),
+            ),
           ],
         ),
-        const SizedBox(height: 8),
+      ),
+    );
+  }
+}
 
-        // إدخال تقييم
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('أضف تقييمك:'),
-                StarSelector(
-                    value: _rating,
-                    onChanged: (v) => setState(() => _rating = v)),
-                TextField(
-                  controller: _ctrl,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    hintText: 'اكتب تعليقًا (اختياري)...',
-                    border: OutlineInputBorder(),
+class _CommentsList extends StatefulWidget {
+  final String partId;
+  const _CommentsList({required this.partId});
+
+  @override
+  State<_CommentsList> createState() => _CommentsListState();
+}
+
+class _CommentsListState extends State<_CommentsList> {
+  bool _fetched = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_fetched) {
+        context.read<ReviewsProvider>().fetchPartComments(widget.partId);
+        _fetched = true;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ReviewsProvider>(
+      builder: (_, p, __) {
+        if (p.isLoading && p.comments.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (p.comments.isEmpty) {
+          return const Text('لا توجد تعليقات بعد.');
+        }
+        return ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: p.comments.length,
+          separatorBuilder: (_, __) => const Divider(height: 8),
+          itemBuilder: (_, i) {
+            final c = p.comments[i];
+            return ListTile(
+              leading: const Icon(Icons.person),
+              title: Text(
+                c.userName,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(c.content),
+                  Text(
+                    '${c.createdAt}',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton.icon(
-                  onPressed: p.isLoading
-                      ? null
-                      : () async {
-                          if (_rating == 0) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('اختر عدد النجوم')),
-                            );
-                            return;
-                          }
-                          final ok = await p.upsertReview(
-                            partId: widget.partId,
-                            userId: widget.userId,
-                            rating: _rating,
-                            comment: _ctrl.text.trim(),
-                          );
-                          if (ok) {
-                            _ctrl.clear();
-                            setState(() => _rating = 0);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('تم حفظ تقييمك ✅')),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text('فشل حفظ التقييم ❌')),
-                            );
-                          }
-                        },
-                  icon: const Icon(Icons.send),
-                  label: const Text('إرسال'),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 8),
-
-        // قائمة التقييمات
-        if (p.isLoading)
-          const Center(child: CircularProgressIndicator())
-        else if (p.reviews.isEmpty)
-          const Text('لا توجد تقييمات بعد.')
-        else
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: p.reviews.length,
-            separatorBuilder: (_, __) => const Divider(height: 8),
-            itemBuilder: (_, i) {
-              final r = p.reviews[i];
-              return ListTile(
-                leading: const Icon(Icons.person),
-                title: Row(
-                  children: [
-                    Text(r.userName,
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(width: 8),
-                    Row(
-                      children: List.generate(
-                          5,
-                          (k) => Icon(
-                                k < r.rating ? Icons.star : Icons.star_border,
-                                size: 16,
-                                color: Colors.amber,
-                              )),
-                    ),
-                  ],
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (r.comment.isNotEmpty) Text(r.comment),
-                    Text(
-                      '${r.createdAt}',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-      ],
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
