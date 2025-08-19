@@ -6,6 +6,7 @@ import '../../widgets/ui_kit.dart';
 import '../home/home_page.dart';
 import '../location/ChooseDestinationPage.dart';
 import '../../providers/auth_provider.dart';
+import '../supplier/supplier_dashboard.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
@@ -55,8 +56,8 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
       case 'user':
         target = const HomePage();
         break;
-      case 'doctor':
-        target = const DoctorDashboardPage();
+      case 'seller':
+        target = const SupplierDashboard();
         break;
       case 'coordinator':
         target = const CoordinatorDashboardPage();

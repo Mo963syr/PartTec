@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:parttec/providers/recommendations_provider.dart';
-import 'package:parttec/screens/auth/splash_screen.dart';
-import 'package:parttec/screens/order/recommendation_orders_page.dart';
 import 'package:provider/provider.dart';
+
+import 'package:parttec/providers/recommendations_provider.dart';
+
 import 'providers/home_provider.dart';
 import 'providers/parts_provider.dart';
 import 'providers/add_part_provider.dart';
@@ -11,35 +11,35 @@ import 'providers/favorites_provider.dart';
 import 'providers/seller_orders_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/reviews_provider.dart';
-import 'theme/app_theme.dart';
 import 'providers/auth_provider.dart';
-import './screens/auth/auth_page.dart';
+
+import 'theme/app_theme.dart';
+import 'screens/auth/auth_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final auth = AuthProvider();
   await auth.loadSession();
-  runApp(
-    //
 
+  runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: auth),
         ChangeNotifierProvider(create: (_) => AddPartProvider()),
         ChangeNotifierProvider(create: (_) => HomeProvider()),
         ChangeNotifierProvider(create: (_) => PartsProvider()),
-        ChangeNotifierProvider(create: (_) => AddPartProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => FavoritesProvider()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
-        ChangeNotifierProvider(
-          create: (_) => RecommendationsProvider('6891009147d76ee5e1b22647'),
-          child: RecommendationOrdersPage(),
-        ),
         ChangeNotifierProvider(create: (_) => ReviewsProvider()),
         ChangeNotifierProvider(
-          create: (_) =>
-              SellerOrdersProvider('68761cf7f92107b8288158c2')..fetchOrders(),
+          create: (_) {
+            final uid = auth.userId ?? '';
+            return RecommendationsProvider(uid);
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (_) => SellerOrdersProvider()..fetchOrders(),
         ),
       ],
       child: const MyApp(),
@@ -56,7 +56,7 @@ class MyApp extends StatelessWidget {
       title: 'PartTec',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: SplashScreen(),
+      home: const AuthPage(),
     );
   }
 }

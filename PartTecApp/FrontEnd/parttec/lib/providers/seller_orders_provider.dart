@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../utils/app_settings.dart';
+import '../utils/session_store.dart';
 
 class SellerOrdersProvider with ChangeNotifier {
-  String sellerId;
-  SellerOrdersProvider(this.sellerId);
+  String? _sellerId;
 
   List<Map<String, dynamic>> _orders = [];
   double totalAmount = 0;
@@ -15,23 +15,27 @@ class SellerOrdersProvider with ChangeNotifier {
   List<Map<String, dynamic>> get orders => _orders;
 
   Future<void> fetchOrders() async {
+    _sellerId ??= await SessionStore.userId();
+    print('Seller ID: $_sellerId');
+    if (_sellerId == null || _sellerId!.isEmpty) {
+      error = 'لم يتم العثور على معرف البائع';
+      notifyListeners();
+      return;
+    }
+
     isLoading = true;
     error = null;
     notifyListeners();
 
-    final url = Uri.parse('${AppSettings.serverurl}/order/getOrderForSellrer/$sellerId');
+    final url = Uri.parse('${AppSettings.serverurl}/order/getOrderForSellrer/$_sellerId');
 
     try {
       final response = await http.get(url);
-      final raw = response.body;
-      final data = jsonDecode(raw);
+      final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data is Map && data['success'] == true) {
         final items = (data['orders'] as List?) ?? [];
-        _orders = items
-            .whereType<Map>()
-            .map((item) => Map<String, dynamic>.from(item))
-            .toList();
+        _orders = items.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
         totalAmount = (data['totalAmount'] as num?)?.toDouble() ?? 0.0;
       } else {
         error = (data is Map ? data['message']?.toString() : null) ?? 'فشل تحميل الطلبات';
