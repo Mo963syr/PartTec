@@ -10,13 +10,21 @@ class PartReviewsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _CommentComposer(partId: partId),
-        const SizedBox(height: 8),
-        _CommentsList(partId: partId),
-      ],
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final insideScrollView = Scrollable.of(context) != null;
+
+    // استخدم Padding عادي لتقليل إعادة البناء العنيفة
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min, // مهم داخل Scroll/كرت
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _CommentsList(partId: partId, insideScrollView: insideScrollView),
+          const SizedBox(height: 8),
+          SafeArea(top: false, child: _CommentComposer(partId: partId)),
+        ],
+      ),
     );
   }
 }
@@ -43,17 +51,37 @@ class _CommentComposer extends StatefulWidget {
 
 class _CommentComposerState extends State<_CommentComposer> {
   final _ctrl = SafeTextController();
-
+  final _focus = FocusNode(debugLabel: 'comment_field_focus');
   bool _sending = false;
+
+  // حارس تركيز يمنع فقدانه فور اللمس
+  bool _armKeepFocus = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(() {
+      // إذا فقد التركيز مباشرة بعد محاولة أخذه، أعد طلبه مرة واحدة
+      if (_armKeepFocus && !_focus.hasFocus) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _focus.requestFocus();
+        });
+        // نفك التسليح بعد المحاولة كي لا ندخل حلقة
+        _armKeepFocus = false;
+      }
+    });
+  }
 
   @override
   void dispose() {
+    _focus.dispose();
     _ctrl.dispose();
     super.dispose();
   }
 
   Future<void> _send() async {
     if (_sending) return;
+
     final content = _ctrl.text.trim();
     if (content.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -61,6 +89,7 @@ class _CommentComposerState extends State<_CommentComposer> {
       );
       return;
     }
+
     final uid = context.read<AuthProvider>().userId ?? '';
     if (uid.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -68,19 +97,24 @@ class _CommentComposerState extends State<_CommentComposer> {
       );
       return;
     }
+
     setState(() => _sending = true);
     final ok = await context.read<ReviewsProvider>().addComment(
-      partId: widget.partId,
-      userId: uid,
-      content: content,
-    );
+          partId: widget.partId,
+          userId: uid,
+          content: content,
+        );
+    if (!mounted) return;
     setState(() => _sending = false);
+
     if (ok) {
-      _ctrl.clear();
-      FocusScope.of(context).unfocus();
+      _ctrl.clearSafely();
+      _armKeepFocus = false;
+      _focus.unfocus();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('تم حفظ تعليقك ✅')),
       );
+      context.read<ReviewsProvider>().fetchPartComments(widget.partId);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('فشل حفظ التعليق ❌')),
@@ -91,9 +125,11 @@ class _CommentComposerState extends State<_CommentComposer> {
   @override
   Widget build(BuildContext context) {
     return Card(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('أضف تعليقك:'),
@@ -105,13 +141,24 @@ class _CommentComposerState extends State<_CommentComposer> {
                 color: Colors.white,
               ),
               child: CupertinoTextField(
+                key: const ValueKey('comment_field_key'), // يحافظ على الهوية
+                focusNode: _focus,
                 controller: _ctrl,
-                maxLines: 2,
+                maxLines: 3,
+                minLines: 1,
                 padding: const EdgeInsets.all(12),
                 placeholder: 'اكتب تعليقًا ...',
                 textInputAction: TextInputAction.newline,
                 keyboardType: TextInputType.multiline,
                 clearButtonMode: OverlayVisibilityMode.never,
+                onTap: () {
+                  // نسلّح الحارس ثم نطلب التركيز — لو فقد فورًا سيعيد طلبه
+                  _armKeepFocus = true;
+                  if (!_focus.hasFocus) _focus.requestFocus();
+                },
+                // بعض القنوات تدعم onTapOutside على CupertinoTextField
+                // نتجاهلها كي لا تُغلق الكيبورد تلقائياً
+                onTapOutside: (_) {}, // يتطلب Flutter حديث؛ إن لم يدعم تجاهله
               ),
             ),
             const SizedBox(height: 8),
@@ -129,7 +176,11 @@ class _CommentComposerState extends State<_CommentComposer> {
 
 class _CommentsList extends StatefulWidget {
   final String partId;
-  const _CommentsList({required this.partId});
+  final bool insideScrollView;
+  const _CommentsList({
+    required this.partId,
+    required this.insideScrollView,
+  });
 
   @override
   State<_CommentsList> createState() => _CommentsListState();
@@ -154,36 +205,86 @@ class _CommentsListState extends State<_CommentsList> {
     return Consumer<ReviewsProvider>(
       builder: (_, p, __) {
         if (p.isLoading && p.comments.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
+          return const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Center(child: CircularProgressIndicator()),
+          );
         }
         if (p.comments.isEmpty) {
-          return const Text('لا توجد تعليقات بعد.');
+          return const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Text('لا توجد تعليقات بعد.'),
+          );
         }
-        return ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: p.comments.length,
-          separatorBuilder: (_, __) => const Divider(height: 8),
-          itemBuilder: (_, i) {
-            final c = p.comments[i];
-            return ListTile(
-              leading: const Icon(Icons.person),
-              title: Text(
-                c.userName,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(c.content),
-                  Text(
-                    '${c.createdAt}',
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ],
-              ),
-            );
-          },
+
+        if (widget.insideScrollView) {
+          // داخل Scroll خارجي → نستخدم Column بدل ListView لتفادي unbounded
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(p.comments.length, (i) {
+                final c = p.comments[i];
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.person),
+                      title: Text(
+                        c.userName,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(c.content),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${c.createdAt}',
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (i != p.comments.length - 1) const Divider(height: 8),
+                  ],
+                );
+              }),
+            ),
+          );
+        }
+
+        // خارج Scroll → ListView بارتفاع معروف
+        return SizedBox(
+          height: 260,
+          child: ListView.separated(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+            itemCount: p.comments.length,
+            separatorBuilder: (_, __) => const Divider(height: 8),
+            itemBuilder: (_, i) {
+              final c = p.comments[i];
+              return ListTile(
+                leading: const Icon(Icons.person),
+                title: Text(
+                  c.userName,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(c.content),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${c.createdAt}',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         );
       },
     );

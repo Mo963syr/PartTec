@@ -26,6 +26,8 @@ class PartDetailsPage extends StatelessWidget {
             const GradientBackground(child: SizedBox.expand()),
             CustomScrollView(
               physics: const BouncingScrollPhysics(),
+              keyboardDismissBehavior:
+                  ScrollViewKeyboardDismissBehavior.manual, // مهم
               slivers: [
                 SliverAppBar(
                   pinned: true,
@@ -47,7 +49,8 @@ class PartDetailsPage extends StatelessWidget {
                         ? Image.network(imageUrl, fit: BoxFit.cover)
                         : Container(
                             color: Colors.grey[300],
-                            child: const Icon(Icons.image, size: 100)),
+                            child: const Icon(Icons.image, size: 100),
+                          ),
                   ),
                 ),
                 SliverToBoxAdapter(
@@ -97,21 +100,25 @@ class PartDetailsPage extends StatelessWidget {
                                           size: 18, color: AppColors.primary),
                                       const SizedBox(width: 6),
                                       Expanded(
-                                          child: Text(
-                                              "تسلسلي: ${part.serialNumber}")),
+                                        child: Text(
+                                            "تسلسلي: ${part.serialNumber}"),
+                                      ),
                                       IconButton(
                                         icon: const Icon(Icons.copy, size: 18),
                                         onPressed: () async {
                                           await Clipboard.setData(ClipboardData(
                                               text: part.serialNumber!));
                                           ScaffoldMessenger.of(context)
-                                              .showSnackBar(const SnackBar(
-                                                  content: Text(
-                                                      "تم نسخ الرقم التسلسلي")));
+                                              .showSnackBar(
+                                            const SnackBar(
+                                              content:
+                                                  Text("تم نسخ الرقم التسلسلي"),
+                                            ),
+                                          );
                                         },
-                                      )
+                                      ),
                                     ],
-                                  )
+                                  ),
                               ],
                             ),
                           ),
@@ -125,11 +132,12 @@ class PartDetailsPage extends StatelessWidget {
                                 _buildDetailRow(Icons.factory, "الماركة",
                                     part.manufacturer),
                                 _buildDetailRow(
-                                    Icons.event,
-                                    "سنة الصنع",
-                                    part.year != 0
-                                        ? part.year.toString()
-                                        : "غير محدد"),
+                                  Icons.event,
+                                  "سنة الصنع",
+                                  part.year != 0
+                                      ? part.year.toString()
+                                      : "غير محدد",
+                                ),
                                 _buildDetailRow(Icons.local_gas_station,
                                     "نوع الوقود", part.fuelType),
                                 _buildDetailRow(
@@ -145,6 +153,8 @@ class PartDetailsPage extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 16),
+
+                          // ===== التقييمات (النسخة الثابتة للـFuture) =====
                           _GlassCard(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,29 +164,11 @@ class PartDetailsPage extends StatelessWidget {
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 8),
-                                FutureBuilder<String?>(
-                                  future: SessionStore.userId(),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.waiting) {
-                                      return const Center(
-                                          child: Padding(
-                                              padding: EdgeInsets.all(16.0),
-                                              child: CircularProgressIndicator(
-                                                  strokeWidth: 2)));
-                                    }
-                                    final uid = snapshot.data;
-                                    if (uid == null || uid.isEmpty) {
-                                      return const Text(
-                                          "⚠️ الرجاء تسجيل الدخول لعرض/إضافة التقييمات.");
-                                    }
-                                    return PartReviewsSection(
-                                        partId: part.id);
-                                  },
-                                ),
+                                _ReviewsGate(partId: part.id), // ← هنا التغيير
                               ],
                             ),
                           ),
+
                           const SizedBox(height: 100),
                         ],
                       ),
@@ -224,7 +216,7 @@ class _GlassCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
         ],
       ),
       child: child,
@@ -244,9 +236,9 @@ class _CircleIconButton extends StatelessWidget {
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: Icon(icon, color: Colors.white),
+        child: const Padding(
+          padding: EdgeInsets.all(10.0),
+          child: Icon(Icons.arrow_back, color: Colors.white),
         ),
       ),
     );
@@ -262,10 +254,12 @@ class _BottomAddToCart extends StatelessWidget {
       onPressed: () async {
         final success =
             await context.read<CartProvider>().addToCartToServer(part);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(success ? "تمت الإضافة إلى السلة" : "فشلت الإضافة"),
-          backgroundColor: success ? Colors.green : Colors.red,
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(success ? "تمت الإضافة إلى السلة" : "فشلت الإضافة"),
+            backgroundColor: success ? Colors.green : Colors.red,
+          ),
+        );
       },
       icon: const Icon(Icons.add_shopping_cart),
       label: const Text("إضافة إلى السلة"),
@@ -274,6 +268,55 @@ class _BottomAddToCart extends StatelessWidget {
         minimumSize: const Size.fromHeight(54),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
+    );
+  }
+}
+
+/// ======== هذا الودجت الصغير يخزّن الـFuture مرة واحدة ========
+class _ReviewsGate extends StatefulWidget {
+  final String partId;
+  const _ReviewsGate({Key? key, required this.partId}) : super(key: key);
+
+  @override
+  State<_ReviewsGate> createState() => _ReviewsGateState();
+}
+
+class _ReviewsGateState extends State<_ReviewsGate>
+    with AutomaticKeepAliveClientMixin {
+  late final Future<String?> _uidFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _uidFuture = SessionStore.userId(); // ← تُنشأ مرة واحدة فقط
+  }
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return FutureBuilder<String?>(
+      future: _uidFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          );
+        }
+        final uid = snapshot.data;
+        if (uid == null || uid.isEmpty) {
+          return const Text("⚠️ الرجاء تسجيل الدخول لعرض/إضافة التقييمات.");
+        }
+        return PartReviewsSection(
+          key: const ValueKey('part_reviews_section_key'),
+          partId: widget.partId,
+        );
+      },
     );
   }
 }
