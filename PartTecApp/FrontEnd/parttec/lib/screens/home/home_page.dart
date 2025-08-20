@@ -145,7 +145,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              // تنسيق أجمل للبحث
                               Padding(
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 16),
@@ -156,7 +155,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              // زر عامة/خاصة بشكل Segmented Control خفيف
                               Padding(
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 16),
