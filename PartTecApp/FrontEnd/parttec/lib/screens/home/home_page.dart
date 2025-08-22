@@ -303,7 +303,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           const BorderRadius.vertical(top: Radius.circular(24)),
                       child: Material(
                         color: Colors.white,
-                        child: const MyOrdersBottomSheetView(),
+                        child: const MyOrdersPage(),
                       ),
                     ),
                   ),

@@ -1,4 +1,3 @@
-// lib/providers/order_provider.dart
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -18,6 +17,14 @@ class OrderProvider with ChangeNotifier {
   String? _lastError;
 
   String? _userId;
+
+
+  final Map<String, List<Map<String, dynamic>>> _offersByOrderId = {};
+
+
+  final Set<String> _loadingOffersOrderIds = {};
+
+  String? offersError;
 
   bool get isSubmitting => _isSubmitting;
   String? get lastOrderId => _lastOrderId;
@@ -51,6 +58,7 @@ class OrderProvider with ChangeNotifier {
     return MediaType('image', 'jpeg');
   }
 
+  // ───────────────────────── Orders: إرسال طلب عام ─────────────────────────
   Future<void> sendOrder(List<double> coordinates) async {
     isLoading = true;
     error = null;
@@ -92,6 +100,7 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
+  // ───────────────────────── Orders: طلب محدد ─────────────────────────
   Future<bool> createSpecificOrder({
     required String brandCode,
     required String partName,
@@ -124,7 +133,6 @@ class OrderProvider with ChangeNotifier {
         req.headers['Authorization'] = 'Bearer $authToken';
       }
 
-
       req.fields.addAll({
         'manufacturer': brandCode.toLowerCase(),
         'name': partName,
@@ -134,7 +142,6 @@ class OrderProvider with ChangeNotifier {
         'serialNumber': serialNumber,
         if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
       });
-
 
       if (image != null) {
         req.files.add(
@@ -172,7 +179,84 @@ class OrderProvider with ChangeNotifier {
     return false;
   }
 
-  // ───────────────────────── State utils ─────────────────────────
+  bool isLoadingOffers(String orderId) => _loadingOffersOrderIds.contains(orderId);
+
+  List<Map<String, dynamic>> offersFor(String orderId) =>
+      _offersByOrderId[orderId] ?? const [];
+
+  Future<void> fetchOffersForOrder(String orderId) async {
+    if (orderId.isEmpty) return;
+    if (_loadingOffersOrderIds.contains(orderId)) return;
+
+    _loadingOffersOrderIds.add(orderId);
+    offersError = null;
+    notifyListeners();
+
+    try {
+      final uri =
+      Uri.parse('${AppSettings.serverurl}/order/recommendation-offer/$orderId');
+      final res = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      final data = _decodeToMapString(res.body);
+
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        final list = (data['offers'] as List?) ?? const [];
+        _offersByOrderId[orderId] = list
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      } else {
+        offersError = 'فشل جلب العروض: ${res.statusCode} ${res.body}';
+      }
+    } catch (e) {
+      offersError = 'خطأ اتصال أثناء جلب العروض: $e';
+    } finally {
+      _loadingOffersOrderIds.remove(orderId);
+      notifyListeners();
+    }
+  }
+
+  Future<bool> addOfferToCart(String offerId) async {
+    final uid = await _getUserId();
+    if (uid == null || uid.isEmpty) {
+      offersError = 'لم يتم العثور على userId. الرجاء تسجيل الدخول.';
+      notifyListeners();
+      return false;
+    }
+
+    try {
+      final uri = Uri.parse('${AppSettings.serverurl}/cart/add-offer');
+      final res = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'userId': uid,
+          'offerId': offerId,
+        }),
+      );
+
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        return true;
+      } else {
+        offersError = 'فشل إضافة العرض للسلة: ${res.statusCode} ${res.body}';
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      offersError = 'خطأ اتصال أثناء إضافة العرض: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+
   void reset() {
     isLoading = false;
     error = null;
@@ -180,9 +264,13 @@ class OrderProvider with ChangeNotifier {
     _isSubmitting = false;
     _lastOrderId = null;
     _lastError = null;
+
+    _offersByOrderId.clear();
+    _loadingOffersOrderIds.clear();
+    offersError = null;
+
     notifyListeners();
   }
-
 
   void resetCachedUser() {
     _userId = null;
