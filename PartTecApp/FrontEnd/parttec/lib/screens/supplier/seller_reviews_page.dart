@@ -27,7 +27,7 @@ class _SellerReviewsPageState extends State<SellerReviewsPage> {
     setState(() => _loading = true);
 
     try {
-      // 1️⃣ جلب المعرف من الذاكرة
+
       final id = await SessionStore.userId();
       if (id == null) {
         setState(() {
@@ -39,7 +39,7 @@ class _SellerReviewsPageState extends State<SellerReviewsPage> {
 
       _sellerId = id;
 
-      // 2️⃣ جلب التقييمات من السيرفر
+
       final res = await http.get(
         Uri.parse('${AppSettings.serverurl}/reviews/seller/$id'),
       );

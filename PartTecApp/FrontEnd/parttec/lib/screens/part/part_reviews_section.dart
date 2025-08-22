@@ -218,7 +218,7 @@ class _CommentsListState extends State<_CommentsList> {
         }
 
         if (widget.insideScrollView) {
-          // داخل Scroll خارجي → نستخدم Column بدل ListView لتفادي unbounded
+
           return Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
             child: Column(
@@ -256,7 +256,7 @@ class _CommentsListState extends State<_CommentsList> {
           );
         }
 
-        // خارج Scroll → ListView بارتفاع معروف
+
         return SizedBox(
           height: 260,
           child: ListView.separated(
