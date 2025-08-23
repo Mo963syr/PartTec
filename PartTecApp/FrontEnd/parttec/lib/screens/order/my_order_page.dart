@@ -339,15 +339,15 @@ class _OrderCard extends StatelessWidget {
                           onPressed: () async {
                             final ok = await context
                                 .read<OrderProvider>()
-                                .addOfferToCart(offerId);
+                                .addOfferToCart(offerId, orderId); // ✅ تمرير orderId
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                               content: Text(ok
                                   ? '✅ تمت إضافة العرض إلى السلة'
-                                  : (context.read<OrderProvider>().offersError ??
-                                  'فشل إضافة العرض')),
+                                  : (context.read<OrderProvider>().offersError ?? 'فشل إضافة العرض')),
                             ));
                           },
+
                           child: const Text('إضافة للسلة'),
                         ),
                       );
