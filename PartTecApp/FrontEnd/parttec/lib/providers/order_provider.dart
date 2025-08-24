@@ -221,40 +221,29 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> addOfferToCart(String offerId) async {
-    final uid = await _getUserId();
-    if (uid == null || uid.isEmpty) {
-      offersError = 'لم يتم العثور على userId. الرجاء تسجيل الدخول.';
-      notifyListeners();
-      return false;
-    }
-
+  Future<bool> addOfferToCart(String offerId, String orderId) async {
+    final url = Uri.parse('${AppSettings.serverurl}/order/apply-offer');
     try {
-      final uri = Uri.parse('${AppSettings.serverurl}/cart/add-offer');
       final res = await http.post(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        url,
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'userId': uid,
-          'offerId': offerId,
+          'recommendationOfferId': offerId,
+          'orderId': orderId,
         }),
       );
-
-      if (res.statusCode >= 200 && res.statusCode < 300) {
+      if (res.statusCode == 200) {
         return true;
       } else {
-        offersError = 'فشل إضافة العرض للسلة: ${res.statusCode} ${res.body}';
-        notifyListeners();
+        offersError = 'فشل تنفيذ الطلب: ${res.statusCode}';
         return false;
       }
     } catch (e) {
-      offersError = 'خطأ اتصال أثناء إضافة العرض: $e';
-      notifyListeners();
+      offersError = 'خطأ أثناء الاتصال بالخادم: $e';
       return false;
     }
   }
+
 
 
   void reset() {
