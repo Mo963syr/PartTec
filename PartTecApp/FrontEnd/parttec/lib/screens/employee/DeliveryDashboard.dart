@@ -21,12 +21,14 @@ class DeliveryDashboard extends StatelessWidget {
           childAspectRatio: 3 / 2,
           children: [
             _buildCard(
-              icon: Icons.check_circle,
-              title: 'الطلبات المؤكدة',
+              icon: Icons.local_shipping_outlined,
+              title: 'طلبات التوصيل',
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => DeliveryOrdersPage()),
+                  MaterialPageRoute(
+                    builder: (_) => DeliveryOrdersPage(),
+                  ),
                 );
               },
             ),

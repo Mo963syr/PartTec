@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parttec/screens/employee/DeliveryDashboard.dart';
 import 'package:provider/provider.dart';
 
 import 'package:parttec/providers/recommendations_provider.dart';
@@ -12,6 +13,7 @@ import 'providers/seller_orders_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/reviews_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/delivery_orders_provider.dart';
 
 import 'theme/app_theme.dart';
 import 'screens/auth/auth_page.dart';
@@ -41,6 +43,9 @@ void main() async {
         ChangeNotifierProvider(
           create: (_) => SellerOrdersProvider()..fetchOrders(),
         ),
+        ChangeNotifierProvider(
+          create: (_) => DeliveryOrdersProvider(),
+        ),
       ],
       child: const MyApp(),
     ),
@@ -56,7 +61,7 @@ class MyApp extends StatelessWidget {
       title: 'PartTec',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: const AuthPage(),
+      home: const DeliveryDashboard(),
     );
   }
 }
