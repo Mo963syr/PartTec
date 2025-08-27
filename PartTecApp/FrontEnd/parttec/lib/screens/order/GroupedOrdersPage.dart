@@ -17,6 +17,7 @@ class _GroupedOrdersPageState extends State<GroupedOrdersPage>
     'على الطريق',
     'تم التوصيل',
     'ملغي',
+    'مستلمة'
   ];
 
   @override

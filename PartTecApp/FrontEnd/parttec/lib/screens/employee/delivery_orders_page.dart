@@ -95,88 +95,31 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
       ),
     );
   }
-
   Widget _buildOrderCard(
       BuildContext context,
       Map<String, dynamic> order,
       DeliveryOrdersProvider provider,
       ) {
     final status = (order['status'] ?? '').toString();
-
     final String orderId = (order['orderId'] ?? order['_id'] ?? '').toString();
 
-    final customer = (order['customer'] as Map?) ?? {};
-    final seller = (order['seller'] as Map?) ?? {};
-    final String customerName =
-    (customer['name'] ?? order['customerName'] ?? 'غير محدد').toString();
-    final String sellerName =
-    (seller['name'] ?? order['sellerName'] ?? 'غير محدد').toString();
+    // القطعة الأولى
+    final part = order['part'] is Map<String, dynamic> ? order['part'] as Map : {};
+    final hasPart = part.isNotEmpty;
 
-    String partName = '';
-    if (order.containsKey('partName')) {
-      partName = order['partName'].toString();
-    } else if (order.containsKey('items')) {
-      final items = order['items'] as List?;
-      if (items != null && items.isNotEmpty) {
-        final it = items.first;
-        if (it is Map && it['name'] != null) {
-          partName = it['name'].toString();
-        }
-      }
-    }
-    if (partName.isEmpty) partName = 'قطعة غير معروفة';
-
-    String customerLocationStr = '';
-    String sellerLocationStr = '';
+    // القطعة الثانية
+    final part1 = order['part1'] is Map<String, dynamic> ? order['part1'] as Map : {};
+    final hasPart1 = part1.isNotEmpty;
 
     // الزبون
-    final customerLocation =
-        customer['location'] ?? order['customerLocation'] ?? order['location'];
-    if (customerLocation is Map) {
-      final lat = (customerLocation['lat'] as num?)?.toDouble();
-      final lng = (customerLocation['lng'] as num?)?.toDouble();
-      if (lat != null && lng != null) {
-        customerLocationStr = '($lat, $lng)';
-      } else if (customerLocation['address'] != null) {
-        customerLocationStr = customerLocation['address'].toString();
-      }
-    } else if (customerLocation != null) {
-      customerLocationStr = customerLocation.toString();
-    }
+    final customer = order['customer'] as Map? ?? {};
+    final customerName = customer['name']?.toString() ?? '';
+    final customerPhone = customer['phoneNumber']?.toString() ?? customer['phone']?.toString() ?? '';
 
     // البائع
-    final sellerLocation =
-        seller['location'] ?? order['sellerLocation'] ?? order['location'];
-    if (sellerLocation is Map) {
-      final lat = (sellerLocation['lat'] as num?)?.toDouble();
-      final lng = (sellerLocation['lng'] as num?)?.toDouble();
-      if (lat != null && lng != null) {
-        sellerLocationStr = '($lat, $lng)';
-      } else if (sellerLocation['address'] != null) {
-        sellerLocationStr = sellerLocation['address'].toString();
-      }
-    } else if (sellerLocation != null) {
-      sellerLocationStr = sellerLocation.toString();
-    }
-
-    // الهواتف
-    final String customerPhone = (customer['phone'] ??
-        customer['phoneNumber'] ??
-        order['customerPhone'] ??
-        '')
-        .toString();
-    final String sellerPhone =
-    (seller['phone'] ?? seller['phoneNumber'] ?? order['sellerPhone'] ?? '')
-        .toString();
-
-    // إحداثيات للخريطة
-    double? mapLat;
-    double? mapLng;
-    final locationForMap = customer['location'] ?? customerLocation;
-    if (locationForMap is Map) {
-      mapLat = (locationForMap['lat'] as num?)?.toDouble();
-      mapLng = (locationForMap['lng'] as num?)?.toDouble();
-    }
+    final seller = order['seller'] as Map? ?? {};
+    final sellerName = seller['name']?.toString() ?? '';
+    final sellerPhone = seller['phoneNumber']?.toString() ?? seller['phone']?.toString() ?? '';
 
     return Card(
       margin: const EdgeInsets.all(12),
@@ -186,131 +129,97 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              partName,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text('الزبون: $customerName'),
-            Text('البائع: $sellerName'),
-            if (customerLocationStr.isNotEmpty)
-              Text('موقع الزبون: $customerLocationStr'),
-            if (sellerLocationStr.isNotEmpty)
-              Text('موقع البائع: $sellerLocationStr'),
+            // القطعة الأولى
+            if (hasPart) ...[
+              Text(
+                part['name']?.toString() ?? '',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              if (part['manufacturer'] != null) Text('المصنّع: ${part['manufacturer']}'),
+              if (part['price'] != null) Text('السعر: ${part['price']}'),
+              const Divider(),
+            ],
+
+            // القطعة الثانية
+            if (hasPart1) ...[
+              Text(
+                part1['name']?.toString() ?? '',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              if (part1['manufacturer'] != null) Text('المصنّع: ${part1['manufacturer']}'),
+              if (part1['price'] != null) Text('السعر: ${part1['price']}'),
+              const Divider(),
+            ],
+
+            if (customerName.isNotEmpty) Text('الزبون: $customerName'),
             if (customerPhone.isNotEmpty) Text('هاتف الزبون: $customerPhone'),
+            if (sellerName.isNotEmpty) Text('البائع: $sellerName'),
             if (sellerPhone.isNotEmpty) Text('هاتف البائع: $sellerPhone'),
+
             const SizedBox(height: 8),
             Row(
               children: [
-                if (mapLat != null && mapLng != null)
-                  IconButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => DeliveryMapPage(
-                            lat: mapLat!,
-                            lng: mapLng!,
-                            customerName: customerName,
-                          ),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.map_outlined, color: Colors.teal),
-                  ),
                 const Spacer(),
-
-                // الإجراءات حسب حالة الطلب
                 if (status == 'مؤكد') ...[
                   ElevatedButton(
                     onPressed: () {
-                      // إدخال سعر التوصيل ثم قبول الطلب → مستلمة
+                      double? price;
                       showDialog(
                         context: context,
-                        builder: (context) {
-                          double? price;
-                          return AlertDialog(
-                            title: const Text('إدخال سعر التوصيل'),
-                            content: TextField(
-                              keyboardType:
-                              const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
-                              decoration: const InputDecoration(
-                                labelText: 'السعر بالوحدة المحلية',
-                              ),
-                              onChanged: (value) {
-                                price = double.tryParse(value);
-                              },
+                        builder: (context) => AlertDialog(
+                          title: const Text('إدخال سعر التوصيل'),
+                          content: TextField(
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: const InputDecoration(labelText: 'السعر بالوحدة المحلية'),
+                            onChanged: (value) => price = double.tryParse(value),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('إلغاء'),
                             ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text('إلغاء'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  if (price != null && price! > 0) {
-                                    provider.updateStatus(
-                                      orderId,
-                                      'مستلمة',
-                                      deliveryPrice: price,
-                                      context: context,
-                                    );
-                                    Navigator.pop(context);
-                                  }
-                                },
-                                child: const Text('حفظ'),
-                              ),
-                            ],
-                          );
-                        },
+                            TextButton(
+                              onPressed: () {
+                                if (price != null && price! > 0) {
+                                  provider.updateStatus(
+                                    orderId,
+                                    'مستلمة',
+                                    deliveryPrice: price,
+                                    context: context,
+                                  );
+                                  Navigator.pop(context);
+                                }
+                              },
+                              child: const Text('حفظ'),
+                            ),
+                          ],
+                        ),
                       );
                     },
                     child: const Text('استلام الطلب'),
                   ),
                   const SizedBox(width: 8),
                   OutlinedButton(
-                    onPressed: () {
-                      provider.updateStatus(
-                        orderId,
-                        'ملغي',
-                        context: context,
-                      );
-                    },
+                    onPressed: () => provider.updateStatus(orderId, 'ملغي', context: context),
                     child: const Text('إلغاء'),
                   ),
                 ] else if (status == 'مستلمة') ...[
                   ElevatedButton(
-                    onPressed: () {
-                      // بدء التوصيل → على الطريق
-                      provider.updateStatus(
-                        orderId,
-                        'على الطريق',
-                        context: context,
-                      );
-                    },
+                    onPressed: () => provider.updateStatus(orderId, 'على الطريق', context: context),
                     child: const Text('بدء التوصيل'),
                   ),
                 ] else if (status == 'على الطريق') ...[
                   ElevatedButton(
-                    onPressed: () {
-                      provider.updateStatus(
-                        orderId,
-                        'تم التوصيل',
-                        context: context,
-                      );
-                    },
+                    onPressed: () => provider.updateStatus(orderId, 'تم التوصيل', context: context),
                     child: const Text('تم التوصيل'),
                   ),
-                ] else ...[
-                  Container(),
-                ],
+                ]
               ],
             ),
           ],
         ),
       ),
     );
-  }
-}
+  }}

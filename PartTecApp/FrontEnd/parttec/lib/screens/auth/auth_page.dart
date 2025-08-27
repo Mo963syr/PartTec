@@ -152,7 +152,7 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
                           builder: (context, auth, _) {
                             return Card(
                               color: Colors.white.withOpacity(0.98),
-                              elevation: 10,
+                              elevation: 6,
                               shadowColor: Colors.black12,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                               child: Padding(

@@ -29,6 +29,7 @@ class DeliveryOrdersProvider with ChangeNotifier {
     _lastStatus = status;
     notifyListeners();
 
+
     try {
       final driverId = await _getDriverId();
       if (driverId == null || driverId.isEmpty) {
@@ -47,6 +48,7 @@ class DeliveryOrdersProvider with ChangeNotifier {
 
       final bodyText = utf8.decode(response.bodyBytes);
       debugPrint('GET $uri -> ${response.statusCode}');
+      debugPrint('📦 Response Body: $bodyText');
       debugPrint('Body (first 200): ${bodyText.substring(0, bodyText.length > 200 ? 200 : bodyText.length)}');
 
       if (response.statusCode != 200) {
