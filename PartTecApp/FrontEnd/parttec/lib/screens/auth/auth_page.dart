@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../theme/app_theme.dart';
 import '../../widgets/ui_kit.dart';
+import '../employee/DeliveryDashboard.dart';
 import '../home/home_page.dart';
 import '../location/ChooseDestinationPage.dart';
 import '../../providers/auth_provider.dart';
@@ -62,8 +63,8 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
       case 'coordinator':
         target = const CoordinatorDashboardPage();
         break;
-      case 'employee':
-        target = const EmployeeDashboardPage();
+      case 'delevery':
+        target = const DeliveryDashboard();
         break;
       default:
         target = ChooseDestinationPage();

@@ -62,7 +62,7 @@ class MyApp extends StatelessWidget {
       title: 'PartTec',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: const DeliveryDashboard(),
+      home: const AuthPage(),
     );
   }
 }

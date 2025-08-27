@@ -15,6 +15,7 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
+  // ترتيب الحالات حسب تبويباتك
   final List<String> _statuses = const ['مؤكد', 'على الطريق', 'مستلمة'];
 
   @override
@@ -22,8 +23,18 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
     super.initState();
     _tabController = TabController(length: _statuses.length, vsync: this);
 
+    // تحميل تبويب البداية
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<DeliveryOrdersProvider>().fetchOrders();
+      final initialStatus = _statuses[_tabController.index];
+      context.read<DeliveryOrdersProvider>().fetchOrders(initialStatus);
+    });
+
+    // إعادة الجلب عند تغيير التبويب
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        final s = _statuses[_tabController.index];
+        context.read<DeliveryOrdersProvider>().fetchOrders(s);
+      }
     });
   }
 
@@ -48,39 +59,48 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
       body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : provider.error != null
-              ? Center(child: Text(provider.error!))
-              : TabBarView(
-                  controller: _tabController,
-                  children: _statuses.map((status) {
-                    final filtered = provider.orders
-                        .where((o) => (o['status'] ?? '') == status)
-                        .toList();
-                    if (filtered.isEmpty) {
-                      return Center(
-                          child: Text('لا توجد طلبات بحالة "$status"'));
-                    }
-                    return RefreshIndicator(
-                      onRefresh: () async {
-                        await provider.fetchOrders();
-                      },
-                      child: ListView.builder(
-                        itemCount: filtered.length,
-                        itemBuilder: (context, index) {
-                          final order = filtered[index];
-                          return _buildOrderCard(context, order, provider);
-                        },
-                      ),
-                    );
-                  }).toList(),
-                ),
+          ? Center(child: Text(provider.error!))
+          : TabBarView(
+        controller: _tabController,
+        children: _statuses.map((status) {
+          // ملاحظة: provider.orders يحوي آخر نتيجة للحالة الحالية فقط
+          // لذا عند فتح تبويب جديد سيتم الجلب عبر المستمع أعلاه
+          final filtered = provider.orders
+              .where((o) => (o['status'] ?? '') == status)
+              .toList();
+
+          if (filtered.isEmpty) {
+            return RefreshIndicator(
+              onRefresh: () => provider.fetchOrders(status),
+              child: ListView(
+                children: [
+                  const SizedBox(height: 120),
+                  Center(child: Text('لا توجد طلبات بحالة "$status"')),
+                ],
+              ),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: () => provider.fetchOrders(status),
+            child: ListView.builder(
+              itemCount: filtered.length,
+              itemBuilder: (context, index) {
+                final order = filtered[index];
+                return _buildOrderCard(context, order, provider);
+              },
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 
   Widget _buildOrderCard(
-    BuildContext context,
-    Map<String, dynamic> order,
-    DeliveryOrdersProvider provider,
-  ) {
+      BuildContext context,
+      Map<String, dynamic> order,
+      DeliveryOrdersProvider provider,
+      ) {
     final status = (order['status'] ?? '').toString();
 
     final String orderId = (order['orderId'] ?? order['_id'] ?? '').toString();
@@ -88,13 +108,9 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
     final customer = (order['customer'] as Map?) ?? {};
     final seller = (order['seller'] as Map?) ?? {};
     final String customerName =
-        (customer['name'] ?? order['customerName'] ?? 'غير محدد').toString();
+    (customer['name'] ?? order['customerName'] ?? 'غير محدد').toString();
     final String sellerName =
-        (seller['name'] ?? order['sellerName'] ?? 'غير محدد').toString();
-    final String customerId =
-        (customer['_id'] ?? order['customerId'] ?? '').toString();
-    final String sellerId =
-        (seller['_id'] ?? order['sellerId'] ?? '').toString();
+    (seller['name'] ?? order['sellerName'] ?? 'غير محدد').toString();
 
     String partName = '';
     if (order.containsKey('partName')) {
@@ -112,6 +128,7 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
 
     String customerLocationStr = '';
     String sellerLocationStr = '';
+
     // الزبون
     final customerLocation =
         customer['location'] ?? order['customerLocation'] ?? order['location'];
@@ -126,6 +143,7 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
     } else if (customerLocation != null) {
       customerLocationStr = customerLocation.toString();
     }
+
     // البائع
     final sellerLocation =
         seller['location'] ?? order['sellerLocation'] ?? order['location'];
@@ -141,17 +159,17 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
       sellerLocationStr = sellerLocation.toString();
     }
 
-    // أرقام الهواتف
+    // الهواتف
     final String customerPhone = (customer['phone'] ??
-            customer['phoneNumber'] ??
-            order['customerPhone'] ??
-            '')
+        customer['phoneNumber'] ??
+        order['customerPhone'] ??
+        '')
         .toString();
     final String sellerPhone =
-        (seller['phone'] ?? seller['phoneNumber'] ?? order['sellerPhone'] ?? '')
-            .toString();
+    (seller['phone'] ?? seller['phoneNumber'] ?? order['sellerPhone'] ?? '')
+        .toString();
 
-    // محاولة استخراج إحداثيات لتشغيل صفحة الخريطة
+    // إحداثيات للخريطة
     double? mapLat;
     double? mapLng;
     final locationForMap = customer['location'] ?? customerLocation;
@@ -184,7 +202,6 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
             const SizedBox(height: 8),
             Row(
               children: [
-                // زر عرض الخريطة إن أمكن
                 if (mapLat != null && mapLng != null)
                   IconButton(
                     onPressed: () {
@@ -202,11 +219,12 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
                     icon: const Icon(Icons.map_outlined, color: Colors.teal),
                   ),
                 const Spacer(),
+
                 // الإجراءات حسب حالة الطلب
                 if (status == 'مؤكد') ...[
                   ElevatedButton(
                     onPressed: () {
-                      // إظهار نافذة لإدخال السعر ومن ثم تحديث الحالة
+                      // إدخال سعر التوصيل ثم قبول الطلب → مستلمة
                       showDialog(
                         context: context,
                         builder: (context) {
@@ -215,7 +233,7 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
                             title: const Text('إدخال سعر التوصيل'),
                             content: TextField(
                               keyboardType:
-                                  const TextInputType.numberWithOptions(
+                              const TextInputType.numberWithOptions(
                                 decimal: true,
                               ),
                               decoration: const InputDecoration(
@@ -232,13 +250,11 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
                               ),
                               TextButton(
                                 onPressed: () {
-                                  if (price != null) {
+                                  if (price != null && price! > 0) {
                                     provider.updateStatus(
                                       orderId,
                                       'مستلمة',
                                       deliveryPrice: price,
-                                      customerId: customerId,
-                                      sellerId: sellerId,
                                       context: context,
                                     );
                                     Navigator.pop(context);
@@ -256,9 +272,25 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
                   const SizedBox(width: 8),
                   OutlinedButton(
                     onPressed: () {
-                      provider.updateStatus(orderId, 'ملغي', context: context);
+                      provider.updateStatus(
+                        orderId,
+                        'ملغي',
+                        context: context,
+                      );
                     },
                     child: const Text('إلغاء'),
+                  ),
+                ] else if (status == 'مستلمة') ...[
+                  ElevatedButton(
+                    onPressed: () {
+                      // بدء التوصيل → على الطريق
+                      provider.updateStatus(
+                        orderId,
+                        'على الطريق',
+                        context: context,
+                      );
+                    },
+                    child: const Text('بدء التوصيل'),
                   ),
                 ] else if (status == 'على الطريق') ...[
                   ElevatedButton(

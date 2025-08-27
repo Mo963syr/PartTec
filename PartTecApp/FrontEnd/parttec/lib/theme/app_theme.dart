@@ -34,7 +34,7 @@ ThemeData buildAppTheme() {
 
   return base.copyWith(
     appBarTheme: const AppBarTheme(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.blueAccent,
       elevation: 0,
       iconTheme: IconThemeData(color: Colors.white),
       titleTextStyle: TextStyle(
