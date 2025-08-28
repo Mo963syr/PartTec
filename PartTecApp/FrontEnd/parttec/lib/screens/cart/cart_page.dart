@@ -6,6 +6,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/ui_kit.dart';
 
 import '../../providers/cart_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../models/cart_item.dart';
 import '../location/add_location.dart';
 import '../order/order_summary_page.dart';
@@ -42,6 +43,12 @@ class _CartPageState extends State<CartPage> {
       0.0,
           (sum, CartItem item) => sum + (item.part.price * item.quantity),
     );
+
+    final auth = context.watch<AuthProvider>();
+    final String role = auth.role ?? '';
+    final double discountRate = role == 'mechanic' ? 0.15 : 0.0;
+    final double discountAmount = total * discountRate;
+    final double finalTotal = total - discountAmount;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -196,9 +203,9 @@ class _CartPageState extends State<CartPage> {
                               children: [
                                 Row(
                                   children: [
-                                    const Text(
-                                      'الإجمالي:',
-                                      style: TextStyle(
+                                    Text(
+                                      discountRate > 0 ? 'الإجمالي قبل الخصم:' : 'الإجمالي:',
+                                      style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w800,
                                       ),
@@ -213,6 +220,50 @@ class _CartPageState extends State<CartPage> {
                                     ),
                                   ],
                                 ),
+                                if (discountRate > 0) ...[
+                                  const SizedBox(height: AppSpaces.xs),
+                                  Row(
+                                    children: [
+                                      const Text(
+                                        'الخصم:',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      Text(
+                                        '-\$${discountAmount.toStringAsFixed(2)}',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: AppSpaces.xs),
+                                  Row(
+                                    children: [
+                                      const Text(
+                                        'المجموع بعد الخصم:',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      Text(
+                                        '\$${finalTotal.toStringAsFixed(2)}',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w800,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                                 const SizedBox(height: AppSpaces.md),
                                 Row(
                                   children: [

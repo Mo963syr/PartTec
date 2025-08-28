@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/ui_kit.dart';
 import '../employee/DeliveryDashboard.dart';
+import '../employee/mechanic_dashboard.dart';
 import '../home/home_page.dart';
 import '../location/ChooseDestinationPage.dart';
 import '../../providers/auth_provider.dart';
@@ -65,6 +66,9 @@ class _AuthPageState extends State<AuthPage> with SingleTickerProviderStateMixin
         break;
       case 'delevery':
         target = const DeliveryDashboard();
+        break;
+      case 'mechanic':
+        target = const MechanicDashboard();
         break;
       default:
         target = ChooseDestinationPage();
