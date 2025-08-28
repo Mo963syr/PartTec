@@ -25,7 +25,7 @@ class RecommendationsProvider extends ChangeNotifier {
     notifyListeners();
 
     final uri = Uri.parse(
-      '${AppSettings.serverurl}/part/CompatibleSpicificOrders/$userId',
+      '${AppSettings.serverurl}/part/CompatibleSpicificOrders/',
     );
 
     try {

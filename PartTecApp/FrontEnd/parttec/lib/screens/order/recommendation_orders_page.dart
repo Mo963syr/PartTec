@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/recommendations_provider.dart';
+import '../../utils/session_store.dart';
 
 class RecommendationOrdersPage extends StatefulWidget {
   const RecommendationOrdersPage({super.key});
@@ -12,6 +13,8 @@ class RecommendationOrdersPage extends StatefulWidget {
 
 class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
   @override
+
+  final storedUserId =  SessionStore.userId();
   void initState() {
     super.initState();
     Future.microtask(() =>

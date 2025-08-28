@@ -18,12 +18,10 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   int _selectedIndex = 2;
 
-  // بحث بالرقم التسلسلي
   late final TextEditingController _serialController;
   String _serialSearchQuery = '';
   List<Part> _serialSearchResults = [];
 
-  // فلاتر الفئات (نسخة واحدة فقط)
   final List<Map<String, dynamic>> _categories = const [
     {'label': 'محرك', 'icon': Icons.settings},
     {'label': 'هيكل', 'icon': Icons.car_repair},

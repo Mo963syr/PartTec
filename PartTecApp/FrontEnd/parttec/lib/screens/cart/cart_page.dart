@@ -270,7 +270,6 @@ class _CartPageState extends State<CartPage> {
                                     Expanded(
                                       child: ElevatedButton.icon(
                                         onPressed: () async {
-                                          // احضار userId الحقيقي من SessionStore قبل فتح صفحة تحديد الموقع
                                           final uid = await SessionStore.userId();
                                           if (uid == null || uid.isEmpty) {
                                             ScaffoldMessenger.of(context).showSnackBar(

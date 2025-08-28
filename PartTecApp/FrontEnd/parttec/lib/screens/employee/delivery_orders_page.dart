@@ -15,7 +15,6 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
-  // ترتيب الحالات حسب تبويباتك
   final List<String> _statuses = const ['مؤكد', 'على الطريق', 'مستلمة'];
 
   @override
@@ -23,7 +22,7 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
     super.initState();
     _tabController = TabController(length: _statuses.length, vsync: this);
 
-    // تحميل تبويب البداية
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final initialStatus = _statuses[_tabController.index];
       context.read<DeliveryOrdersProvider>().fetchOrders(initialStatus);
@@ -63,8 +62,7 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
           : TabBarView(
         controller: _tabController,
         children: _statuses.map((status) {
-          // ملاحظة: provider.orders يحوي آخر نتيجة للحالة الحالية فقط
-          // لذا عند فتح تبويب جديد سيتم الجلب عبر المستمع أعلاه
+
           final filtered = provider.orders
               .where((o) => (o['status'] ?? '') == status)
               .toList();
@@ -103,20 +101,17 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
     final status = (order['status'] ?? '').toString();
     final String orderId = (order['orderId'] ?? order['_id'] ?? '').toString();
 
-    // القطعة الأولى
+
     final part = order['part'] is Map<String, dynamic> ? order['part'] as Map : {};
     final hasPart = part.isNotEmpty;
 
-    // القطعة الثانية
     final part1 = order['part1'] is Map<String, dynamic> ? order['part1'] as Map : {};
     final hasPart1 = part1.isNotEmpty;
 
-    // الزبون
     final customer = order['customer'] as Map? ?? {};
     final customerName = customer['name']?.toString() ?? '';
     final customerPhone = customer['phoneNumber']?.toString() ?? customer['phone']?.toString() ?? '';
 
-    // البائع
     final seller = order['seller'] as Map? ?? {};
     final sellerName = seller['name']?.toString() ?? '';
     final sellerPhone = seller['phoneNumber']?.toString() ?? seller['phone']?.toString() ?? '';
@@ -141,7 +136,7 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
               const Divider(),
             ],
 
-            // القطعة الثانية
+
             if (hasPart1) ...[
               Text(
                 part1['name']?.toString() ?? '',
