@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:parttec/utils/app_settings.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 
 import '../../theme/app_theme.dart';
 import '../../widgets/ui_kit.dart';
-
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../../providers/cart_provider.dart';
 import '../../models/part.dart';
 import 'part_reviews_section.dart';
@@ -153,8 +155,10 @@ class PartDetailsPage extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 16),
-
-                          // ===== التقييمات (النسخة الثابتة للـFuture) =====
+                          _GlassCard(
+                            child: _PartStarRating(partId: part.id),
+                          ),
+                          const SizedBox(height: 16),
                           _GlassCard(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,11 +168,10 @@ class PartDetailsPage extends StatelessWidget {
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 8),
-                                _ReviewsGate(partId: part.id), // ← هنا التغيير
+                                _ReviewsGate(partId: part.id),
                               ],
                             ),
                           ),
-
                           const SizedBox(height: 100),
                         ],
                       ),
@@ -272,7 +275,6 @@ class _BottomAddToCart extends StatelessWidget {
   }
 }
 
-/// ======== هذا الودجت الصغير يخزّن الـFuture مرة واحدة ========
 class _ReviewsGate extends StatefulWidget {
   final String partId;
   const _ReviewsGate({Key? key, required this.partId}) : super(key: key);
@@ -288,7 +290,7 @@ class _ReviewsGateState extends State<_ReviewsGate>
   @override
   void initState() {
     super.initState();
-    _uidFuture = SessionStore.userId(); // ← تُنشأ مرة واحدة فقط
+    _uidFuture = SessionStore.userId();
   }
 
   @override
@@ -317,6 +319,129 @@ class _ReviewsGateState extends State<_ReviewsGate>
           partId: widget.partId,
         );
       },
+    );
+  }
+}
+
+class _PartStarRating extends StatefulWidget {
+  final String partId;
+  const _PartStarRating({Key? key, required this.partId}) : super(key: key);
+
+  @override
+  State<_PartStarRating> createState() => _PartStarRatingState();
+}
+
+class _PartStarRatingState extends State<_PartStarRating> {
+  int _rating = 0;
+  bool _submitting = false;
+  String? _uid;
+
+  @override
+  void initState() {
+    super.initState();
+    SessionStore.userId().then((id) {
+      setState(() => _uid = id);
+    });
+  }
+
+  Future<void> _submit() async {
+    if (_uid == null || _uid!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('الرجاء تسجيل الدخول لإرسال التقييم')),
+      );
+      return;
+    }
+    if (_rating < 1 || _rating > 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('اختر تقييمًا من 1 إلى 5')),
+      );
+      return;
+    }
+    setState(() => _submitting = true);
+    try {
+      final url =
+          Uri.parse('${AppSettings.serverurl}/part/ratePart/${widget.partId}');
+      final res = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'userId': _uid, 'rating': _rating}),
+      );
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم إرسال تقييمك بنجاح')),
+        );
+      } else {
+        final msg = _extractError(res.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg ?? 'فشل إرسال التقييم')),
+        );
+      }
+    } catch (_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذر الاتصال بالخادم')),
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  String? _extractError(String body) {
+    try {
+      final obj = jsonDecode(body);
+      if (obj is Map && obj['message'] is String) return obj['message'];
+      if (obj is Map && obj['error'] is String) return obj['error'];
+    } catch (_) {}
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'قيّم هذه القطعة',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: List.generate(5, (i) {
+            final idx = i + 1;
+            final filled = _rating >= idx;
+            return IconButton(
+              onPressed:
+                  _submitting ? null : () => setState(() => _rating = idx),
+              icon: Icon(
+                filled ? Icons.star : Icons.star_border,
+                size: 28,
+                color: filled ? Colors.amber : Colors.grey,
+              ),
+              tooltip: '$idx',
+            );
+          }),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _submitting ? null : _submit,
+            icon: _submitting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.send),
+            label: Text(_submitting ? 'جارٍ الإرسال...' : 'إرسال التقييم'),
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
