@@ -36,6 +36,7 @@ class _MyOrdersViewState extends State<_MyOrdersView> {
   List<Map<String, dynamic>> grouped = [];
   String? errorMsg;
   String? _uid;
+  String? _role;
 
   @override
   void initState() {
@@ -51,6 +52,7 @@ class _MyOrdersViewState extends State<_MyOrdersView> {
 
     try {
       _uid ??= await SessionStore.userId();
+      _role ??= await SessionStore.role();
       if (_uid == null || _uid!.isEmpty) {
         setState(() {
           errorMsg = '⚠️ يُرجى تسجيل الدخول أولًا لعرض الطلبات.';
@@ -60,20 +62,32 @@ class _MyOrdersViewState extends State<_MyOrdersView> {
       }
 
       final base = AppSettings.serverurl;
-      final res1 = await http.get(Uri.parse('$base/order/viewuserorder/$_uid'));
-      final res2 =
-      await http.get(Uri.parse('$base/order/viewuserspicificorder/$_uid'));
+      http.Response? res1;
+      http.Response? res2;
+
+      if (_role == 'user') {
+        res1 = await http.get(Uri.parse('$base/order/viewuserorder/$_uid'));
+        res2 = await http
+            .get(Uri.parse('$base/order/viewuserspicificorder/$_uid'));
+      } else if (_role == 'seller') {
+        res2 = await http
+            .get(Uri.parse('$base/order/viewuserspicificorder/$_uid'));
+      }
 
       final List<Map<String, dynamic>> list = [];
-      if (res1.statusCode == 200 && res1.body.isNotEmpty) {
+
+      if (res1 != null && res1.statusCode == 200 && res1.body.isNotEmpty) {
         list.addAll(_parse(res1.body, false));
       }
-      if (res2.statusCode == 200 && res2.body.isNotEmpty) {
+      if (res2 != null && res2.statusCode == 200 && res2.body.isNotEmpty) {
         list.addAll(_parse(res2.body, true));
       }
 
-      if (list.isEmpty && (res1.statusCode != 200 || res2.statusCode != 200)) {
-        errorMsg = 'فشل تحميل الطلبات (${res1.statusCode}/${res2.statusCode})';
+      if (list.isEmpty &&
+          ((res1 != null && res1.statusCode != 200) ||
+              (res2 != null && res2.statusCode != 200))) {
+        errorMsg =
+            'فشل تحميل الطلبات (${res1?.statusCode ?? '-'}/${res2?.statusCode ?? '-'})';
       }
 
       setState(() {
@@ -123,8 +137,10 @@ class _MyOrdersViewState extends State<_MyOrdersView> {
           ],
         };
       } else {
-        final src = (map['cartIds'] is List ? map['cartIds'] : map['items']) as List?;
-        final items = (src ?? []).whereType<Map>().map<Map<String, dynamic>>((it) {
+        final src =
+            (map['cartIds'] is List ? map['cartIds'] : map['items']) as List?;
+        final items =
+            (src ?? []).whereType<Map>().map<Map<String, dynamic>>((it) {
           final itm = Map<String, dynamic>.from(it as Map);
           final part = (itm['partId'] ?? itm);
           String? name, image;
@@ -188,7 +204,8 @@ class _MyOrdersViewState extends State<_MyOrdersView> {
           final expanded = (order['expanded'] as bool?) ?? false;
           final status = order['status'] as String? ?? 'غير معروف';
           final items =
-              (order['items'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
+              (order['items'] as List?)?.cast<Map<String, dynamic>>() ??
+                  const [];
           final orderId = (order['orderId'] ?? '').toString();
 
           return _OrderCard(
@@ -241,34 +258,36 @@ class _OrderCard extends StatelessWidget {
         children: [
           // عناصر الطلب
           ...items.map((item) => ListTile(
-            leading: (item['image'] != null && item['image'].toString().isNotEmpty)
-                ? Image.network(
-              item['image'],
-              width: 40,
-              height: 40,
-              fit: BoxFit.cover,
-              loadingBuilder: (ctx, child, progress) {
-                if (progress == null) return child;
-                return const SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: Center(
-                      child: CircularProgressIndicator(strokeWidth: 2)),
-                );
-              },
-              errorBuilder: (_, __, ___) =>
-              const Icon(Icons.image_not_supported),
-            )
-                : const Icon(Icons.image_not_supported),
-            title: Text(item['name']),
-            subtitle: Text("السعر: ${item['price'] ?? 'غير محدد'}"),
-            trailing: item['canCancel'] == true
-                ? IconButton(
-              icon: const Icon(Icons.cancel, color: Colors.red),
-              onPressed: () => onCancel(item['cartId']),
-            )
-                : null,
-          )),
+                leading: (item['image'] != null &&
+                        item['image'].toString().isNotEmpty)
+                    ? Image.network(
+                        item['image'],
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (ctx, child, progress) {
+                          if (progress == null) return child;
+                          return const SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: Center(
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2)),
+                          );
+                        },
+                        errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.image_not_supported),
+                      )
+                    : const Icon(Icons.image_not_supported),
+                title: Text(item['name']),
+                subtitle: Text("السعر: ${item['price'] ?? 'غير محدد'}"),
+                trailing: item['canCancel'] == true
+                    ? IconButton(
+                        icon: const Icon(Icons.cancel, color: Colors.red),
+                        onPressed: () => onCancel(item['cartId']),
+                      )
+                    : null,
+              )),
 
           // العروض
           Padding(
@@ -288,7 +307,8 @@ class _OrderCard extends StatelessWidget {
                 if (offers.isEmpty) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12.0),
-                    child: Center(child: Text('لا توجد عروض حالياً لهذا الطلب')),
+                    child:
+                        Center(child: Text('لا توجد عروض حالياً لهذا الطلب')),
                   );
                 }
 
@@ -298,7 +318,7 @@ class _OrderCard extends StatelessWidget {
                     const Divider(),
                     const Padding(
                       padding:
-                      EdgeInsets.symmetric(horizontal: 16.0, vertical: 6),
+                          EdgeInsets.symmetric(horizontal: 16.0, vertical: 6),
                       child: Text(
                         "العروض المتاحة:",
                         style: TextStyle(
@@ -306,48 +326,51 @@ class _OrderCard extends StatelessWidget {
                       ),
                     ),
                     ...offers.map((offer) {
-                      final offerId =
-                      (offer['_id'] ?? offer['id'] ?? offer['offerId'] ?? '')
+                      final offerId = (offer['_id'] ??
+                              offer['id'] ??
+                              offer['offerId'] ??
+                              '')
                           .toString();
-                      final desc =
-                      (offer['description'] ?? 'عرض').toString();
-                      final price =
-                      (offer['price'] ?? 'غير محدد').toString();
+                      final desc = (offer['description'] ?? 'عرض').toString();
+                      final price = (offer['price'] ?? 'غير محدد').toString();
                       final image = (offer['imageUrl'] ?? '').toString();
                       final supplier =
-                      (offer['supplierName'] ?? 'مورد').toString();
+                          (offer['supplierName'] ?? 'مورد').toString();
 
                       return ListTile(
                         leading: image.isNotEmpty
                             ? ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: Image.network(
-                            image,
-                            width: 44,
-                            height: 44,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Icon(
-                                Icons.local_offer,
-                                color: Colors.green),
-                          ),
-                        )
+                                borderRadius: BorderRadius.circular(6),
+                                child: Image.network(
+                                  image,
+                                  width: 44,
+                                  height: 44,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => const Icon(
+                                      Icons.local_offer,
+                                      color: Colors.green),
+                                ),
+                              )
                             : const Icon(Icons.local_offer,
-                            color: Colors.green),
+                                color: Colors.green),
                         title: Text(desc),
                         subtitle: Text('السعر: $price — $supplier'),
                         trailing: ElevatedButton(
                           onPressed: () async {
                             final ok = await context
                                 .read<OrderProvider>()
-                                .addOfferToCart(offerId, orderId); // ✅ تمرير orderId
+                                .addOfferToCart(
+                                    offerId, orderId); // ✅ تمرير orderId
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                               content: Text(ok
                                   ? '✅ تمت إضافة العرض إلى السلة'
-                                  : (context.read<OrderProvider>().offersError ?? 'فشل إضافة العرض')),
+                                  : (context
+                                          .read<OrderProvider>()
+                                          .offersError ??
+                                      'فشل إضافة العرض')),
                             ));
                           },
-
                           child: const Text('إضافة للسلة'),
                         ),
                       );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parttec/screens/order/my_order_page.dart';
 import 'package:parttec/screens/recommendation/request_recommendation_page.dart';
 import '../order/recommendation_orders_page.dart';
 import '../part/add_part_page_supplier.dart';
@@ -7,6 +8,7 @@ import '../order/GroupedOrdersPage.dart';
 import '../part/added_parts_page.dart';
 import '../recommendation/recommendation_requests_page.dart';
 import 'seller_reviews_page.dart';
+import 'DeliveredOrdersPage.dart.dart';
 
 class SupplierDashboard extends StatelessWidget {
   const SupplierDashboard({super.key});
@@ -41,12 +43,12 @@ class SupplierDashboard extends StatelessWidget {
             ),
             _buildCard(
               icon: Icons.edit_note,
-              title: 'تعديل أو حذف قطعة',
+              title: 'طلباتي',
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const ManagePartsPage(),
+                    builder: (_) => MyOrdersPage(),
                   ),
                 );
               },
@@ -109,6 +111,18 @@ class SupplierDashboard extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (_) =>
                         RecommendationOrdersPage(roleOverride: 'seller'),
+                  ),
+                );
+              },
+            ),
+            _buildCard(
+              icon: Icons.history,
+              title: 'السجل',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DeliveredOrdersPage(),
                   ),
                 );
               },
