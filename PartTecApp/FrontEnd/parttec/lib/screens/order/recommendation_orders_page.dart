@@ -4,7 +4,11 @@ import '../../providers/recommendations_provider.dart';
 import '../../utils/session_store.dart';
 
 class RecommendationOrdersPage extends StatefulWidget {
-  const RecommendationOrdersPage({super.key});
+  final String roleOverride;
+  const RecommendationOrdersPage({
+    super.key,
+    required this.roleOverride,
+  });
 
   @override
   State<RecommendationOrdersPage> createState() =>
@@ -13,12 +17,15 @@ class RecommendationOrdersPage extends StatefulWidget {
 
 class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
   @override
-
-  final storedUserId =  SessionStore.userId();
   void initState() {
     super.initState();
-    Future.microtask(() =>
-        context.read<RecommendationsProvider>().fetchMyRecommendationOrders());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context
+            .read<RecommendationsProvider>()
+            .fetchMyRecommendationOrders(roleOverride: widget.roleOverride);
+      }
+    });
   }
 
   Color _statusColor(String s) {
@@ -28,7 +35,6 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
     if (t.contains('قيد') || t.contains('بحث')) return Colors.amber;
     return Colors.blueGrey;
   }
-
 
   void _showOfferForm(BuildContext context, String orderId) {
     final _formKey = GlobalKey<FormState>();
@@ -55,7 +61,7 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
                       prefixIcon: Icon(Icons.attach_money),
                     ),
                     validator: (v) =>
-                    v == null || v.isEmpty ? 'أدخل السعر' : null,
+                        v == null || v.isEmpty ? 'أدخل السعر' : null,
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
@@ -86,23 +92,22 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
               child: const Text('حفظ'),
               onPressed: () async {
                 if (_formKey.currentState!.validate()) {
-                  final ok = await context
-                      .read<RecommendationsProvider>()
-                      .addOffer(
-                    orderId: orderId,
-                    price: priceController.text,
-                    description: descController.text,
-                    imageUrl: imageUrlController.text,
-                  );
+                  final ok =
+                      await context.read<RecommendationsProvider>().addOffer(
+                            orderId: orderId,
+                            price: priceController.text,
+                            description: descController.text,
+                            imageUrl: imageUrlController.text,
+                          );
 
-                  if (!mounted) return;
+                  if (!mounted) return; // ✅ تحقق أن الصفحة لسا موجودة
                   Navigator.pop(context);
 
+                  if (!mounted) return; // ✅ تحقق ثاني
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(ok
-                          ? '✅ تم إرسال العرض بنجاح'
-                          : '❌ فشل إرسال العرض'),
+                      content: Text(
+                          ok ? '✅ تم إرسال العرض بنجاح' : '❌ فشل إرسال العرض'),
                     ),
                   );
                 }
@@ -162,15 +167,16 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
               final all = provider.compatibleParts;
               final pending = all.where((o) => provider.isPending(o)).toList();
               final available =
-              all.where((o) => provider.isAvailable(o)).toList();
+                  all.where((o) => provider.isAvailable(o)).toList();
               final unavailable =
-              all.where((o) => provider.isUnavailable(o)).toList();
+                  all.where((o) => provider.isUnavailable(o)).toList();
 
               Widget buildList(List<Map<String, dynamic>> orders,
                   {bool showActions = true}) {
                 if (orders.isEmpty) {
                   return RefreshIndicator(
-                    onRefresh: () => provider.fetchMyRecommendationOrders(),
+                    onRefresh: () => provider.fetchMyRecommendationOrders(
+                        roleOverride: widget.roleOverride),
                     child: ListView(
                       children: const [
                         SizedBox(height: 120),
@@ -181,7 +187,8 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
                 }
 
                 return RefreshIndicator(
-                  onRefresh: () => provider.fetchMyRecommendationOrders(),
+                  onRefresh: () => provider.fetchMyRecommendationOrders(
+                      roleOverride: widget.roleOverride),
                   child: ListView.builder(
                     itemCount: orders.length,
                     itemBuilder: (context, i) {
@@ -195,26 +202,26 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
                       final year = (o['year'] ?? '').toString();
                       final status = (o['status'] ?? 'قيد البحث').toString();
                       final notes = (o['notes'] ?? '').toString();
-                      final img = (o['imageUrl'] ?? '').toString();
+                      final img = (o['imageUrls'] ?? '').toString();
 
                       return Card(
                         margin: const EdgeInsets.all(12),
                         child: ExpansionTile(
                           leading: img.isNotEmpty
                               ? ClipRRect(
-                            borderRadius: BorderRadius.circular(6),
-                            child: Image.network(
-                              img,
-                              width: 48,
-                              height: 48,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) =>
-                              const Icon(Icons.image_not_supported),
-                            ),
-                          )
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: Image.network(
+                                    img,
+                                    width: 48,
+                                    height: 48,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) =>
+                                        const Icon(Icons.image_not_supported),
+                                  ),
+                                )
                               : const CircleAvatar(
-                            child: Icon(Icons.directions_car),
-                          ),
+                                  child: Icon(Icons.directions_car),
+                                ),
                           title: Text(
                             name.isNotEmpty ? name : 'طلب توصية',
                             maxLines: 1,
@@ -237,9 +244,9 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
                                   Chip(
                                     label: Text('الحالة: $status'),
                                     backgroundColor:
-                                    _statusColor(status).withOpacity(.12),
+                                        _statusColor(status).withOpacity(.12),
                                     labelStyle:
-                                    TextStyle(color: _statusColor(status)),
+                                        TextStyle(color: _statusColor(status)),
                                   ),
                                   if (serial.isNotEmpty) ...[
                                     const SizedBox(height: 6),
@@ -255,14 +262,15 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
                                     const SizedBox(height: 6),
                                     Row(
                                       crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                          CrossAxisAlignment.start,
                                       children: [
                                         const Icon(
                                           Icons.note_alt_outlined,
                                           size: 18,
                                         ),
                                         const SizedBox(width: 6),
-                                        Expanded(child: Text('ملاحظات: $notes')),
+                                        Expanded(
+                                            child: Text('ملاحظات: $notes')),
                                       ],
                                     ),
                                   ],
@@ -272,7 +280,7 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
                             if (showActions)
                               Padding(
                                 padding:
-                                const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                                    const EdgeInsets.fromLTRB(16, 4, 16, 12),
                                 child: Consumer<RecommendationsProvider>(
                                   builder: (context, prov, _) {
                                     final busy = prov.isBusy(id);
@@ -283,8 +291,8 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
                                             onPressed: busy
                                                 ? null
                                                 : () {
-                                              _showOfferForm(context, id);
-                                            },
+                                                    _showOfferForm(context, id);
+                                                  },
                                             icon: const Icon(
                                                 Icons.check_circle_outline),
                                             label: Text(busy
@@ -298,22 +306,21 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
                                             onPressed: busy
                                                 ? null
                                                 : () async {
-                                              final ok = await prov
-                                                  .markUnavailable(id);
-                                              if (!context.mounted) {
-                                                return;
-                                              }
-                                              ScaffoldMessenger.of(
-                                                  context)
-                                                  .showSnackBar(SnackBar(
-                                                content: Text(ok
-                                                    ? 'تم نقل الطلب إلى: غير موجودة'
-                                                    : (prov.lastError ??
-                                                    'فشل التحديث')),
-                                              ));
-                                            },
+                                                    final ok = await prov
+                                                        .markUnavailable(id);
+
+                                                    if (!mounted) return;
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(SnackBar(
+                                                      content: Text(ok
+                                                          ? 'تم نقل الطلب إلى: غير موجودة'
+                                                          : (prov.lastError ??
+                                                              'فشل التحديث')),
+                                                    ));
+                                                  },
                                             icon:
-                                            const Icon(Icons.highlight_off),
+                                                const Icon(Icons.highlight_off),
                                             label: Text(busy
                                                 ? 'جارٍ التحديث...'
                                                 : 'غير موجودة'),

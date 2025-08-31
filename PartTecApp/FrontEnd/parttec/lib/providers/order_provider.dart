@@ -17,10 +17,9 @@ class OrderProvider with ChangeNotifier {
   String? _lastError;
 
   String? _userId;
-
+  String? _role;
 
   final Map<String, List<Map<String, dynamic>>> _offersByOrderId = {};
-
 
   final Set<String> _loadingOffersOrderIds = {};
 
@@ -34,6 +33,11 @@ class OrderProvider with ChangeNotifier {
   Future<String?> _getUserId() async {
     _userId ??= await SessionStore.userId();
     return _userId;
+  }
+
+  Future<String?> _getRole() async {
+    _role ??= await SessionStore.role();
+    return _role;
   }
 
   Map<String, dynamic> _decodeToMapBytes(List<int> bodyBytes) {
@@ -123,7 +127,14 @@ class OrderProvider with ChangeNotifier {
       notifyListeners();
       return false;
     }
-
+    final role = await _getRole();
+    if (role == null || role.isEmpty) {
+      _lastError = 'لم يتم العثور على userId. الرجاء تسجيل الدخول أولاً.';
+      _isSubmitting = false;
+      notifyListeners();
+      return false;
+    }
+    print(' rolle $role');
     final uri = Uri.parse('${AppSettings.serverurl}/order/addspicificorder');
 
     try {
@@ -159,9 +170,9 @@ class OrderProvider with ChangeNotifier {
 
       if (res.statusCode == 200 || res.statusCode == 201) {
         _lastOrderId = (data['order']?['_id'] ??
-            data['orderId'] ??
-            data['_id'] ??
-            data['id'])
+                data['orderId'] ??
+                data['_id'] ??
+                data['id'])
             ?.toString();
 
         _isSubmitting = false;
@@ -179,7 +190,8 @@ class OrderProvider with ChangeNotifier {
     return false;
   }
 
-  bool isLoadingOffers(String orderId) => _loadingOffersOrderIds.contains(orderId);
+  bool isLoadingOffers(String orderId) =>
+      _loadingOffersOrderIds.contains(orderId);
 
   List<Map<String, dynamic>> offersFor(String orderId) =>
       _offersByOrderId[orderId] ?? const [];
@@ -193,8 +205,8 @@ class OrderProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final uri =
-      Uri.parse('${AppSettings.serverurl}/order/recommendation-offer/$orderId');
+      final uri = Uri.parse(
+          '${AppSettings.serverurl}/order/recommendation-offer/$orderId');
       final res = await http.get(
         uri,
         headers: {
@@ -243,8 +255,6 @@ class OrderProvider with ChangeNotifier {
       return false;
     }
   }
-
-
 
   void reset() {
     isLoading = false;

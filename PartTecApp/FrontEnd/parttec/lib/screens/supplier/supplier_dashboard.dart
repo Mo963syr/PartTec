@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parttec/screens/recommendation/request_recommendation_page.dart';
 import '../order/recommendation_orders_page.dart';
 import '../part/add_part_page_supplier.dart';
 import '../part/manage_parts_page.dart';
@@ -81,7 +82,8 @@ class SupplierDashboard extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => RecommendationOrdersPage(), // صفحة جديدة
+                    builder: (_) =>
+                        RecommendationOrdersPage(roleOverride: 'user'),
                   ),
                 );
               },
@@ -93,8 +95,20 @@ class SupplierDashboard extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
+                    builder: (_) => SellerReviewsPage(),
+                  ),
+                );
+              },
+            ),
+            _buildCard(
+              icon: Icons.recommend,
+              title: 'طلبات تجار',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
                     builder: (_) =>
-                        SellerReviewsPage(),
+                        RecommendationOrdersPage(roleOverride: 'seller'),
                   ),
                 );
               },

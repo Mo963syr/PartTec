@@ -17,15 +17,34 @@ class RecommendationsProvider extends ChangeNotifier {
 
   final Set<String> _busyIds = {};
   bool isBusy(String id) => _busyIds.contains(id);
+  String? _role;
+  String? _userId;
 
+  Future<String?> _getUserId() async {
+    _userId ??= await SessionStore.userId();
+    return _userId;
+  }
 
-  Future<bool> fetchMyRecommendationOrders({String? authToken}) async {
+  Future<String?> _getRole() async {
+    _role ??= await SessionStore.role();
+    return _role;
+  }
+
+  Future<bool> fetchMyRecommendationOrders({
+    String? authToken,
+    String? roleOverride,
+  }) async {
     isLoading = true;
     lastError = null;
     notifyListeners();
 
+    final uid = await _getUserId();
+    final role = roleOverride;
+    print('Role: $role');
+    print('UserId: $uid');
+
     final uri = Uri.parse(
-      '${AppSettings.serverurl}/part/CompatibleSpicificOrders/',
+      '${AppSettings.serverurl}/part/CompatibleSpicificOrders/$uid/$role',
     );
 
     try {
@@ -63,7 +82,6 @@ class RecommendationsProvider extends ChangeNotifier {
     return false;
   }
 
-
   String _normalizeStatus(dynamic v) {
     final s = (v ?? '').toString().trim();
     if (s.isEmpty) return 'قيد البحث';
@@ -83,9 +101,6 @@ class RecommendationsProvider extends ChangeNotifier {
   bool isAvailable(Map o) => _normalizeStatus(o['status']) == 'موجودة';
   bool isUnavailable(Map o) => _normalizeStatus(o['status']) == 'غير موجودة';
 
-  /// =========================
-  /// تحديث حالة الطلب
-  /// =========================
   Future<bool> _setStatus({
     required String orderId,
     required String newStatusArabic,
@@ -102,8 +117,8 @@ class RecommendationsProvider extends ChangeNotifier {
       final statusEn = (newStatusArabic == 'موجودة')
           ? 'available'
           : (newStatusArabic == 'غير موجودة')
-          ? 'unavailable'
-          : 'pending';
+              ? 'unavailable'
+              : 'pending';
 
       final res = await http.post(
         url,
@@ -116,7 +131,8 @@ class RecommendationsProvider extends ChangeNotifier {
       );
 
       if (res.statusCode >= 200 && res.statusCode < 300) {
-        final i = compatibleParts.indexWhere((o) => (o['id'] ?? '').toString() == orderId);
+        final i = compatibleParts
+            .indexWhere((o) => (o['id'] ?? '').toString() == orderId);
         if (i != -1) {
           final m = Map<String, dynamic>.from(compatibleParts[i]);
           m['status'] = newStatusArabic;
@@ -149,6 +165,7 @@ class RecommendationsProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final uid = await _getUserId();
       final storedUserId = await SessionStore.userId();
       if (storedUserId == null) {
         lastError = 'User ID not found in session';
@@ -157,13 +174,14 @@ class RecommendationsProvider extends ChangeNotifier {
         return false;
       }
 
-      final uri = Uri.parse('${AppSettings.serverurl}/order/recommendation-offer');
+      final uri =
+          Uri.parse('${AppSettings.serverurl}/order/recommendation-offer');
       final res = await http.post(
         uri,
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'orderId': orderId,
-          'sellerId': userId,
+          'sellerId': uid,
           'price': double.tryParse(price) ?? 0,
           'description': description ?? '',
           'imageUrl': imageUrl ?? '',
@@ -187,13 +205,15 @@ class RecommendationsProvider extends ChangeNotifier {
     return false;
   }
 
-
-  Future<bool> markAvailable(String orderId, {String? authToken}) =>
-      _setStatus(orderId: orderId, newStatusArabic: 'موجودة', authToken: authToken);
+  Future<bool> markAvailable(String orderId, {String? authToken}) => _setStatus(
+      orderId: orderId, newStatusArabic: 'موجودة', authToken: authToken);
 
   Future<bool> markUnavailable(String orderId, {String? authToken}) =>
-      _setStatus(orderId: orderId, newStatusArabic: 'غير موجودة', authToken: authToken);
+      _setStatus(
+          orderId: orderId,
+          newStatusArabic: 'غير موجودة',
+          authToken: authToken);
 
-  Future<bool> markPending(String orderId, {String? authToken}) =>
-      _setStatus(orderId: orderId, newStatusArabic: 'قيد البحث', authToken: authToken);
+  Future<bool> markPending(String orderId, {String? authToken}) => _setStatus(
+      orderId: orderId, newStatusArabic: 'قيد البحث', authToken: authToken);
 }

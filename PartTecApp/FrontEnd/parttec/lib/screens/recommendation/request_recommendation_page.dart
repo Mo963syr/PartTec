@@ -137,14 +137,6 @@ class _RequestRecommendationPageState extends State<RequestRecommendationPage> {
                   validator: (v) => v == null ? 'مطلوب' : null,
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                      labelText: 'وصف مكان العطل (اختياري)',
-                      border: OutlineInputBorder()),
-                  onSaved: (v) => note = v,
-                ),
-                const SizedBox(height: 12),
                 GestureDetector(
                   onTap: _pickImage,
                   child: Container(
