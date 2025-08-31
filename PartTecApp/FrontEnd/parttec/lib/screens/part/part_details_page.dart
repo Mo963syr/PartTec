@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:parttec/utils/app_settings.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
-
+import 'package:parttec/providers/parts_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/ui_kit.dart';
 import 'package:http/http.dart' as http;
@@ -155,6 +155,58 @@ class PartDetailsPage extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 16),
+                          _GlassCard(
+                            child: Consumer<PartRatingProvider>(
+                              builder: (context, prov, _) {
+                                if (prov.isLoading) {
+                                  return const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
+                                    ),
+                                  );
+                                }
+
+                                if (prov.ratingsCount == 0) {
+                                  return const Text("لا توجد تقييمات بعد",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w600));
+                                }
+
+                                return Row(
+                                  children: [
+                                    Row(
+                                      children: List.generate(5, (i) {
+                                        final filled =
+                                            i < prov.averageRating.round();
+                                        return Icon(
+                                          filled
+                                              ? Icons.star
+                                              : Icons.star_border,
+                                          size: 20,
+                                          color: Colors.amber,
+                                        );
+                                      }),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      prov.averageRating.toStringAsFixed(1),
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 16),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      "(${prov.ratingsCount} تقييم)",
+                                      style: const TextStyle(
+                                          color: Colors.black54),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
                           _GlassCard(
                             child: _PartStarRating(partId: part.id),
                           ),

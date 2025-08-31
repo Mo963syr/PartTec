@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'package:provider/provider.dart';
+import '../providers/parts_provider.dart';
 import '../models/part.dart';
 import '../providers/home_provider.dart';
 import '../providers/favorites_provider.dart';
@@ -20,7 +21,12 @@ class PartCard extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => PartDetailsPage(part: part)),
+          MaterialPageRoute(
+            builder: (_) => ChangeNotifierProvider(
+              create: (_) => PartRatingProvider()..fetchRating(part.id),
+              child: PartDetailsPage(part: part),
+            ),
+          ),
         );
       },
       child: Card(
@@ -36,24 +42,25 @@ class PartCard extends StatelessWidget {
                   Expanded(
                     child: part.imageUrl.isNotEmpty
                         ? ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        part.imageUrl,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (_, __, ___) => const Icon(
-                          Icons.broken_image,
-                          size: 50,
-                          color: Colors.grey,
-                        ),
-                        loadingBuilder: (ctx, child, progress) {
-                          if (progress == null) return child;
-                          return const Center(
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          );
-                        },
-                      ),
-                    )
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              part.imageUrl,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                Icons.broken_image,
+                                size: 50,
+                                color: Colors.grey,
+                              ),
+                              loadingBuilder: (ctx, child, progress) {
+                                if (progress == null) return child;
+                                return const Center(
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                );
+                              },
+                            ),
+                          )
                         : const Icon(Icons.image, size: 50, color: Colors.grey),
                   ),
                   const SizedBox(height: 6),
@@ -69,7 +76,8 @@ class PartCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           part.manufacturer ?? '',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                          style:
+                              TextStyle(color: Colors.grey[600], fontSize: 12),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -77,7 +85,8 @@ class PartCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           part.model,
-                          style: const TextStyle(fontSize: 13, color: Colors.black87),
+                          style: const TextStyle(
+                              fontSize: 13, color: Colors.black87),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -108,7 +117,9 @@ class PartCard extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        nowFav ? 'تمت الإضافة إلى المفضلة' : 'تمت الإزالة من المفضلة',
+                        nowFav
+                            ? 'تمت الإضافة إلى المفضلة'
+                            : 'تمت الإزالة من المفضلة',
                       ),
                       duration: const Duration(seconds: 1),
                     ),

@@ -31,26 +31,41 @@ class Part {
     this.reviewsCount = 0,
   });
 
+  static double _asDouble(dynamic v) {
+    if (v == null) return 0.0;
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v.trim()) ?? 0.0;
+    return 0.0;
+  }
+
+  static int _asInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    if (v is String) return int.tryParse(v.trim()) ?? 0;
+    return 0;
+  }
+
   factory Part.fromJson(Map<String, dynamic> json) {
     return Part(
       id: (json['_id'] ?? json['id'])?.toString() ?? '',
       name: json['name'] ?? '',
       manufacturer: json['manufacturer'],
       model: json['model'] ?? '',
-      year: json['year'] is int
-          ? json['year'] as int
-          : int.tryParse(json['year']?.toString() ?? '0') ?? 0,
+      year: _asInt(json['year']),
       fuelType: json['fuelType'] ?? json['fuel_type'] ?? '',
       status: json['status'] ?? '',
-      price: json['price'] is num
-          ? (json['price'] as num).toDouble()
-          : double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
+      price: _asDouble(json['price']),
       imageUrl: json['imageUrl'] ?? json['image_url'] ?? '',
       category: json['category'] ?? '',
       serialNumber: json['serialNumber'] ?? json['serial_number'],
       description: json['description'],
-      averageRating: (json['averageRating'] ?? 0).toDouble(),
-      reviewsCount: (json['reviewsCount'] ?? 0).toInt(),
+      averageRating: _asDouble(
+        json['averageRating'] ?? json['avgRating'] ?? json['rating'],
+      ),
+      reviewsCount: _asInt(
+        json['reviewsCount'] ?? json['ratingsCount'] ?? json['numReviews'],
+      ),
     );
   }
 }

@@ -78,3 +78,32 @@ class PartsProvider extends ChangeNotifier {
     }
   }
 }
+
+class PartRatingProvider with ChangeNotifier {
+  double averageRating = 0.0;
+  int ratingsCount = 0;
+  bool isLoading = false;
+
+  Future<void> fetchRating(String partId) async {
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      final url =
+          Uri.parse("${AppSettings.serverurl}/part/getPartRatings/$partId");
+      final res = await http.get(url);
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        final d = data['data'];
+        averageRating = (d['avgRating'] as num).toDouble();
+        ratingsCount = d['ratingsCount'] as int;
+      }
+    } catch (e) {
+      debugPrint("❌ خطأ أثناء جلب التقييم: $e");
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+}

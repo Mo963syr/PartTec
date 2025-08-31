@@ -134,7 +134,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         ),
                       ),
 
-                      // 🔎 شريط البحث + زر عامة/خاصة — مثبّت بارتفاع ثابت
                       SliverPersistentHeader(
                         pinned: true,
                         delegate: _SearchBarHeader(
@@ -166,8 +165,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           ),
                         ),
                       ),
-
-                      // ===== الفئات (Chips) نسخة واحدة متكاملة =====
                       SliverToBoxAdapter(
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
