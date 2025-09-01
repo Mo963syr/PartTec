@@ -62,7 +62,6 @@ class OrderProvider with ChangeNotifier {
     return MediaType('image', 'jpeg');
   }
 
-  // ───────────────────────── Orders: إرسال طلب عام ─────────────────────────
   Future<void> sendOrder(List<double> coordinates) async {
     isLoading = true;
     error = null;

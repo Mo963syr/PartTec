@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../providers/seller_orders_provider.dart';
+import '../../providers/purchases_provider.dart';
+import '../../utils/session_store.dart';
 import '../order/SellerOrderDetailsPage.dart';
 
 class DeliveredOrdersPage extends StatefulWidget {
@@ -12,10 +14,11 @@ class DeliveredOrdersPage extends StatefulWidget {
 class _DeliveredOrdersPageState extends State<DeliveredOrdersPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  String _salesFilter = 'اليومي';
-  String _purchaseFilter = 'اليومي';
+  String _salesFilter = 'الكل';
+  String _purchaseFilter = 'الكل';
 
   final List<String> _filters = [
+    'الكل',
     'اليومي',
     'الأسبوعي',
     'الشهري',
@@ -27,9 +30,12 @@ class _DeliveredOrdersPageState extends State<DeliveredOrdersPage>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
 
-    // ✅ جلب الطلبات عند بداية الصفحة
-    Future.microtask(() {
-      context.read<SellerOrdersProvider>().fetchOrders();
+    Future.microtask(() async {
+      final userId = await SessionStore.userId();
+      if (userId != null) {
+        context.read<SellerOrdersProvider>().fetchOrders();
+        context.read<PurchasesProvider>().fetchPurchases(userId);
+      }
     });
   }
 
@@ -41,7 +47,8 @@ class _DeliveredOrdersPageState extends State<DeliveredOrdersPage>
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<SellerOrdersProvider>();
+    final salesProvider = context.watch<SellerOrdersProvider>();
+    final purchasesProvider = context.watch<PurchasesProvider>();
 
     return Scaffold(
       appBar: AppBar(
@@ -54,41 +61,59 @@ class _DeliveredOrdersPageState extends State<DeliveredOrdersPage>
           ],
         ),
       ),
-      body: provider.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : provider.error != null
-              ? Center(child: Text(provider.error!))
-              : TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildSales(provider),
-                    _buildPurchases(provider),
-                  ],
-                ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          salesProvider.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : salesProvider.error != null
+                  ? Center(child: Text(salesProvider.error!))
+                  : _buildSales(salesProvider),
+          purchasesProvider.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : purchasesProvider.error != null
+                  ? Center(child: Text(purchasesProvider.error!))
+                  : _buildPurchases(purchasesProvider),
+        ],
+      ),
     );
   }
 
-  /// فلترة حسب الزمن
+  /// فلترة حسب الزمن (مع خيار "الكل")
   List<Map<String, dynamic>> _filterOrders(
       List<Map<String, dynamic>> orders, String filter) {
-    DateTime now = DateTime.now();
+    DateTime now = DateTime.now().toUtc();
 
     return orders.where((order) {
-      final date = DateTime.tryParse(order['createdAt'] ?? '') ?? now;
+      final createdAt = order['createdAt']?.toString();
+      if (createdAt == null || createdAt.isEmpty) return false;
+
+      final date = DateTime.tryParse(createdAt);
+      if (date == null) return false;
+
       switch (filter) {
+        case 'الكل':
+          return true;
+
         case 'اليومي':
           return date.year == now.year &&
               date.month == now.month &&
               date.day == now.day;
+
         case 'الأسبوعي':
-          final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-          final endOfWeek =
-              startOfWeek.add(const Duration(days: 6, hours: 23, minutes: 59));
-          return date.isAfter(startOfWeek) && date.isBefore(endOfWeek);
+          final weekday = now.weekday % 7; // الأحد = 0
+          final startOfWeek = DateTime.utc(now.year, now.month, now.day)
+              .subtract(Duration(days: weekday));
+          final endOfWeek = startOfWeek.add(
+              const Duration(days: 6, hours: 23, minutes: 59, seconds: 59));
+          return !date.isBefore(startOfWeek) && !date.isAfter(endOfWeek);
+
         case 'الشهري':
           return date.year == now.year && date.month == now.month;
+
         case 'السنوي':
           return date.year == now.year;
+
         default:
           return true;
       }
@@ -102,7 +127,6 @@ class _DeliveredOrdersPageState extends State<DeliveredOrdersPage>
           height: 200, child: Center(child: Text("لا توجد بيانات")));
     }
 
-    // جمع المبالغ
     double total = orders.fold(
         0.0, (sum, o) => sum + ((o['totalAmount'] ?? 0).toDouble()));
 
@@ -155,7 +179,6 @@ class _DeliveredOrdersPageState extends State<DeliveredOrdersPage>
   }
 
   Widget _buildSales(SellerOrdersProvider provider) {
-    // ✅ الطلبات من fetchOrders فقط، والحالة "تم التوصيل"
     final deliveredOrders = provider.orders
         .where((o) => (o['status'] ?? '') == 'تم التوصيل')
         .map((o) => Map<String, dynamic>.from(o))
@@ -163,16 +186,11 @@ class _DeliveredOrdersPageState extends State<DeliveredOrdersPage>
 
     final filteredOrders = _filterOrders(deliveredOrders, _salesFilter);
 
-    if (filteredOrders.isEmpty) {
-      return const Center(child: Text('لا توجد مبيعات'));
-    }
-
     double total = filteredOrders.fold(
         0.0, (sum, o) => sum + ((o['totalAmount'] ?? 0).toDouble()));
 
     return Column(
       children: [
-        // فلترة
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: DropdownButton<String>(
@@ -187,43 +205,43 @@ class _DeliveredOrdersPageState extends State<DeliveredOrdersPage>
             },
           ),
         ),
-        // رسم بياني
         _buildChart(filteredOrders, _salesFilter),
-        // قائمة الطلبات
         Expanded(
-          child: ListView.builder(
-            itemCount: filteredOrders.length,
-            itemBuilder: (context, index) {
-              final order = filteredOrders[index];
-              final items = (order['items'] as List?) ?? [];
+          child: filteredOrders.isEmpty
+              ? const Center(child: Text('لا توجد مبيعات'))
+              : ListView.builder(
+                  itemCount: filteredOrders.length,
+                  itemBuilder: (context, index) {
+                    final order = filteredOrders[index];
+                    final items = (order['items'] as List?) ?? [];
 
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    child: Text(items.length.toString()),
-                  ),
-                  title: Text(
-                      'طلب #${(order['orderId'] ?? '').toString().substring(0, 6)}'),
-                  subtitle: Text(order['customer']?['name'] ?? 'زبون'),
-                  trailing: Text('\$${order['totalAmount']}'),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => SellerOrderDetailsPage(
-                          customerName: order['customer']?['name'] ?? '',
-                          orders: [order],
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          child: Text(items.length.toString()),
                         ),
+                        title: Text(
+                            'طلب #${(order['orderId'] ?? '').toString().substring(0, 6)}'),
+                        subtitle: Text(order['customer']?['name'] ?? 'زبون'),
+                        trailing: Text('\$${order['totalAmount']}'),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => SellerOrderDetailsPage(
+                                customerName: order['customer']?['name'] ?? '',
+                                orders: [order],
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     );
                   },
                 ),
-              );
-            },
-          ),
         ),
-        // الإجمالي
         Container(
           padding: const EdgeInsets.all(12),
           color: Colors.grey.shade200,
@@ -242,24 +260,15 @@ class _DeliveredOrdersPageState extends State<DeliveredOrdersPage>
     );
   }
 
-  Widget _buildPurchases(SellerOrdersProvider provider) {
-    final purchases = provider.orders
-        .where((o) => (o['status'] ?? '') == 'مكتمل شراء')
-        .map((o) => Map<String, dynamic>.from(o))
-        .toList();
-
-    final filteredPurchases = _filterOrders(purchases, _purchaseFilter);
-
-    if (filteredPurchases.isEmpty) {
-      return const Center(child: Text('لا توجد مشتريات'));
-    }
+  Widget _buildPurchases(PurchasesProvider provider) {
+    final filteredPurchases =
+        _filterOrders(provider.purchases, _purchaseFilter);
 
     double total = filteredPurchases.fold(
         0.0, (sum, o) => sum + ((o['totalAmount'] ?? 0).toDouble()));
 
     return Column(
       children: [
-        // فلترة
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: DropdownButton<String>(
@@ -274,33 +283,33 @@ class _DeliveredOrdersPageState extends State<DeliveredOrdersPage>
             },
           ),
         ),
-        // رسم بياني
         _buildChart(filteredPurchases, _purchaseFilter),
-
         Expanded(
-          child: ListView.builder(
-            itemCount: filteredPurchases.length,
-            itemBuilder: (context, index) {
-              final order = filteredPurchases[index];
-              final items = (order['items'] as List?) ?? [];
+          child: filteredPurchases.isEmpty
+              ? const Center(child: Text('لا توجد مشتريات'))
+              : ListView.builder(
+                  itemCount: filteredPurchases.length,
+                  itemBuilder: (context, index) {
+                    final order = filteredPurchases[index];
+                    final items = (order['items'] as List?) ?? [];
 
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.orange,
-                    child: Text(items.length.toString()),
-                  ),
-                  title: Text(
-                      'فاتورة #${(order['orderId'] ?? '').toString().substring(0, 6)}'),
-                  subtitle: Text(order['supplier']?['name'] ?? 'مورد'),
-                  trailing: Text('\$${order['totalAmount']}'),
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.orange,
+                          child: Text(items.length.toString()),
+                        ),
+                        title: Text(
+                            'فاتورة #${(order['orderId'] ?? '').toString().substring(0, 6)}'),
+                        subtitle: Text(order['supplier']?['name'] ?? 'مورد'),
+                        trailing: Text('\$${order['totalAmount']}'),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
         ),
-
         Container(
           padding: const EdgeInsets.all(12),
           color: Colors.grey.shade200,

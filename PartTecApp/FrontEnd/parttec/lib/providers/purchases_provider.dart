@@ -6,24 +6,36 @@ import '../utils/app_settings.dart';
 class PurchasesProvider with ChangeNotifier {
   bool isLoading = false;
   String? error;
-  List<dynamic> purchases = [];
+  List<Map<String, dynamic>> purchases = []; // ✅ نوع مضبوط
 
-  Future<void> fetchPurchases() async {
+  Future<void> fetchPurchases(String userId) async {
     isLoading = true;
     error = null;
     notifyListeners();
 
     try {
-      final url = Uri.parse("${AppSettings.serverurl}/purchases");
-      final res = await http.get(url);
+      final res = await http.get(
+        Uri.parse(
+            '${AppSettings.serverurl}/order/viewspicificordercompleted/$userId'),
+      );
 
-      if (res.statusCode == 200) {
-        purchases = jsonDecode(res.body);
+      if (res.statusCode == 200 && res.body.isNotEmpty) {
+        final decoded = json.decode(res.body);
+
+        if (decoded is List) {
+          purchases = decoded.map((e) => Map<String, dynamic>.from(e)).toList();
+        } else if (decoded is Map && decoded['orders'] is List) {
+          purchases = (decoded['orders'] as List)
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList();
+        } else {
+          purchases = [];
+        }
       } else {
-        error = "فشل في جلب المشتريات";
+        error = "فشل تحميل المشتريات (${res.statusCode})";
       }
     } catch (e) {
-      error = e.toString();
+      error = "خطأ أثناء الجلب: $e";
     }
 
     isLoading = false;

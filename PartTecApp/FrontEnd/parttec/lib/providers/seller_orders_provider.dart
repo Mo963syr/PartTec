@@ -27,18 +27,25 @@ class SellerOrdersProvider with ChangeNotifier {
     error = null;
     notifyListeners();
 
-    final url = Uri.parse('${AppSettings.serverurl}/order/getOrderForSellrer/$_sellerId');
+    final url = Uri.parse(
+        '${AppSettings.serverurl}/order/getOrderForSellrer/$_sellerId');
 
     try {
       final response = await http.get(url);
       final data = jsonDecode(response.body);
 
-      if (response.statusCode == 200 && data is Map && data['success'] == true) {
+      if (response.statusCode == 200 &&
+          data is Map &&
+          data['success'] == true) {
         final items = (data['orders'] as List?) ?? [];
-        _orders = items.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+        _orders = items
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
         totalAmount = (data['totalAmount'] as num?)?.toDouble() ?? 0.0;
       } else {
-        error = (data is Map ? data['message']?.toString() : null) ?? 'فشل تحميل الطلبات';
+        error = (data is Map ? data['message']?.toString() : null) ??
+            'فشل تحميل الطلبات';
         _orders.clear();
         totalAmount = 0.0;
       }
@@ -52,8 +59,10 @@ class SellerOrdersProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateStatus(String orderId, String newStatus, BuildContext context) async {
-    final url = Uri.parse('${AppSettings.serverurl}/order/updateOrderStatus/$orderId');
+  Future<void> updateStatus(
+      String orderId, String newStatus, BuildContext context) async {
+    final url =
+        Uri.parse('${AppSettings.serverurl}/order/updateOrderStatus/$orderId');
 
     try {
       final response = await http.put(
@@ -63,14 +72,18 @@ class SellerOrdersProvider with ChangeNotifier {
       );
 
       final data = jsonDecode(response.body);
-      if (response.statusCode == 200 && data is Map && data['success'] == true) {
+      if (response.statusCode == 200 &&
+          data is Map &&
+          data['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(data['message'] ?? 'تم التحديث بنجاح')),
         );
         await fetchOrders();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text((data is Map ? data['message'] : null) ?? 'فشل في التحديث')),
+          SnackBar(
+              content: Text(
+                  (data is Map ? data['message'] : null) ?? 'فشل في التحديث')),
         );
       }
     } catch (e) {
