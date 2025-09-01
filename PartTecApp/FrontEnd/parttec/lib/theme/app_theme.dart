@@ -1,22 +1,19 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // ألوان رئيسية خاصة بمتجر قطع غيار
-  static const primary = Color(0xFF512DA8); // بنفسجي غامق
-  static const primaryDark = Color(0xFF311B92);
-  static const accent = Color(0xFF448AFF); // أزرق تقني
-  static const bgGradientA = Color(0xFF4527A0);
-  static const bgGradientB = Color(0xFF283593);
-  static const bgGradientC = Color(0xFF1E88E5);
+  static const primary = Color.fromARGB(255, 39, 92, 199);
+  static const primaryDark = Color.fromARGB(255, 39, 92, 199);
+  static const accent = Color(0xFF448AFF);
+  static const bgGradientA = Color.fromARGB(255, 39, 92, 199);
+  static const bgGradientB = Color.fromARGB(255, 60, 82, 244);
+  static const bgGradientC = Color.fromARGB(255, 31, 139, 234);
 
-  // ألوان عامة
   static const card = Colors.white;
   static const text = Color(0xFF212121);
   static const textWeak = Color(0xFF757575);
   static const chipBg = Colors.white;
   static const chipBorder = Color(0xFFE0E0E0);
 
-  // ألوان الحالات
   static const success = Color(0xFF2E7D32);
   static const warning = Color(0xFFFFA000);
   static const error = Color(0xFFD32F2F);
@@ -34,7 +31,7 @@ class AppSpaces {
 ThemeData buildAppTheme() {
   final base = ThemeData(
     useMaterial3: false,
-    fontFamily: "Tajawal", // خط عربي أنيق
+    fontFamily: "Tajawal",
     colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
     scaffoldBackgroundColor: const Color(0xFFF7F7F7),
   );
