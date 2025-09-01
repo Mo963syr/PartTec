@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'package:provider/provider.dart';
-import 'package:provider/provider.dart';
 import '../providers/parts_provider.dart';
 import '../models/part.dart';
 import '../providers/home_provider.dart';
@@ -41,30 +40,28 @@ class PartCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Expanded(
-                    child: part.imageUrl.isNotEmpty
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              part.imageUrl,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              errorBuilder: (_, __, ___) => const Icon(
-                                Icons.broken_image,
-                                size: 50,
-                                // استخدم لون نص ضعيف من الثيم بدلاً من الرمادي الصريح
-                                color: AppColors.textWeak,
-                              ),
-                              loadingBuilder: (ctx, child, progress) {
-                                if (progress == null) return child;
-                                return const Center(
-                                  child:
-                                      CircularProgressIndicator(strokeWidth: 2),
-                                );
-                              },
-                            ),
-                          )
-                        : const Icon(Icons.image,
-                            size: 50, color: AppColors.textWeak),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        (part.imageUrl != null && part.imageUrl.isNotEmpty)
+                            ? part.imageUrl
+                            : AppImages
+                                .defaultPart, // 🔥 صورة افتراضية من AppTheme
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (_, __, ___) => Image.network(
+                          AppImages.defaultPart,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                        ),
+                        loadingBuilder: (ctx, child, progress) {
+                          if (progress == null) return child;
+                          return const Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          );
+                        },
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -107,17 +104,13 @@ class PartCard extends StatelessWidget {
             Positioned(
               top: 6,
               right: 6,
-            child: IconButton(
+              child: IconButton(
                 icon: Icon(
                   isFav ? Icons.favorite : Icons.favorite_border,
-                  // استخدم لون الخطأ عند اختيار المفضلة ولون نص ضعيف عند عدم الاختيار
                   color: isFav ? AppColors.error : AppColors.textWeak,
                 ),
                 onPressed: () async {
-                  // بدّل الحالة في الباك والواجهة
                   await favProvider.toggleFavorite(part);
-
-                  // تحقّق من الحالة بعد التبديل لرسالة أدق
                   final nowFav = favProvider.isFavorite(part.id);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
