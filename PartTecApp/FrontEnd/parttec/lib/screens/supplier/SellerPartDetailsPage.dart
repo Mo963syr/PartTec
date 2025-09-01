@@ -415,6 +415,7 @@ class _RatingsSectionState extends State<_RatingsSection> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       context.read<PartRatingProvider>().fetchRating(widget.partId);
     });
   }

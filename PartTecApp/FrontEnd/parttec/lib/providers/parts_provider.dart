@@ -86,6 +86,8 @@ class PartRatingProvider with ChangeNotifier {
 
   Future<void> fetchRating(String partId) async {
     isLoading = true;
+    print("lhedfdk");
+    print(partId);
     notifyListeners();
 
     try {

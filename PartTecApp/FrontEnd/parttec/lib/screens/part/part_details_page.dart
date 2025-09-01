@@ -28,8 +28,7 @@ class PartDetailsPage extends StatelessWidget {
             const GradientBackground(child: SizedBox.expand()),
             CustomScrollView(
               physics: const BouncingScrollPhysics(),
-              keyboardDismissBehavior:
-                  ScrollViewKeyboardDismissBehavior.manual, // مهم
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
               slivers: [
                 SliverAppBar(
                   pinned: true,
@@ -47,10 +46,9 @@ class PartDetailsPage extends StatelessWidget {
                   ),
                   flexibleSpace: FlexibleSpaceBar(
                     collapseMode: CollapseMode.parallax,
-                  background: imageUrl.isNotEmpty
+                    background: imageUrl.isNotEmpty
                         ? Image.network(imageUrl, fit: BoxFit.cover)
                         : Container(
-                            // استخدم لون الحدود من الثيم بدلاً من الرمادي الصريح
                             color: AppColors.chipBorder,
                             child: const Icon(Icons.image, size: 100),
                           ),
