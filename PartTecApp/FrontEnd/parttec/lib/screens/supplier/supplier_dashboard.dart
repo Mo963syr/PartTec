@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parttec/screens/part/PartsSectionPage.dart';
 import 'package:parttec/theme/app_theme.dart';
 import 'package:parttec/widgets/ui_kit.dart';
 
@@ -48,13 +49,13 @@ class SupplierDashboard extends StatelessWidget {
                     children: [
                       _buildCard(
                         context,
-                        icon: Icons.add_box,
-                        title: 'إضافة قطعة',
+                        icon: Icons.widgets,
+                        title: 'قسم القطع',
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => KiaPartAddPage(),
+                              builder: (_) => PartsSectionPage(),
                             ),
                           );
                         },
@@ -109,19 +110,6 @@ class SupplierDashboard extends StatelessWidget {
                               builder: (_) => RecommendationOrdersPage(
                                 roleOverride: 'user',
                               ),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildCard(
-                        context,
-                        icon: Icons.star_rate,
-                        title: 'التقييمات',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => SellerReviewsPage(),
                             ),
                           );
                         },
