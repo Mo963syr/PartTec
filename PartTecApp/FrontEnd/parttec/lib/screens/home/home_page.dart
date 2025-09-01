@@ -7,6 +7,7 @@ import '../../providers/home_provider.dart';
 import '../cart/cart_page.dart';
 import '../order/my_order_page.dart';
 import '../favorites/favorite_parts_page.dart';
+import '../order/user_delivered_orders_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -318,10 +319,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               },
             ),
             IconButton(
-              tooltip: 'الرئيسية',
-              icon: Icon(Icons.home,
+              tooltip: 'السجل',
+              icon: Icon(Icons.history,
                   color: _selectedIndex == 2 ? Colors.blue : Colors.grey),
-              onPressed: () => setState(() => _selectedIndex = 2),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const UserDeliveredOrdersPage()),
+                ).then((_) => _refresh());
+                setState(() => _selectedIndex = 2);
+              },
             ),
           ],
         ),
