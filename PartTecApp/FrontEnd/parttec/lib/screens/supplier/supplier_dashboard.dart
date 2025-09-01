@@ -9,6 +9,7 @@ import '../part/added_parts_page.dart';
 import '../recommendation/recommendation_requests_page.dart';
 import 'seller_reviews_page.dart';
 import 'DeliveredOrdersPage.dart.dart';
+import 'sellers.dart';
 
 class SupplierDashboard extends StatelessWidget {
   const SupplierDashboard({super.key});
@@ -103,14 +104,13 @@ class SupplierDashboard extends StatelessWidget {
               },
             ),
             _buildCard(
-              icon: Icons.recommend,
-              title: 'طلبات تجار',
+              icon: Icons.storefront,
+              title: 'التجار',
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        RecommendationOrdersPage(roleOverride: 'seller'),
+                    builder: (_) => const TradersDashboard(),
                   ),
                 );
               },
