@@ -5,7 +5,7 @@ import 'dart:convert';
 
 import '../../utils/session_store.dart';
 import '../../models/part.dart';
-import '../part/seller_part_details_page.dart';
+
 import '../supplier/SellerPartDetailsPage.dart';
 
 class AddedPartsPage extends StatefulWidget {
@@ -102,69 +102,68 @@ class _AddedPartsPageState extends State<AddedPartsPage>
         body: isLoading
             ? const Center(child: CircularProgressIndicator())
             : RefreshIndicator(
-          onRefresh: fetchParts,
-          child: TabBarView(
-            controller: _tabController,
-            children: categorizedParts.keys.map((category) {
-              final parts = categorizedParts[category]!;
-              return parts.isEmpty
-                  ? const ListTile(
-                title: Center(
-                    child: Text('لا توجد قطع في هذا التصنيف')),
-              )
-                  : ListView.builder(
-                itemCount: parts.length,
-                itemBuilder: (context, index) {
-                  final Map<String, dynamic> part =
-                  Map<String, dynamic>.from(parts[index]);
+                onRefresh: fetchParts,
+                child: TabBarView(
+                  controller: _tabController,
+                  children: categorizedParts.keys.map((category) {
+                    final parts = categorizedParts[category]!;
+                    return parts.isEmpty
+                        ? const ListTile(
+                            title: Center(
+                                child: Text('لا توجد قطع في هذا التصنيف')),
+                          )
+                        : ListView.builder(
+                            itemCount: parts.length,
+                            itemBuilder: (context, index) {
+                              final Map<String, dynamic> part =
+                                  Map<String, dynamic>.from(parts[index]);
 
-                  return Card(
-                    margin: const EdgeInsets.all(12),
-                    child: ListTile(
-                      onTap: () async {
-                        final refreshed = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => SellerPartDetailsPage(
-                              part: Part.fromJson(part),
-                            ),
-                          ),
-                        );
+                              return Card(
+                                margin: const EdgeInsets.all(12),
+                                child: ListTile(
+                                  onTap: () async {
+                                    final refreshed = await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => SellerPartDetailsPage(
+                                          part: Part.fromJson(part),
+                                        ),
+                                      ),
+                                    );
 
-                        if (refreshed == true) {
-
-                          fetchParts();
-                        }
-                      },
-                      leading: (part['imageUrl'] != null &&
-                          part['imageUrl']
-                              .toString()
-                              .isNotEmpty)
-                          ? Image.network(
-                        part['imageUrl'],
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                      )
-                          : const Icon(Icons.image, size: 50),
-                      title: Text(
-                          part['name']?.toString() ?? 'بدون اسم'),
-                      subtitle: Column(
-                        crossAxisAlignment:
-                        CrossAxisAlignment.start,
-                        children: [
-                          Text('الموديل: ${part['model'] ?? ''}'),
-                          Text('السنة: ${part['year'] ?? ''}'),
-                          Text('الحالة: ${part['status'] ?? ''}'),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              );
-            }).toList(),
-          ),
-        ),
+                                    if (refreshed == true) {
+                                      fetchParts();
+                                    }
+                                  },
+                                  leading: (part['imageUrl'] != null &&
+                                          part['imageUrl']
+                                              .toString()
+                                              .isNotEmpty)
+                                      ? Image.network(
+                                          part['imageUrl'],
+                                          width: 50,
+                                          height: 50,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : const Icon(Icons.image, size: 50),
+                                  title: Text(
+                                      part['name']?.toString() ?? 'بدون اسم'),
+                                  subtitle: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text('الموديل: ${part['model'] ?? ''}'),
+                                      Text('السنة: ${part['year'] ?? ''}'),
+                                      Text('الحالة: ${part['status'] ?? ''}'),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                  }).toList(),
+                ),
+              ),
       ),
     );
   }
