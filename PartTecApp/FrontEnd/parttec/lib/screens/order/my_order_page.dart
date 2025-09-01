@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
@@ -283,7 +284,8 @@ class _OrderCard extends StatelessWidget {
                 subtitle: Text("السعر: ${item['price'] ?? 'غير محدد'}"),
                 trailing: item['canCancel'] == true
                     ? IconButton(
-                        icon: const Icon(Icons.cancel, color: Colors.red),
+                        // استخدم لون الخطأ من الثيم بدلاً من الأحمر الصريح
+                        icon: const Icon(Icons.cancel, color: AppColors.error),
                         onPressed: () => onCancel(item['cartId']),
                       )
                     : null,
@@ -322,7 +324,9 @@ class _OrderCard extends StatelessWidget {
                       child: Text(
                         "العروض المتاحة:",
                         style: TextStyle(
-                            fontWeight: FontWeight.bold, color: Colors.blue),
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
                       ),
                     ),
                     ...offers.map((offer) {
@@ -348,11 +352,11 @@ class _OrderCard extends StatelessWidget {
                                   fit: BoxFit.cover,
                                   errorBuilder: (_, __, ___) => const Icon(
                                       Icons.local_offer,
-                                      color: Colors.green),
+                                      color: AppColors.primary),
                                 ),
                               )
                             : const Icon(Icons.local_offer,
-                                color: Colors.green),
+                                color: AppColors.primary),
                         title: Text(desc),
                         subtitle: Text('السعر: $price — $supplier'),
                         trailing: ElevatedButton(

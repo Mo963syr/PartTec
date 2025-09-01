@@ -15,9 +15,8 @@ class GradientBackground extends StatelessWidget {
           colors: [
             AppColors.bgGradientA,
             AppColors.bgGradientB,
-            AppColors.bgGradientC
+            AppColors.bgGradientC,
           ],
-          stops: [0.0, 0.45, 1.0],
         ),
       ),
       child: child,
@@ -33,10 +32,16 @@ class SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpaces.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpaces.md,
+        vertical: AppSpaces.sm,
+      ),
       child: Row(
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const Spacer(),
           if (trailing != null) trailing!,
         ],
@@ -55,14 +60,14 @@ class FloatingSearchBar extends StatelessWidget {
     required this.controller,
     required this.onSearch,
     this.onClear,
-    this.hint = 'ابحث...',
+    this.hint = 'ابحث عن قطعة...',
   });
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      elevation: 10,
-      borderRadius: BorderRadius.circular(16),
+      elevation: 6,
+      borderRadius: BorderRadius.circular(20),
       color: Colors.white,
       child: TextField(
         controller: controller,
@@ -70,12 +75,16 @@ class FloatingSearchBar extends StatelessWidget {
         onSubmitted: (_) => onSearch(),
         decoration: InputDecoration(
           hintText: hint,
+          hintStyle: const TextStyle(color: AppColors.textWeak),
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          prefixIcon: const Icon(Icons.search),
+          prefixIcon: const Icon(Icons.search, color: AppColors.primary),
           suffixIcon: (controller.text.isNotEmpty && onClear != null)
-              ? IconButton(icon: const Icon(Icons.clear), onPressed: onClear)
+              ? IconButton(
+                  icon: const Icon(Icons.clear, color: AppColors.textWeak),
+                  onPressed: onClear,
+                )
               : null,
         ),
       ),
@@ -86,52 +95,48 @@ class FloatingSearchBar extends StatelessWidget {
 class VisibilityToggle extends StatelessWidget {
   final bool isPrivate;
   final ValueChanged<bool> onChanged;
-  const VisibilityToggle(
-      {super.key, required this.isPrivate, required this.onChanged});
+  const VisibilityToggle({
+    super.key,
+    required this.isPrivate,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 36,
+      height: 38,
       decoration: BoxDecoration(
         color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: Row(
         children: [
-          _segBtn(context,
-              label: 'عامة',
-              selected: !isPrivate,
-              onTap: () => onChanged(false)),
-          _segBtn(context,
-              label: 'خاصة', selected: isPrivate, onTap: () => onChanged(true)),
+          _segBtn('عامة', !isPrivate, () => onChanged(false)),
+          _segBtn('خاصة', isPrivate, () => onChanged(true)),
         ],
       ),
     );
   }
 
-  Expanded _segBtn(BuildContext ctx,
-      {required String label,
-      required bool selected,
-      required VoidCallback onTap}) {
+  Expanded _segBtn(String label, bool selected, VoidCallback onTap) {
     return Expanded(
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
+          duration: const Duration(milliseconds: 200),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: selected ? const Color(0x1A2196F3) : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
+            color: selected ? AppColors.primary.withOpacity(0.15) : null,
+            borderRadius: BorderRadius.circular(12),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           child: Text(
             label,
             style: TextStyle(
               color: selected ? AppColors.primary : AppColors.text,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ),
@@ -144,16 +149,17 @@ class CategoryChipsBar extends StatelessWidget {
   final List<Map<String, dynamic>> categories;
   final int selectedIndex;
   final ValueChanged<int> onChanged;
-  const CategoryChipsBar(
-      {super.key,
-      required this.categories,
-      required this.selectedIndex,
-      required this.onChanged});
+  const CategoryChipsBar({
+    super.key,
+    required this.categories,
+    required this.selectedIndex,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 46,
+      height: 48,
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: AppSpaces.md),
         scrollDirection: Axis.horizontal,
@@ -171,13 +177,15 @@ class CategoryChipsBar extends StatelessWidget {
                 color: isSel ? AppColors.primary : Colors.white,
                 borderRadius: BorderRadius.circular(28),
                 border: Border.all(
-                    color: isSel ? AppColors.primary : AppColors.chipBorder),
+                  color: isSel ? AppColors.primary : AppColors.chipBorder,
+                ),
                 boxShadow: [
                   if (isSel)
                     BoxShadow(
-                        color: AppColors.primary.withOpacity(0.25),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6))
+                      color: AppColors.primary.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
                 ],
               ),
               child: Row(
@@ -185,10 +193,13 @@ class CategoryChipsBar extends StatelessWidget {
                   Icon(icon,
                       size: 18, color: isSel ? Colors.white : AppColors.text),
                   const SizedBox(width: 6),
-                  Text(label,
-                      style: TextStyle(
-                          color: isSel ? Colors.white : AppColors.text,
-                          fontWeight: FontWeight.w700)),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: isSel ? Colors.white : AppColors.text,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
             ),

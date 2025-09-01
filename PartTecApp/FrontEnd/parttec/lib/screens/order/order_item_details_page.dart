@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 
 class OrderItemDetailsPage extends StatelessWidget {
   final Map<String, dynamic> item;
@@ -22,7 +23,11 @@ class OrderItemDetailsPage extends StatelessWidget {
     final partId = (item['partId'] ?? '').toString();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('تفاصيل القطعة')),
+      appBar: AppBar(
+        title: const Text('تفاصيل القطعة'),
+        // استخدم اللون الأساسي للتطبيق
+        backgroundColor: AppColors.primary,
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

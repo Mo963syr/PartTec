@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../../models/part.dart';
 import '../../utils/app_settings.dart';
 import '../part/part_reviews_section.dart';
+import '../../theme/app_theme.dart';
 
 class SellerPartDetailsPage extends StatelessWidget {
   final Part part;
@@ -207,7 +208,8 @@ class SellerPartDetailsPage extends StatelessWidget {
                   icon: const Icon(Icons.edit),
                   label: const Text("تعديل"),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueGrey,
+                    // استخدم اللون الغامق من الثيم بدلاً من الأزرق الرمادي
+                    backgroundColor: AppColors.primaryDark,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: () => _showEditDialog(context),
@@ -219,7 +221,8 @@ class SellerPartDetailsPage extends StatelessWidget {
                   icon: const Icon(Icons.delete),
                   label: const Text("حذف"),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
+                    // استخدم لون الخطأ من الثيم بدلاً من الأحمر الصريح
+                    backgroundColor: AppColors.error,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   onPressed: () async {

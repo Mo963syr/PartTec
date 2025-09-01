@@ -47,10 +47,11 @@ class PartDetailsPage extends StatelessWidget {
                   ),
                   flexibleSpace: FlexibleSpaceBar(
                     collapseMode: CollapseMode.parallax,
-                    background: imageUrl.isNotEmpty
+                  background: imageUrl.isNotEmpty
                         ? Image.network(imageUrl, fit: BoxFit.cover)
                         : Container(
-                            color: Colors.grey[300],
+                            // استخدم لون الحدود من الثيم بدلاً من الرمادي الصريح
+                            color: AppColors.chipBorder,
                             child: const Icon(Icons.image, size: 100),
                           ),
                   ),
@@ -200,7 +201,7 @@ class PartDetailsPage extends StatelessWidget {
                                     Text(
                                       "(${prov.ratingsCount} تقييم)",
                                       style: const TextStyle(
-                                          color: Colors.black54),
+                                          color: AppColors.textWeak),
                                     ),
                                   ],
                                 );
@@ -268,7 +269,8 @@ class _GlassCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        // استخدم لون الكارد من الثيم بدلاً من الأبيض الصريح
+        color: AppColors.card,
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [
           BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
@@ -312,7 +314,8 @@ class _BottomAddToCart extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(success ? "تمت الإضافة إلى السلة" : "فشلت الإضافة"),
-            backgroundColor: success ? Colors.green : Colors.red,
+            // استخدم ألوان الحالات من الثيم بدلاً من الألوان الصريحة
+            backgroundColor: success ? AppColors.success : AppColors.error,
           ),
         );
       },

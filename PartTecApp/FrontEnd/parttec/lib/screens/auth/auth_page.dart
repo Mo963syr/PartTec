@@ -70,7 +70,7 @@ class _AuthPageState extends State<AuthPage>
         target = const MechanicDashboard();
         break;
       default:
-        target = ChooseDestinationPage();
+        target = const MechanicDashboard();
         break;
     }
     Navigator.of(context)

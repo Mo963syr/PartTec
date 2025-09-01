@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
@@ -142,7 +143,8 @@ class _RequestRecommendationPageState extends State<RequestRecommendationPage> {
                   child: Container(
                     height: 150,
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
+                      // استخدم لون الحدود من الثيم بدلاً من الرمادي الصريح
+                      border: Border.all(color: AppColors.chipBorder),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: _pickedImage != null
@@ -156,8 +158,12 @@ class _RequestRecommendationPageState extends State<RequestRecommendationPage> {
                   onPressed: isSubmitting ? null : _submit,
                   icon: const Icon(Icons.send),
                   label: Text(isSubmitting ? 'جارٍ الإرسال...' : 'إرسال الطلب'),
+                  // استخدم لون الزر من الثيم مع الحفاظ على حجم الحد الأدنى
                   style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 50)),
+                    minimumSize: const Size(double.infinity, 50),
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                  ),
                 ),
               ],
             ),

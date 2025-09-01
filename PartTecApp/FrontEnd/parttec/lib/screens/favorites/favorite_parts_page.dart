@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../../providers/favorites_provider.dart';
 import 'package:parttec/widgets/parts_widgets.dart' as pw;
@@ -31,7 +32,11 @@ class _FavoritePartsPageState extends State<FavoritePartsPage> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        appBar: AppBar(title: const Text('المفضلة')),
+        appBar: AppBar(
+          title: const Text('المفضلة'),
+          // استخدم اللون الأساسي للتطبيق
+          backgroundColor: AppColors.primary,
+        ),
         body: RefreshIndicator(
           onRefresh: _refresh,
           child: FutureBuilder<void>(

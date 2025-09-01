@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -25,7 +26,11 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
     final orderProvider = Provider.of<OrderProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text('تحديد الموقع')),
+      appBar: AppBar(
+        title: const Text('تحديد الموقع'),
+        // استخدم اللون الأساسي للتطبيق
+        backgroundColor: AppColors.primary,
+      ),
       body: Stack(
         children: [
           FlutterMap(
@@ -54,7 +59,8 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                       point: selectedLocation!,
                       child: Icon(
                         Icons.location_on,
-                        color: Colors.red,
+                        // استخدم اللون الأساسي بدلاً من الأحمر
+                        color: AppColors.primary,
                         size: 40,
                       ),
                     ),
@@ -87,9 +93,15 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                     Navigator.of(context).pop(); // العودة بعد الإرسال
                   }
                 },
+                // استخدم لون الزر من الثيم
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(48),
+                ),
                 child: orderProvider.isLoading
-                    ? CircularProgressIndicator(color: Colors.white)
-                    : Text('تأكيد وإرسال الطلب'),
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('تأكيد وإرسال الطلب'),
               ),
             ),
         ],

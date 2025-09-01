@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 
 class RecommendationRequestsPage extends StatelessWidget {
   const RecommendationRequestsPage({super.key});
@@ -8,7 +9,8 @@ class RecommendationRequestsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('طلبات التوصية'),
-        backgroundColor: Colors.blue,
+        // استخدام اللون الأساسي من الثيم بدلاً من الأزرق الصريح
+        backgroundColor: AppColors.primary,
       ),
       body: Center(
         child: Text(

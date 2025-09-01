@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 import 'package:http/http.dart' as http;
 import '../../utils/app_settings.dart';
 import '../../utils/session_store.dart';
@@ -60,7 +61,11 @@ class _SellerReviewsPageState extends State<SellerReviewsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('تقييمات البائع')),
+      appBar: AppBar(
+        title: const Text('تقييمات البائع'),
+        // استخدم اللون الأساسي للتطبيق
+        backgroundColor: AppColors.primary,
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -105,7 +110,8 @@ class _SellerReviewsPageState extends State<SellerReviewsPage> {
                     'بواسطة: ${user['name'] ?? 'مستخدم'}',
                     style: const TextStyle(
                       fontSize: 12,
-                      color: Colors.grey,
+                      // استخدم لون النص الضعيف من الثيم بدلاً من الرمادي الصريح
+                      color: AppColors.textWeak,
                     ),
                   ),
                 ],

@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
+
 import '../../providers/add_part_provider.dart';
 import '../../utils/app_settings.dart';
+import '../../theme/app_theme.dart';
 import '../qr/qr_scan_page.dart';
 
 class KiaPartAddPage extends StatefulWidget {
@@ -37,6 +39,7 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
   String? selectedFuel;
   String? selectedCategory;
   String? selectedStatus;
+
   File? _pickedImage;
   final priceController = TextEditingController();
   final serialNumberController = TextEditingController();
@@ -71,7 +74,7 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
               .toList();
         });
       }
-    } catch (e) {}
+    } catch (_) {}
   }
 
   Future<void> _fetchModels(String brand) async {
@@ -87,7 +90,7 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
       } else {
         models = [];
       }
-    } catch (e) {
+    } catch (_) {
       models = [];
     }
     setState(() => isModelsLoading = false);
@@ -112,7 +115,7 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
         priceController.text.isEmpty ||
         _pickedImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى تعبئة جميع الحقول')),
+        const SnackBar(content: Text('⚠️ يرجى تعبئة جميع الحقول')),
       );
       return;
     }
@@ -132,8 +135,8 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
     setState(() => isLoading = false);
 
     final msg = ok
-        ? '✅ تمت الإضافة'
-        : (context.read<AddPartProvider>().errorMessage ?? 'فشل');
+        ? '✅ تمت إضافة القطعة بنجاح'
+        : (context.read<AddPartProvider>().errorMessage ?? 'فشل في الإضافة');
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     if (ok) Navigator.pop(context);
   }
@@ -168,40 +171,20 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
           loading: isModelsLoading,
         );
       case 2:
-        return _cardStep(
-          'اختر سنة الصنع:',
-          years,
-          selectedYear,
-          (y) => setState(() => selectedYear = y),
-        );
+        return _cardStep('اختر سنة الصنع:', years, selectedYear,
+            (y) => setState(() => selectedYear = y));
       case 3:
-        return _cardStep(
-          'اختر اسم القطعة:',
-          partsList,
-          selectedPart,
-          (p) => setState(() => selectedPart = p),
-        );
+        return _cardStep('اختر اسم القطعة:', partsList, selectedPart,
+            (p) => setState(() => selectedPart = p));
       case 4:
-        return _cardStep(
-          'اختر نوع الوقود:',
-          fuels,
-          selectedFuel,
-          (f) => setState(() => selectedFuel = f),
-        );
+        return _cardStep('اختر نوع الوقود:', fuels, selectedFuel,
+            (f) => setState(() => selectedFuel = f));
       case 5:
-        return _cardStep(
-          'اختر التصنيف:',
-          categories,
-          selectedCategory,
-          (c) => setState(() => selectedCategory = c),
-        );
+        return _cardStep('اختر التصنيف:', categories, selectedCategory,
+            (c) => setState(() => selectedCategory = c));
       case 6:
-        return _cardStep(
-          'اختر الحالة:',
-          statuses,
-          selectedStatus,
-          (s) => setState(() => selectedStatus = s),
-        );
+        return _cardStep('اختر الحالة:', statuses, selectedStatus,
+            (s) => setState(() => selectedStatus = s));
       default:
         return _buildFinalForm();
     }
@@ -218,8 +201,11 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
+            style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryDark)),
+        const SizedBox(height: AppSpaces.sm),
         if (loading)
           const Center(child: CircularProgressIndicator())
         else
@@ -232,37 +218,41 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
               return AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 decoration: BoxDecoration(
-                  color: isSel ? Colors.blue.shade50 : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border:
-                      isSel ? Border.all(color: Colors.blue, width: 2) : null,
-                  boxShadow: const [
-                    BoxShadow(
-                      blurRadius: 4,
-                      color: Colors.black12,
-                      offset: Offset(0, 2),
-                    )
+                  color:
+                      isSel ? AppColors.primary.withOpacity(0.1) : Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                      color: isSel ? AppColors.primary : AppColors.chipBorder,
+                      width: isSel ? 2 : 1),
+                  boxShadow: [
+                    if (isSel)
+                      BoxShadow(
+                        blurRadius: 8,
+                        color: AppColors.primary.withOpacity(0.25),
+                        offset: const Offset(0, 4),
+                      )
                   ],
                 ),
                 child: InkWell(
                   onTap: () => onSelect(opt),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                        vertical: 16, horizontal: 20),
-                    child: Text(txt,
-                        style: TextStyle(
-                            fontSize: 14,
-                            fontWeight:
-                                isSel ? FontWeight.bold : FontWeight.normal,
-                            color:
-                                isSel ? Colors.blue.shade700 : Colors.black87)),
+                        vertical: 14, horizontal: 18),
+                    child: Text(
+                      txt,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                        color: isSel ? AppColors.primary : AppColors.text,
+                      ),
+                    ),
                   ),
                 ),
               );
             }).toList(),
           ),
-        const SizedBox(height: 20),
+        const SizedBox(height: AppSpaces.lg),
       ],
     );
   }
@@ -275,13 +265,13 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
           controller: serialNumberController,
           decoration: InputDecoration(
             labelText: 'الرقم التسلسلي (اختياري)',
-            border: OutlineInputBorder(),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             suffixIcon: IconButton(
-              icon: Icon(Icons.qr_code_scanner),
+              icon: const Icon(Icons.qr_code_scanner),
               onPressed: () async {
                 final code = await Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => QRScanPage()),
+                  MaterialPageRoute(builder: (_) => const QRScanPage()),
                 );
                 if (code != null) {
                   setState(() {
@@ -292,33 +282,38 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpaces.md),
         TextField(
           controller: priceController,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'السعر (بالدولار)',
-            border: OutlineInputBorder(),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpaces.md),
         ElevatedButton.icon(
           onPressed: _pickImage,
           icon: const Icon(Icons.image),
           label: const Text('اختيار صورة'),
         ),
         if (_pickedImage != null) ...[
-          const SizedBox(height: 12),
-          Image.file(_pickedImage!, width: 120, height: 120, fit: BoxFit.cover),
+          const SizedBox(height: AppSpaces.sm),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.file(
+              _pickedImage!,
+              width: 120,
+              height: 120,
+              fit: BoxFit.cover,
+            ),
+          ),
         ],
-        const SizedBox(height: 20),
+        const SizedBox(height: AppSpaces.lg),
         ElevatedButton.icon(
           onPressed: _submit,
           icon: const Icon(Icons.send),
           label: const Text('إرسال'),
-          style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              padding: const EdgeInsets.symmetric(vertical: 14)),
         )
       ],
     );
@@ -333,15 +328,14 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
           : AnimatedSwitcher(
               duration: const Duration(milliseconds: 400),
               transitionBuilder: (child, anim) => SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(1, 0),
-                  end: Offset.zero,
-                ).animate(anim),
+                position:
+                    Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+                        .animate(anim),
                 child: child,
               ),
               child: SingleChildScrollView(
                 key: ValueKey<int>(_currentStep),
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpaces.md),
                 child: _buildCurrentStep(_currentStep),
               ),
             ),

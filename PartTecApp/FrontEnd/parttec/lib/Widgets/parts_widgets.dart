@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/provider.dart';
 import '../providers/parts_provider.dart';
@@ -50,7 +51,8 @@ class PartCard extends StatelessWidget {
                               errorBuilder: (_, __, ___) => const Icon(
                                 Icons.broken_image,
                                 size: 50,
-                                color: Colors.grey,
+                                // استخدم لون نص ضعيف من الثيم بدلاً من الرمادي الصريح
+                                color: AppColors.textWeak,
                               ),
                               loadingBuilder: (ctx, child, progress) {
                                 if (progress == null) return child;
@@ -61,7 +63,8 @@ class PartCard extends StatelessWidget {
                               },
                             ),
                           )
-                        : const Icon(Icons.image, size: 50, color: Colors.grey),
+                        : const Icon(Icons.image,
+                            size: 50, color: AppColors.textWeak),
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -76,8 +79,8 @@ class PartCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           part.manufacturer ?? '',
-                          style:
-                              TextStyle(color: Colors.grey[600], fontSize: 12),
+                          style: const TextStyle(
+                              color: AppColors.textWeak, fontSize: 12),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -86,14 +89,15 @@ class PartCard extends StatelessWidget {
                         child: Text(
                           part.model,
                           style: const TextStyle(
-                              fontSize: 13, color: Colors.black87),
+                              fontSize: 13, color: AppColors.text),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const SizedBox(width: 10),
                       Text(
                         part.year != 0 ? part.year.toString() : '',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                        style: const TextStyle(
+                            fontSize: 12, color: AppColors.textWeak),
                       ),
                     ],
                   ),
@@ -103,10 +107,11 @@ class PartCard extends StatelessWidget {
             Positioned(
               top: 6,
               right: 6,
-              child: IconButton(
+            child: IconButton(
                 icon: Icon(
                   isFav ? Icons.favorite : Icons.favorite_border,
-                  color: isFav ? Colors.red : Colors.grey,
+                  // استخدم لون الخطأ عند اختيار المفضلة ولون نص ضعيف عند عدم الاختيار
+                  color: isFav ? AppColors.error : AppColors.textWeak,
                 ),
                 onPressed: () async {
                   // بدّل الحالة في الباك والواجهة

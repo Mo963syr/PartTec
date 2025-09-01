@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import '../../theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../../providers/reviews_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -136,9 +137,11 @@ class _CommentComposerState extends State<_CommentComposer> {
             const SizedBox(height: 8),
             Container(
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade400),
+                // استخدم لون الحدود من الثيم بدلاً من الرمادي الصريح
+                border: Border.all(color: AppColors.chipBorder),
                 borderRadius: BorderRadius.circular(8),
-                color: Colors.white,
+                // ولون الكارد من الثيم بدلاً من الأبيض الصريح
+                color: AppColors.card,
               ),
               child: CupertinoTextField(
                 key: const ValueKey('comment_field_key'), // يحافظ على الهوية

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../../providers/recommendations_provider.dart';
 import '../../utils/session_store.dart';
@@ -30,10 +31,10 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
 
   Color _statusColor(String s) {
     final t = s.trim();
-    if (t.contains('موجود')) return Colors.green;
-    if (t.contains('غير موجود')) return Colors.red;
-    if (t.contains('قيد') || t.contains('بحث')) return Colors.amber;
-    return Colors.blueGrey;
+    if (t.contains('موجود')) return AppColors.success;
+    if (t.contains('غير موجود')) return AppColors.error;
+    if (t.contains('قيد') || t.contains('بحث')) return AppColors.warning;
+    return AppColors.primaryDark;
   }
 
   void _showOfferForm(BuildContext context, String orderId) {
@@ -128,6 +129,8 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
         child: Scaffold(
           appBar: AppBar(
             title: const Text('طلبات التوصية'),
+            // استخدم لون الأساس للتطبيق
+            backgroundColor: AppColors.primary,
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(48),
               child: Consumer<RecommendationsProvider>(
@@ -143,7 +146,8 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
                   return TabBar(
                     labelColor: const Color.fromARGB(255, 0, 0, 0),
                     unselectedLabelColor: const Color.fromARGB(179, 0, 0, 0),
-                    indicatorColor: Colors.amber,
+                    // استخدم لون المؤشر من الثيم بدلاً من اللون الكهرماني
+                    indicatorColor: AppColors.primary,
                     indicatorWeight: 3,
                     tabs: [
                       Tab(text: 'الطلبات ($pendingCount)'),

@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+//import 'package:flutter/material.dart';
+//import '../theme/app_theme.dart';
+/*
 import '../supplier/supplier_dashboard.dart';
 import '../home/home_page.dart';
 
@@ -11,7 +13,9 @@ class ChooseDestinationPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('اختر الصفحة'),
+        title: const Text('اختر الصفحة'),
+        // استخدم اللون الأساسي للتطبيق
+        backgroundColor: AppColors.primary,
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -44,4 +48,4 @@ class ChooseDestinationPage extends StatelessWidget {
       ),
     );
   }
-}
+}*/

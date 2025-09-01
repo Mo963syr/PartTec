@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 import 'package:latlong2/latlong.dart';
 import '../../models/cart_item.dart';
 
@@ -22,7 +23,11 @@ class OrderSummaryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('فاتورة الطلب')),
+      appBar: AppBar(
+        title: const Text('فاتورة الطلب'),
+        // استخدم اللون الأساسي للتطبيق
+        backgroundColor: AppColors.primary,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -61,19 +66,26 @@ class OrderSummaryPage extends StatelessWidget {
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
-                  child: Text('إلغاء'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
+                  child: const Text('إلغاء'),
+                  // استخدم لون الخطأ للبوتون
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.error,
+                    foregroundColor: Colors.white,
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('تم تأكيد الطلب ✅')),
+                      const SnackBar(content: Text('تم تأكيد الطلب ✅')),
                     );
                     Navigator.of(context).popUntil((route) => route.isFirst);
                   },
-                  child: Text('تأكيد الطلب'),
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                  child: const Text('تأكيد الطلب'),
+                  // استخدم لون النجاح للبوتون
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.success,
+                    foregroundColor: Colors.white,
+                  ),
                 ),
               ],
             )

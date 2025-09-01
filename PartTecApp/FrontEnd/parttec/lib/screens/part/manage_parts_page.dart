@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import '../../providers/parts_provider.dart';
 import '../../models/part.dart';
@@ -25,7 +26,8 @@ class _ManagePartsPageState extends State<ManagePartsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('إدارة القطع'),
-        backgroundColor: Colors.blue,
+        // استخدم اللون الأساسي المخصص للتطبيق بدلاً من الأزرق الصريح
+        backgroundColor: AppColors.primary,
       ),
       body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -40,7 +42,8 @@ class _ManagePartsPageState extends State<ManagePartsPage> {
                     title: Text(part.name),
                     subtitle: Text("${part.manufacturer} - ${part.model}"),
                     trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
+                      // استعمل لون الخطأ من الثيم بدلاً من الأحمر الصريح
+                      icon: const Icon(Icons.delete, color: AppColors.error),
                       onPressed: () async {
                         final confirm = await showDialog<bool>(
                           context: context,
