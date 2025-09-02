@@ -21,7 +21,7 @@ class _UploadPartsExcelPageState extends State<UploadPartsExcelPage> {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['xlsx', 'xls'], // حصراً Excel
+        allowedExtensions: ['xlsx', 'xls'],
       );
       if (result != null && result.files.single.path != null) {
         setState(() {
@@ -47,16 +47,14 @@ class _UploadPartsExcelPageState extends State<UploadPartsExcelPage> {
     setState(() => isUploading = true);
 
     try {
-      final uri = Uri.parse("${AppSettings.serverurl}/parts/upload-excel");
+      final uri = Uri.parse("${AppSettings.serverurl}/part/upload-excel");
 
-      // ✅ أنشئ الـ request
       var request = http.MultipartRequest("POST", uri);
 
-      // ✅ إضافة userId إلى الـ body
       final userId = await SessionStore.userId();
-      request.fields["userId"] = userId ?? "";
+      print("📌 UserId: $userId");
+      request.fields["user"] = userId ?? "";
 
-      // ✅ إضافة الملف
       request.files.add(
         await http.MultipartFile.fromPath("file", pickedFile!.path),
       );
@@ -64,7 +62,7 @@ class _UploadPartsExcelPageState extends State<UploadPartsExcelPage> {
       final response = await request.send();
       final resBody = await response.stream.bytesToString();
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("✅ تم رفع الملف بنجاح")),
         );

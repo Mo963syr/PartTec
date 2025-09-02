@@ -30,7 +30,7 @@ class AppSpaces {
 
 class AppImages {
   static const String defaultPart =
-      "https://www.bing.com/images/search?view=detailV2&ccid=N12W6FwB&id=598B88BD3720C721F724C03B0D208C662404347C&thid=OIP.N12W6FwB8RT0ba5WrPcXEAHaE8&mediaurl=https%3a%2f%2fwww.mosoah.com%2fwp-content%2fuploads%2f2021%2f05%2f%d9%85%d9%88%d9%82%d8%b9-%d9%84%d9%85%d8%b9%d8%b1%d9%81%d8%a9-%d9%82%d8%b7%d8%b9-%d8%ba%d9%8a%d8%a7%d8%b1-%d8%a7%d9%84%d8%b3%d9%8a%d8%a7%d8%b1%d8%a7%d8%aa.jpg&cdnurl=https%3a%2f%2fth.bing.com%2fth%2fid%2fR.375d96e85c01f114f46dae56acf71710%3frik%3dfDQEJGaMIA07wA%26pid%3dImgRaw%26r%3d0&exph=800&expw=1200&q=%d8%b5%d9%88%d8%b1%d8%a9+%d9%82%d8%b7%d8%b9%d8%a9+%d8%ba%d9%8a%d8%a7%d8%b1&FORM=IRPRST&ck=465A8150B1B2D15531E37B9B83759F2E&selectedIndex=16&itb=0";
+      "https://res.cloudinary.com/dzjrgcxwt/image/upload/photo_2025-09-02_07-58-51_e8g6im.jpg";
 }
 
 ThemeData buildAppTheme() {
