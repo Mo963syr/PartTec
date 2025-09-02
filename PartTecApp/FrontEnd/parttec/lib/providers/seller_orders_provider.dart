@@ -59,8 +59,7 @@ class SellerOrdersProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updateStatus(
-      String orderId, String newStatus, BuildContext context) async {
+  Future<bool> updateStatus(String orderId, String newStatus) async {
     final url =
         Uri.parse('${AppSettings.serverurl}/order/updateOrderStatus/$orderId');
 
@@ -75,21 +74,13 @@ class SellerOrdersProvider with ChangeNotifier {
       if (response.statusCode == 200 &&
           data is Map &&
           data['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? 'تم التحديث بنجاح')),
-        );
-        await fetchOrders();
+        await fetchOrders(); // إعادة جلب الطلبات
+        return true;
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(
-                  (data is Map ? data['message'] : null) ?? 'فشل في التحديث')),
-        );
+        return false;
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('حدث خطأ أثناء التحديث: $e')),
-      );
+      return false;
     }
   }
 

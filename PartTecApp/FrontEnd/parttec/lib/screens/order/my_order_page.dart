@@ -122,16 +122,19 @@ class _MyOrdersViewState extends State<_MyOrdersView> {
       final map = Map<String, dynamic>.from(o as Map);
 
       if (specific) {
+        final rawStatus = (map['status'] ?? 'غير محدد').toString();
+        // عرض حالة "مؤكد" للمستخدم العادي على أنها "قيد المعالجة"
+        final userStatus = rawStatus == 'مؤكد' ? 'قيد المعالجة' : rawStatus;
         return {
           'orderId': map['_id'] ?? '',
-          'status': map['status'] ?? 'غير محدد',
+          'status': userStatus,
           'expanded': false,
           'items': [
             {
               'name': map['name'] ?? 'اسم غير معروف',
               'image': map['imageUrl'],
               'price': map['price'],
-              'status': map['status'] ?? 'غير محدد',
+              'status': userStatus,
               'canCancel': false,
               'cartId': map['_id'] ?? '',
             }
@@ -152,19 +155,24 @@ class _MyOrdersViewState extends State<_MyOrdersView> {
             image = pMap['imageUrl']?.toString();
             price = pMap['price'];
           }
+          final rawItemStatus = (itm['status'] ?? map['status'] ?? 'غير متوفر').toString();
+          final userItemStatus = rawItemStatus == 'مؤكد' ? 'قيد المعالجة' : rawItemStatus;
           return {
             'name': name ?? 'اسم غير معروف',
             'image': image,
             'price': price,
-            'status': itm['status'] ?? map['status'] ?? 'غير متوفر',
+            'status': userItemStatus,
             'canCancel': (map['status'] == 'قيد التجهيز'),
             'cartId': itm['_id'] ?? '',
           };
         }).toList();
 
+        final rawOrderStatus = (map['status'] ?? 'غير معروف').toString();
+        final userOrderStatus = rawOrderStatus == 'مؤكد' ? 'قيد المعالجة' : rawOrderStatus;
+
         return {
           'orderId': map['_id'] ?? '',
-          'status': map['status'] ?? 'غير معروف',
+          'status': userOrderStatus,
           'expanded': false,
           'items': items,
         };

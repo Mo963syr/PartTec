@@ -74,24 +74,9 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
               left: 16,
               right: 16,
               child: ElevatedButton(
-                onPressed: () async {
-                  final coords = [
-                    selectedLocation!.longitude,
-                    selectedLocation!.latitude,
-                  ];
-
-                  await orderProvider.sendOrder(coords);
-
-                  if (orderProvider.error != null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(orderProvider.error!)),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('✅ تم إرسال الطلب بنجاح')),
-                    );
-                    Navigator.of(context).pop(); // العودة بعد الإرسال
-                  }
+                onPressed: () {
+                  // عند تأكيد الموقع، نعيد الإحداثيات للصفحة السابقة بدلاً من إرسال الطلب مباشرةً
+                  Navigator.of(context).pop(selectedLocation);
                 },
                 // استخدم لون الزر من الثيم
                 style: ElevatedButton.styleFrom(
@@ -99,9 +84,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
                   foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(48),
                 ),
-                child: orderProvider.isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('تأكيد وإرسال الطلب'),
+                child: const Text('تأكيد الموقع'),
               ),
             ),
         ],

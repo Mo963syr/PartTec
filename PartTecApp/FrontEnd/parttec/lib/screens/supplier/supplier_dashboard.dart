@@ -12,7 +12,7 @@ import '../order/GroupedOrdersPage.dart';
 import '../part/added_parts_page.dart';
 import '../recommendation/recommendation_requests_page.dart';
 import 'seller_reviews_page.dart';
-import 'DeliveredOrdersPage.dart.dart';
+import 'DeliveredOrdersPage.dart';
 import 'sellers.dart';
 
 class SupplierDashboard extends StatelessWidget {
@@ -76,7 +76,8 @@ class SupplierDashboard extends StatelessWidget {
                       _buildCard(
                         context,
                         icon: Icons.shopping_cart,
-                        title: 'طلبات الزبائن',
+                        // تغيير العنوان ليعكس الطلبات المقدمة من الزبون فقط
+                        title: 'الطلبات المقدمة من الزبون',
                         onTap: () {
                           Navigator.push(
                             context,

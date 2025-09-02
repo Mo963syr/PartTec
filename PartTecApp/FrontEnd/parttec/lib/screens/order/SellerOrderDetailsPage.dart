@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/seller_orders_provider.dart';
-import 'order_item_details_page.dart';
+import 'package:http/http.dart' as http;
 
-class SellerOrderDetailsPage extends StatelessWidget {
+import '../../providers/seller_orders_provider.dart';
+import '../../theme/app_theme.dart';
+
+class SellerOrderDetailsPage extends StatefulWidget {
   final String customerName;
   final List<Map<String, dynamic>> orders;
 
@@ -12,6 +15,60 @@ class SellerOrderDetailsPage extends StatelessWidget {
     required this.customerName,
     required this.orders,
   }) : super(key: key);
+
+  @override
+  State<SellerOrderDetailsPage> createState() => _SellerOrderDetailsPageState();
+}
+
+class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
+  String? _address;
+  bool _loadingAddress = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAddress();
+  }
+
+  Future<void> _fetchAddress() async {
+    final order =
+        widget.orders.isNotEmpty ? widget.orders.first : <String, dynamic>{};
+
+    List? coords = order['coordinates'] as List?;
+    if (coords == null || coords.length < 2) {
+      final loc = order['location'] as List?;
+      if (loc != null && loc.length >= 2) {
+        coords = loc;
+      }
+    }
+    if (coords != null && coords.length >= 2) {
+      // نتأكد من كونها رقمية
+      final lon = double.tryParse(coords[0].toString());
+      final lat = double.tryParse(coords[1].toString());
+      if (lat != null && lon != null) {
+        try {
+          final uri = Uri.parse(
+              'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=jsonv2');
+          final res = await http.get(uri,
+              headers: {'User-Agent': 'parttec-app/1.0 (https://example.com)'});
+          if (res.statusCode == 200) {
+            final data = jsonDecode(res.body) as Map?;
+            setState(() {
+              _address = data?['display_name']?.toString();
+              _loadingAddress = false;
+            });
+            return;
+          }
+        } catch (_) {
+          // ignore
+        }
+      }
+    }
+    setState(() {
+      _address = null;
+      _loadingAddress = false;
+    });
+  }
 
   double _numToDouble(dynamic v) {
     if (v is num) return v.toDouble();
@@ -29,155 +86,209 @@ class SellerOrderDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final order = orders.isNotEmpty ? orders.first : <String, dynamic>{};
+    final order =
+        widget.orders.isNotEmpty ? widget.orders.first : <String, dynamic>{};
 
-    final orderId = (order['orderId'] ?? '').toString();
+    final orderId = (order['orderId'] ?? order['_id'] ?? '').toString();
     final status = (order['status'] ?? '').toString();
     final createdAt = _fmtDate((order['createdAt'] ?? '').toString());
 
+    // عناصر الطلب
     final List<Map<String, dynamic>> items = ((order['items'] as List?) ?? [])
         .map<Map<String, dynamic>>((e) => (e as Map).cast<String, dynamic>())
         .toList();
 
+    // حساب الإجمالي
     final totalAmount = (order['totalAmount'] != null)
         ? _numToDouble(order['totalAmount'])
-        : items.fold<double>(0.0, (s, it) => s + _numToDouble(it['total']));
+        : items.fold<double>(0.0, (s, it) {
+            final qty = _numToDouble(it['quantity']).toInt();
+            final price = _numToDouble(it['price']);
+            final tot =
+                it['total'] != null ? _numToDouble(it['total']) : (price * qty);
+            return s + tot;
+          });
 
-    final shouldShowActions = status != 'على الطريق';
+    final shouldShowActions = status == 'قيد التجهيز' || status == 'مؤكد';
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('تفاصيل الطلب')),
-      body: ListView(
-        padding: const EdgeInsets.all(12),
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('الزبون: $customerName',
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
-                  if (orderId.isNotEmpty) Text('رقم الطلب: $orderId'),
-                  if (status.isNotEmpty) Text('الحالة الحالية: $status'),
-                  if (createdAt.isNotEmpty) Text('التاريخ: $createdAt'),
-                  const Divider(height: 20),
-                  Row(
-                    children: [
-                      const Text('إجمالي المبلغ:',
-                          style: TextStyle(fontWeight: FontWeight.w600)),
-                      const Spacer(),
-                      Text(totalAmount.toStringAsFixed(2)),
-                    ],
-                  ),
-                  if (shouldShowActions) ...[
-                    const SizedBox(height: 12),
+    List<dynamic>? coordsList = order['coordinates'] as List?;
+    if (coordsList == null || coordsList.length < 2) {
+      coordsList = order['location'] as List?;
+    }
+    double? lat;
+    double? lon;
+    if (coordsList != null && coordsList.length >= 2) {
+      lon = double.tryParse(coordsList[0].toString());
+      lat = double.tryParse(coordsList[1].toString());
+    }
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('تفاصيل الطلب'),
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'الزبون: ${widget.customerName}',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    const SizedBox(height: 6),
+                    if (orderId.isNotEmpty) Text('رقم الطلب: $orderId'),
+                    if (status.isNotEmpty) Text('الحالة الحالية: $status'),
+                    if (createdAt.isNotEmpty) Text('التاريخ: $createdAt'),
+                    const SizedBox(height: 10),
+                    if (_loadingAddress)
+                      const Row(
+                        children: [
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          SizedBox(width: 8),
+                          Text('جاري جلب الموقع...'),
+                        ],
+                      )
+                    else if (_address != null)
+                      Text('الموقع: $_address')
+                    else if (lat != null && lon != null)
+                      Text(
+                          'إحداثيات الموقع: ${lat.toStringAsFixed(5)}, ${lon.toStringAsFixed(5)}'),
+                  ],
+                ),
+              ),
+            ),
+            Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'تفاصيل الفاتورة',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: DataTable(
+                        columns: const [
+                          DataColumn(label: Text('القطعة')),
+                          DataColumn(label: Text('الكمية')),
+                          DataColumn(label: Text('السعر')),
+                          DataColumn(label: Text('الإجمالي')),
+                        ],
+                        rows: items.map((it) {
+                          final name = (it['name'] ?? 'بدون اسم').toString();
+                          final qty = _numToDouble(it['quantity']).toInt();
+                          final price = _numToDouble(it['price']);
+                          final total = it['total'] != null
+                              ? _numToDouble(it['total'])
+                              : (price * qty);
+                          return DataRow(cells: [
+                            DataCell(
+                                Text(name, overflow: TextOverflow.ellipsis)),
+                            DataCell(Text(qty.toString())),
+                            DataCell(Text(price.toStringAsFixed(2))),
+                            DataCell(Text(total.toStringAsFixed(2))),
+                          ]);
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
-                        ElevatedButton.icon(
-                          onPressed: () async {
-                            await context
-                                .read<SellerOrdersProvider>()
-                                .updateStatus(orderId, 'على الطريق', context);
-                            Navigator.pop(context);
-                          },
-                          icon: const Icon(Icons.local_shipping_outlined),
-                          label: const Text('على الطريق'),
+                        const Spacer(),
+                        const Text(
+                          'المجموع:',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 15),
                         ),
-                        const SizedBox(width: 10),
-                        OutlinedButton.icon(
-                          onPressed: () async {
-                            await context
-                                .read<SellerOrdersProvider>()
-                                .updateStatus(orderId, 'ملغي', context);
-                            Navigator.pop(context);
-                          },
-                          icon: const Icon(Icons.cancel_outlined),
-                          label: const Text('إلغاء'),
+                        const SizedBox(width: 8),
+                        Text(
+                          totalAmount.toStringAsFixed(2),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 15),
                         ),
                       ],
                     ),
                   ],
+                ),
+              ),
+            ),
+            if (shouldShowActions)
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final ok = await context
+                            .read<SellerOrdersProvider>()
+                            .updateStatus(orderId, 'ملغي');
+
+                        if (!mounted) return;
+
+                        if (ok) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('تم إلغاء الطلب')),
+                          );
+                          Navigator.of(context).pop();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('فشل إلغاء الطلب')),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.cancel_outlined),
+                      label: const Text('إلغاء'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        final ok = await context
+                            .read<SellerOrdersProvider>()
+                            .updateStatus(orderId, 'مؤكد');
+                        if (!mounted) return;
+
+                        if (ok) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('تمت الموافقة على الطلب')),
+                          );
+                          Navigator.of(context).pop();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('فشل تحديث الطلب')),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.check_circle_outline),
+                      label: const Text('موافق'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ),
                 ],
               ),
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-            child: Row(
-              children: [
-                const Icon(Icons.list_alt),
-                const SizedBox(width: 6),
-                Text('العناصر (${items.length})',
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ),
-
-          ...items.map((it) {
-            final name = (it['name'] ?? 'بدون اسم').toString();
-            final img = (it['imageUrl'] ?? '').toString();
-            final qty = _numToDouble(it['quantity']).toInt();
-            final price = _numToDouble(it['price']);
-            final total = it['total'] != null
-                ? _numToDouble(it['total'])
-                : (price * qty);
-
-            return Card(
-              margin: const EdgeInsets.symmetric(vertical: 6),
-              child: ListTile(
-                leading: img.isNotEmpty
-                    ? ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: Image.network(
-                    img,
-                    width: 56,
-                    height: 56,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) =>
-                    const Icon(Icons.image_not_supported),
-                  ),
-                )
-                    : const CircleAvatar(child: Icon(Icons.build)),
-                title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (price > 0) Text('السعر: ${price.toStringAsFixed(2)}'),
-                    Text('الكمية: $qty'),
-                  ],
-                ),
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('الإجمالي',
-                        style: TextStyle(fontSize: 12, color: Colors.grey)),
-                    Text(total.toStringAsFixed(2),
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => OrderItemDetailsPage(item: it),
-                    ),
-                  );
-                },
-              ),
-            );
-          }).toList(),
-
-          if (items.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(24),
-              child: Center(child: Text('لا توجد عناصر في هذا الطلب')),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
