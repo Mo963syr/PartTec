@@ -143,6 +143,8 @@ class PartDetailsPage extends StatelessWidget {
                                     "نوع الوقود", part.fuelType),
                                 _buildDetailRow(
                                     Icons.category, "الفئة", part.category),
+                                _buildDetailRow(Icons.inventory,
+                                    "الكمية المتوفرة", part.count.toString()),
                                 const SizedBox(height: 10),
                                 const Text("الوصف",
                                     style: TextStyle(
@@ -300,30 +302,88 @@ class _CircleIconButton extends StatelessWidget {
   }
 }
 
-class _BottomAddToCart extends StatelessWidget {
+class _BottomAddToCart extends StatefulWidget {
   final Part part;
   const _BottomAddToCart({required this.part});
+
+  @override
+  State<_BottomAddToCart> createState() => _BottomAddToCartState();
+}
+
+class _BottomAddToCartState extends State<_BottomAddToCart> {
+  int _quantity = 1;
+
+  void _increase() {
+    if (_quantity < widget.part.count) {
+      setState(() => _quantity++);
+    }
+  }
+
+  void _decrease() {
+    if (_quantity > 1) {
+      setState(() => _quantity--);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: () async {
-        final success =
-            await context.read<CartProvider>().addToCartToServer(part);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(success ? "تمت الإضافة إلى السلة" : "فشلت الإضافة"),
-            // استخدم ألوان الحالات من الثيم بدلاً من الألوان الصريحة
-            backgroundColor: success ? AppColors.success : AppColors.error,
+    return Row(
+      children: [
+        // عداد الكمية
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.chipBorder),
           ),
-        );
-      },
-      icon: const Icon(Icons.add_shopping_cart),
-      label: const Text("إضافة إلى السلة"),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.success,
-        minimumSize: const Size.fromHeight(54),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      ),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.remove),
+                onPressed: _quantity > 1 ? _decrease : null,
+              ),
+              Text(
+                '$_quantity',
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add),
+                onPressed: _quantity < widget.part.count ? _increase : null,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              final success = await context
+                  .read<CartProvider>()
+                  .addToCartToServer(widget.part, _quantity);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(success
+                      ? "تمت إضافة $_quantity إلى السلة"
+                      : "فشلت الإضافة"),
+                  backgroundColor:
+                      success ? AppColors.success : AppColors.error,
+                ),
+              );
+            },
+            icon: const Icon(Icons.add_shopping_cart),
+            label: const Text("إضافة إلى السلة"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+              minimumSize: const Size.fromHeight(54),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

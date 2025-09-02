@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+/*import 'package:flutter/material.dart';
 import 'providers/cart_provider.dart';
 import 'package:provider/provider.dart';
 import '../../models/part.dart';
@@ -10,7 +10,7 @@ class PartDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-   final imageUrl = part.imageUrl;
+    final imageUrl = part.imageUrl;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -79,7 +79,7 @@ class PartDetailsPage extends StatelessWidget {
                     ),
                     SizedBox(height: 6),
                     Text(
-                      part.description?? 'لا يوجد وصف',
+                      part.description ?? 'لا يوجد وصف',
                       style: TextStyle(fontSize: 15),
                     ),
                     SizedBox(height: 80),
@@ -149,3 +149,4 @@ class PartDetailsPage extends StatelessWidget {
     );
   }
 }
+*/

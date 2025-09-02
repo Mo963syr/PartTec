@@ -13,6 +13,7 @@ class Part {
   final String? description;
   final double averageRating;
   final int reviewsCount;
+  final int count;
 
   Part({
     required this.id,
@@ -25,6 +26,7 @@ class Part {
     required this.price,
     required this.imageUrl,
     required this.category,
+    required this.count,
     this.serialNumber,
     this.description,
     this.averageRating = 0.0,
@@ -58,6 +60,7 @@ class Part {
       price: _asDouble(json['price']),
       imageUrl: json['imageUrl'] ?? json['image_url'] ?? '',
       category: json['category'] ?? '',
+      count: _asInt(json['count']),
       serialNumber: json['serialNumber'] ?? json['serial_number'],
       description: json['description'],
       averageRating: _asDouble(

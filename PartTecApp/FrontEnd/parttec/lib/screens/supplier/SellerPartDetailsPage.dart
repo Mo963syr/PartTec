@@ -51,6 +51,8 @@ class _SellerPartDetailsPageState extends State<SellerPartDetailsPage> {
     final statusC = TextEditingController(text: part.status ?? '');
     final priceC = TextEditingController(text: part.price.toString());
     final categoryC = TextEditingController(text: part.category ?? '');
+    final countC = TextEditingController(text: part.count.toString());
+
     final descriptionC = TextEditingController(text: part.description ?? '');
 
     final formKey = GlobalKey<FormState>();
@@ -97,6 +99,12 @@ class _SellerPartDetailsPageState extends State<SellerPartDetailsPage> {
                       decoration: const InputDecoration(labelText: 'التصنيف'),
                     ),
                     TextFormField(
+                      controller: countC,
+                      decoration:
+                          const InputDecoration(labelText: 'الكمية المتوفرة'),
+                      keyboardType: TextInputType.number,
+                    ),
+                    TextFormField(
                       controller: descriptionC,
                       decoration:
                           const InputDecoration(labelText: 'الوصف (اختياري)'),
@@ -129,6 +137,7 @@ class _SellerPartDetailsPageState extends State<SellerPartDetailsPage> {
                           'model': modelC.text.trim(),
                           'year': yearC.text.trim(),
                           'status': statusC.text.trim(),
+                          'count': countC.text.trim(),
                           'price': priceC.text.trim(),
                           'category': categoryC.text.trim(),
                           'description': descriptionC.text.trim(),
@@ -250,6 +259,8 @@ class _SellerPartDetailsPageState extends State<SellerPartDetailsPage> {
                     _InfoRow(label: "السنة", value: part.year.toString()),
                     _InfoRow(label: "الفئة", value: part.category ?? ''),
                     _InfoRow(label: "الحالة", value: part.status ?? ''),
+                    _InfoRow(
+                        label: "الكمية المتوفرة", value: part.count.toString()),
                   ],
                 ),
               ),

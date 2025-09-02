@@ -69,7 +69,7 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> addToCartToServer(Part part) async {
+  Future<bool> addToCartToServer(Part part, int quantity) async {
     final uid = await _getUserId();
     if (uid == null || uid.isEmpty) {
       error = 'لم يتم العثور على userId. الرجاء تسجيل الدخول أولاً.';
@@ -86,11 +86,11 @@ class CartProvider extends ChangeNotifier {
         body: jsonEncode({
           'userId': uid,
           'partId': part.id,
+          'quantity': quantity,
         }),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-
         await fetchCartFromServer();
         return true;
       } else {
@@ -104,7 +104,6 @@ class CartProvider extends ChangeNotifier {
       return false;
     }
   }
-
 
   void resetCachedUser() {
     _userId = null;
