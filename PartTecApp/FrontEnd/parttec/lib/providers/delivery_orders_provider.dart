@@ -79,6 +79,44 @@ class DeliveryOrdersProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+  Future<bool> acceptOrder(String orderId, double fee, BuildContext context) async {
+    final driverId = await SessionStore.userId();
+    if (driverId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("لم يتم العثور على معرف المندوب")),
+      );
+      return false;
+    }
+
+    final url = Uri.parse('${AppSettings.serverurl}/delivery/orders/$orderId/accept');
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'driverId': driverId,
+          'fee': fee,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        await fetchOrders('موافق عليها');
+        return true;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message']?.toString() ?? 'فشل الاستلام')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('خطأ في الاستلام: $e')),
+      );
+    }
+    return false;
+  }
+
 
   /// تحديث حالة الطلب عبر مسارات التوصيل
   Future<void> updateStatus(
