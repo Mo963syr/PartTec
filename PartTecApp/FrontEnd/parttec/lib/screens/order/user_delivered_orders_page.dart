@@ -104,10 +104,7 @@ class _UserDeliveredOrdersPageState extends State<UserDeliveredOrdersPage> {
             onChanged: (val) => setState(() => _filter = val!),
           ),
         ),
-
-        // رسم بياني لإجمالي الطلبات حسب الفلتر المختار
         _buildChart(filtered, _filter),
-
         Expanded(
           child: filtered.isEmpty
               ? const Center(child: Text('لا توجد طلبات مكتملة'))
@@ -122,7 +119,8 @@ class _UserDeliveredOrdersPageState extends State<UserDeliveredOrdersPage> {
                         ? ((order['totalAmount'] as num?)?.toDouble() ?? 0)
                         : items.fold<double>(
                             0.0,
-                            (s, it) => s +
+                            (s, it) =>
+                                s +
                                 (((it as Map?)?['total'] as num?)?.toDouble() ??
                                     0.0),
                           );
@@ -175,10 +173,10 @@ class _UserDeliveredOrdersPageState extends State<UserDeliveredOrdersPage> {
                                     rows: items.map<DataRow>((it) {
                                       final name =
                                           (it['name'] ?? 'بدون اسم').toString();
-                                      final qty =
-                                          ((it['quantity'] ?? 0) as num).toInt();
-                                      final price =
-                                          ((it['price'] ?? 0) as num).toDouble();
+                                      final qty = ((it['quantity'] ?? 0) as num)
+                                          .toInt();
+                                      final price = ((it['price'] ?? 0) as num)
+                                          .toDouble();
                                       final total = it['total'] != null
                                           ? (((it['total'] ?? 0) as num)
                                               .toDouble())
@@ -188,7 +186,8 @@ class _UserDeliveredOrdersPageState extends State<UserDeliveredOrdersPage> {
                                           DataCell(Text(name,
                                               overflow: TextOverflow.ellipsis)),
                                           DataCell(Text(qty.toString())),
-                                          DataCell(Text(price.toStringAsFixed(2))),
+                                          DataCell(
+                                              Text(price.toStringAsFixed(2))),
                                           DataCell(
                                               Text(total.toStringAsFixed(2))),
                                         ],
@@ -208,7 +207,6 @@ class _UserDeliveredOrdersPageState extends State<UserDeliveredOrdersPage> {
                                   ],
                                 ),
                                 const SizedBox(height: 12),
-                                // موقع الطلب
                                 FutureBuilder<String?>(
                                   future: _fetchAddressForOrder(order),
                                   builder: (context, snapshot) {
@@ -355,9 +353,8 @@ class _UserDeliveredOrdersPageState extends State<UserDeliveredOrdersPage> {
     try {
       final uri = Uri.parse(
           'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=jsonv2');
-      final response = await http.get(uri, headers: {
-        'User-Agent': 'parttec-app/1.0 (https://example.com)'
-      });
+      final response = await http.get(uri,
+          headers: {'User-Agent': 'parttec-app/1.0 (https://example.com)'});
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map?;
         return data?['display_name']?.toString();
