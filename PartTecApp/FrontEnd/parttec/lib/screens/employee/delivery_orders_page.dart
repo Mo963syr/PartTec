@@ -18,7 +18,13 @@ class DeliveryOrdersPage extends StatefulWidget {
 class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
-  final List<String> _tabs = const ['طلبات جديدة', 'مستلمة', 'على الطريق', 'تم التوصيل', 'ملغي'];
+  final List<String> _tabs = const [
+    'طلبات جديدة',
+    'مستلمة',
+    'على الطريق',
+    'تم التوصيل',
+    'ملغي'
+  ];
   final Map<String, String> _addressCache = {};
 
   @override
@@ -50,6 +56,11 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
       default:
         return tab;
     }
+  }
+
+  Future<void> _refreshCurrentTab() async {
+    final s = _mapTabToStatus(_tabs[_tabController.index]);
+    await context.read<DeliveryOrdersProvider>().fetchOrders(s);
   }
 
   List<double>? _extractCoordinates(Map order) {
@@ -115,54 +126,54 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
       body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : provider.error != null
-          ? Center(child: Text(provider.error!))
-          : TabBarView(
-        controller: _tabController,
-        children: _tabs.map((tab) {
-          final status = _mapTabToStatus(tab);
-          final filtered = provider.orders
-              .where((o) => (o['status'] ?? '') == status)
-              .toList();
+              ? Center(child: Text(provider.error!))
+              : TabBarView(
+                  controller: _tabController,
+                  children: _tabs.map((tab) {
+                    final status = _mapTabToStatus(tab);
+                    final filtered = provider.orders
+                        .where((o) => (o['status'] ?? '') == status)
+                        .toList();
 
-          if (filtered.isEmpty) {
-            return RefreshIndicator(
-              onRefresh: () => provider.fetchOrders(status),
-              child: ListView(
-                children: [
-                  const SizedBox(height: 120),
-                  Center(
-                    child: Text('لا توجد طلبات بحالة "$tab"'),
-                  ),
-                ],
-              ),
-            );
-          }
+                    if (filtered.isEmpty) {
+                      return RefreshIndicator(
+                        onRefresh: () => provider.fetchOrders(status),
+                        child: ListView(
+                          children: const [
+                            SizedBox(height: 120),
+                            Center(
+                              child: Text('لا توجد طلبات بحالة "طلبات جديدة"'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
 
-          return RefreshIndicator(
-            onRefresh: () => provider.fetchOrders(status),
-            child: ListView.builder(
-              itemCount: filtered.length,
-              itemBuilder: (context, index) {
-                final order = filtered[index] as Map<String, dynamic>;
-                return _buildOrderCard(context, order, provider, tab);
-              },
-            ),
-          );
-        }).toList(),
-      ),
+                    return RefreshIndicator(
+                      onRefresh: () => provider.fetchOrders(status),
+                      child: ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final order = filtered[index] as Map<String, dynamic>;
+                          return _buildOrderCard(context, order, provider, tab);
+                        },
+                      ),
+                    );
+                  }).toList(),
+                ),
     );
   }
 
   Widget _buildOrderCard(
-      BuildContext context,
-      Map<String, dynamic> order,
-      DeliveryOrdersProvider provider,
-      String tab,
-      ) {
+    BuildContext context,
+    Map<String, dynamic> order,
+    DeliveryOrdersProvider provider,
+    String tab,
+  ) {
     final status = (order['status'] ?? '').toString();
     final String orderId = (order['orderId'] ?? order['_id'] ?? '').toString();
     final part =
-    order['part'] is Map<String, dynamic> ? order['part'] as Map : {};
+        order['part'] is Map<String, dynamic> ? order['part'] as Map : {};
     final hasPart = part.isNotEmpty;
     final customer = order['customer'] as Map? ?? {};
     final customerName = customer['name']?.toString() ?? '';
@@ -184,7 +195,7 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
               Text(
                 part['name']?.toString() ?? '',
                 style:
-                const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             if (customerName.isNotEmpty) Text('الزبون: $customerName'),
             if (customerPhone.isNotEmpty) Text('هاتف: $customerPhone'),
@@ -229,30 +240,39 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
                 if (tab == 'طلبات جديدة' && status == 'موافق عليها') ...[
                   ElevatedButton(
                     onPressed: () {
+                      // احفظ سياق الصفحة قبل إنشاء الـ Dialog
+                      final pageContext = context;
                       double? price;
+
                       showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
+                        context: pageContext,
+                        builder: (dialogContext) => AlertDialog(
                           title: const Text('إدخال سعر التوصيل'),
                           content: TextField(
-                            keyboardType:
-                            const TextInputType.numberWithOptions(
+                            keyboardType: const TextInputType.numberWithOptions(
                                 decimal: true),
                             decoration:
-                            const InputDecoration(labelText: 'السعر'),
+                                const InputDecoration(labelText: 'السعر'),
                             onChanged: (value) =>
-                            price = double.tryParse(value),
+                                price = double.tryParse(value),
                           ),
                           actions: [
                             TextButton(
-                              onPressed: () => Navigator.pop(context),
+                              onPressed: () => Navigator.pop(dialogContext),
                               child: const Text('إلغاء'),
                             ),
                             TextButton(
-                              onPressed: () {
+                              onPressed: () async {
                                 if (price != null && price! > 0) {
-                                  provider.acceptOrder(orderId, price!, context);
-                                  Navigator.pop(context);
+                                  await provider.acceptOrder(
+                                      orderId, price!, pageContext);
+
+                                  if (!mounted) return;
+
+                                  Navigator.pop(dialogContext);
+
+                                  // إعادة تحميل التبويب الحالي
+                                  await _refreshCurrentTab();
                                 }
                               },
                               child: const Text('استلام الطلب'),
@@ -265,14 +285,28 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
                   ),
                 ] else if (status == 'مستلمة') ...[
                   ElevatedButton(
-                    onPressed: () => provider.updateStatus(
-                        orderId, 'على الطريق', context: context),
+                    onPressed: () async {
+                      await provider.updateStatus(
+                        orderId,
+                        'على الطريق',
+                        context: context, // سياق الصفحة
+                      );
+                      if (!mounted) return;
+                      await _refreshCurrentTab();
+                    },
                     child: const Text('بدء التوصيل'),
                   ),
                 ] else if (status == 'على الطريق') ...[
                   ElevatedButton(
-                    onPressed: () => provider.updateStatus(
-                        orderId, 'تم التوصيل', context: context),
+                    onPressed: () async {
+                      await provider.updateStatus(
+                        orderId,
+                        'تم التوصيل',
+                        context: context,
+                      );
+                      if (!mounted) return;
+                      await _refreshCurrentTab();
+                    },
                     child: const Text('تم التوصيل'),
                   ),
                 ]
