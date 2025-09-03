@@ -42,7 +42,6 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
       }
     }
     if (coords != null && coords.length >= 2) {
-      // نتأكد من كونها رقمية
       final lon = double.tryParse(coords[0].toString());
       final lat = double.tryParse(coords[1].toString());
       if (lat != null && lon != null) {
@@ -59,9 +58,7 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
             });
             return;
           }
-        } catch (_) {
-          // ignore
-        }
+        } catch (_) {}
       }
     }
     setState(() {
@@ -76,12 +73,20 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
     return 0.0;
   }
 
-  String _fmtDate(String? iso) {
+  String _timeAgo(String? iso) {
     if (iso == null || iso.isEmpty) return '';
     final d = DateTime.tryParse(iso);
     if (d == null) return iso;
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${d.year}-${two(d.month)}-${two(d.day)} ${two(d.hour)}:${two(d.minute)}';
+    final diff = DateTime.now().difference(d);
+    if (diff.inDays > 0) {
+      return 'منذ ${diff.inDays} يوم';
+    } else if (diff.inHours > 0) {
+      return 'منذ ${diff.inHours} ساعة';
+    } else if (diff.inMinutes > 0) {
+      return 'منذ ${diff.inMinutes} دقيقة';
+    } else {
+      return 'الآن';
+    }
   }
 
   @override
@@ -89,16 +94,13 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
     final order =
         widget.orders.isNotEmpty ? widget.orders.first : <String, dynamic>{};
 
-    final orderId = (order['orderId'] ?? order['_id'] ?? '').toString();
     final status = (order['status'] ?? '').toString();
-    final createdAt = _fmtDate((order['createdAt'] ?? '').toString());
+    final createdAt = _timeAgo((order['createdAt'] ?? '').toString());
 
-    // عناصر الطلب
     final List<Map<String, dynamic>> items = ((order['items'] as List?) ?? [])
         .map<Map<String, dynamic>>((e) => (e as Map).cast<String, dynamic>())
         .toList();
 
-    // حساب الإجمالي
     final totalAmount = (order['totalAmount'] != null)
         ? _numToDouble(order['totalAmount'])
         : items.fold<double>(0.0, (s, it) {
@@ -144,9 +146,8 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
                           fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     const SizedBox(height: 6),
-                    if (orderId.isNotEmpty) Text('رقم الطلب: $orderId'),
                     if (status.isNotEmpty) Text('الحالة الحالية: $status'),
-                    if (createdAt.isNotEmpty) Text('التاريخ: $createdAt'),
+                    if (createdAt.isNotEmpty) Text(createdAt),
                     const SizedBox(height: 10),
                     if (_loadingAddress)
                       const Row(
@@ -237,7 +238,7 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
                       onPressed: () async {
                         final ok = await context
                             .read<SellerOrdersProvider>()
-                            .updateStatus(orderId, 'ملغي');
+                            .updateStatus(order['_id'].toString(), 'ملغي');
 
                         if (!mounted) return;
 
@@ -262,7 +263,8 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
                       onPressed: () async {
                         final ok = await context
                             .read<SellerOrdersProvider>()
-                            .updateStatus(orderId, 'مؤكد');
+                            .updateStatus(
+                                order['_id'].toString(), 'موافق عليها');
                         if (!mounted) return;
 
                         if (ok) {
