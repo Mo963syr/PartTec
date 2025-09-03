@@ -32,14 +32,12 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
 
   Future<void> _fetchAddress() async {
     final order =
-        widget.orders.isNotEmpty ? widget.orders.first : <String, dynamic>{};
+    widget.orders.isNotEmpty ? widget.orders.first : <String, dynamic>{};
 
     List? coords = order['coordinates'] as List?;
     if (coords == null || coords.length < 2) {
       final loc = order['location'] as List?;
-      if (loc != null && loc.length >= 2) {
-        coords = loc;
-      }
+      if (loc != null && loc.length >= 2) coords = loc;
     }
     if (coords != null && coords.length >= 2) {
       final lon = double.tryParse(coords[0].toString());
@@ -48,8 +46,9 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
         try {
           final uri = Uri.parse(
               'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=jsonv2');
-          final res = await http.get(uri,
-              headers: {'User-Agent': 'parttec-app/1.0 (https://example.com)'});
+          final res = await http.get(uri, headers: {
+            'User-Agent': 'parttec-app/1.0 (https://example.com)'
+          });
           if (res.statusCode == 200) {
             final data = jsonDecode(res.body) as Map?;
             setState(() {
@@ -78,22 +77,18 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
     final d = DateTime.tryParse(iso);
     if (d == null) return iso;
     final diff = DateTime.now().difference(d);
-    if (diff.inDays > 0) {
-      return 'منذ ${diff.inDays} يوم';
-    } else if (diff.inHours > 0) {
-      return 'منذ ${diff.inHours} ساعة';
-    } else if (diff.inMinutes > 0) {
-      return 'منذ ${diff.inMinutes} دقيقة';
-    } else {
-      return 'الآن';
-    }
+    if (diff.inDays > 0) return 'منذ ${diff.inDays} يوم';
+    if (diff.inHours > 0) return 'منذ ${diff.inHours} ساعة';
+    if (diff.inMinutes > 0) return 'منذ ${diff.inMinutes} دقيقة';
+    return 'الآن';
   }
 
   @override
   Widget build(BuildContext context) {
     final order =
-        widget.orders.isNotEmpty ? widget.orders.first : <String, dynamic>{};
+    widget.orders.isNotEmpty ? widget.orders.first : <String, dynamic>{};
 
+    final orderId = (order['_id'] ?? order['orderId'])?.toString() ?? '';
     final status = (order['status'] ?? '').toString();
     final createdAt = _timeAgo((order['createdAt'] ?? '').toString());
 
@@ -104,12 +99,12 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
     final totalAmount = (order['totalAmount'] != null)
         ? _numToDouble(order['totalAmount'])
         : items.fold<double>(0.0, (s, it) {
-            final qty = _numToDouble(it['quantity']).toInt();
-            final price = _numToDouble(it['price']);
-            final tot =
-                it['total'] != null ? _numToDouble(it['total']) : (price * qty);
-            return s + tot;
-          });
+      final qty = _numToDouble(it['quantity']).toInt();
+      final price = _numToDouble(it['price']);
+      final tot =
+      it['total'] != null ? _numToDouble(it['total']) : (price * qty);
+      return s + tot;
+    });
 
     final shouldShowActions = status == 'قيد التجهيز' || status == 'مؤكد';
 
@@ -164,8 +159,8 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
                     else if (_address != null)
                       Text('الموقع: $_address')
                     else if (lat != null && lon != null)
-                      Text(
-                          'إحداثيات الموقع: ${lat.toStringAsFixed(5)}, ${lon.toStringAsFixed(5)}'),
+                        Text(
+                            'إحداثيات الموقع: ${lat.toStringAsFixed(5)}, ${lon.toStringAsFixed(5)}'),
                   ],
                 ),
               ),
@@ -180,7 +175,7 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
                     const Text(
                       'تفاصيل الفاتورة',
                       style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     const SizedBox(height: 8),
                     SingleChildScrollView(
@@ -236,22 +231,23 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () async {
+                        if (orderId.isEmpty || orderId == 'null') {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('معرف الطلب غير صالح')),
+                          );
+                          return;
+                        }
                         final ok = await context
                             .read<SellerOrdersProvider>()
-                            .updateStatus(order['_id'].toString(), 'ملغي');
-
+                            .updateStatus(orderId, 'ملغي');
                         if (!mounted) return;
-
-                        if (ok) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('تم إلغاء الطلب')),
-                          );
-                          Navigator.of(context).pop();
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('فشل إلغاء الطلب')),
-                          );
-                        }
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text(
+                                  ok ? 'تم إلغاء الطلب' : 'فشل إلغاء الطلب')),
+                        );
+                        if (ok) Navigator.of(context).pop();
                       },
                       icon: const Icon(Icons.cancel_outlined),
                       label: const Text('إلغاء'),
@@ -261,23 +257,24 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () async {
-                        final ok = await context
-                            .read<SellerOrdersProvider>()
-                            .updateStatus(
-                                order['_id'].toString(), 'موافق عليها');
-                        if (!mounted) return;
-
-                        if (ok) {
+                        if (orderId.isEmpty || orderId == 'null') {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                                content: Text('تمت الموافقة على الطلب')),
+                                content: Text('معرف الطلب غير صالح')),
                           );
-                          Navigator.of(context).pop();
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('فشل تحديث الطلب')),
-                          );
+                          return;
                         }
+                        final ok = await context
+                            .read<SellerOrdersProvider>()
+                            .updateStatus(orderId, 'موافق عليها');
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text(ok
+                                  ? 'تمت الموافقة على الطلب'
+                                  : 'فشل تحديث الطلب')),
+                        );
+                        if (ok) Navigator.of(context).pop();
                       },
                       icon: const Icon(Icons.check_circle_outline),
                       label: const Text('موافق'),
