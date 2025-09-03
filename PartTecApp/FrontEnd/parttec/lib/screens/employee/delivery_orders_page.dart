@@ -18,19 +18,17 @@ class DeliveryOrdersPage extends StatefulWidget {
 class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
-
   final List<String> _statuses = const ['مؤكد', 'على الطريق', 'مستلمة'];
+  final Map<String, String> _addressCache = {};
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: _statuses.length, vsync: this);
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final initialStatus = _statuses[_tabController.index];
       context.read<DeliveryOrdersProvider>().fetchOrders(initialStatus);
     });
-
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         final s = _statuses[_tabController.index];
@@ -45,33 +43,35 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
     super.dispose();
   }
 
-  // 🔹 استخراج الإحداثيات
   List<double>? _extractCoordinates(Map order) {
     List? coords = order['coordinates'] as List?;
-    if (coords == null || coords.length < 2) {
-      coords = order['location'] as List?;
-    }
+    coords ??= order['location'] as List?;
     if (coords != null && coords.length >= 2) {
       final lon = double.tryParse(coords[0].toString());
       final lat = double.tryParse(coords[1].toString());
-      if (lat != null && lon != null) {
-        return [lon, lat];
-      }
+      if (lat != null && lon != null) return [lon, lat];
     }
     return null;
   }
 
-  // 🔹 جلب العنوان من Nominatim
+  String _formatCoords(Map order) {
+    final c = _extractCoordinates(order);
+    if (c == null) return 'الموقع غير متاح';
+    return 'إحداثيات: ${c[1].toStringAsFixed(5)}, ${c[0].toStringAsFixed(5)}';
+  }
+
   Future<String?> _fetchAddress(Map order) async {
     final coords = _extractCoordinates(order);
     if (coords == null) return null;
-    final lon = coords[0];
-    final lat = coords[1];
+    final lon = coords[0], lat = coords[1];
     try {
       final uri = Uri.parse(
-          'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=jsonv2');
-      final response = await http.get(uri,
-          headers: {'User-Agent': 'parttec-app/1.0 (https://example.com)'});
+        'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=jsonv2',
+      );
+      final response = await http.get(
+        uri,
+        headers: {'User-Agent': 'parttec-app/1.0 (https://example.com)'},
+      );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map?;
         return data?['display_name']?.toString();
@@ -80,9 +80,20 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
     return null;
   }
 
+  Future<String> _fetchAndCacheAddress(Map order) async {
+    final String key = (order['orderId'] ?? order['_id'] ?? '').toString();
+    if (_addressCache.containsKey(key)) return _addressCache[key]!;
+    final addr = await _fetchAddress(order);
+    final fallback = _formatCoords(order);
+    final value = (addr != null && addr.isNotEmpty) ? addr : fallback;
+    _addressCache[key] = value;
+    return value;
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<DeliveryOrdersProvider>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('طلبات التوصيل'),
@@ -110,7 +121,8 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
                           children: [
                             const SizedBox(height: 120),
                             Center(
-                                child: Text('لا توجد طلبات بحالة "$status"')),
+                              child: Text('لا توجد طلبات بحالة "$status"'),
+                            ),
                           ],
                         ),
                       );
@@ -121,7 +133,7 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
                       child: ListView.builder(
                         itemCount: filtered.length,
                         itemBuilder: (context, index) {
-                          final order = filtered[index];
+                          final order = filtered[index] as Map<String, dynamic>;
                           return _buildOrderCard(context, order, provider);
                         },
                       ),
@@ -138,18 +150,16 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
   ) {
     final status = (order['status'] ?? '').toString();
     final String orderId = (order['orderId'] ?? order['_id'] ?? '').toString();
-
     final part =
         order['part'] is Map<String, dynamic> ? order['part'] as Map : {};
     final hasPart = part.isNotEmpty;
-
     final customer = order['customer'] as Map? ?? {};
     final customerName = customer['name']?.toString() ?? '';
     final customerPhone = customer['phoneNumber']?.toString() ??
         customer['phone']?.toString() ??
         '';
-
     final coords = _extractCoordinates(order);
+    final province = (order['delivery']?['province'] ?? '').toString();
 
     return Card(
       margin: const EdgeInsets.all(12),
@@ -167,22 +177,21 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
               ),
             if (customerName.isNotEmpty) Text('الزبون: $customerName'),
             if (customerPhone.isNotEmpty) Text('هاتف: $customerPhone'),
+            if (province.isNotEmpty) Text('المحافظة: $province'),
             const SizedBox(height: 8),
-            FutureBuilder<String?>(
-              future: _fetchAddress(order),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Text('جاري جلب الموقع...');
-                }
-                if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                  return Text('الموقع: ${snapshot.data}');
-                }
-                if (coords != null) {
-                  return Text(
-                      'إحداثيات: ${coords[1].toStringAsFixed(5)}, ${coords[0].toStringAsFixed(5)}');
-                }
-                return const SizedBox.shrink();
-              },
+            Padding(
+              padding: const EdgeInsets.only(top: 4.0, bottom: 4.0),
+              child: FutureBuilder<String>(
+                future: _fetchAndCacheAddress(order),
+                initialData: _formatCoords(order),
+                builder: (context, snap) {
+                  final text = (snap.data == null || snap.data!.isEmpty)
+                      ? _formatCoords(order)
+                      : snap.data!;
+                  return Text('الموقع: $text',
+                      style: const TextStyle(fontSize: 13));
+                },
+              ),
             ),
             const SizedBox(height: 8),
             if (coords != null)
