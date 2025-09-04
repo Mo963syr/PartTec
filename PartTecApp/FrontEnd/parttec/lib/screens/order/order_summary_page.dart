@@ -8,13 +8,11 @@ import '../../models/cart_item.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/order_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/session_store.dart';
 import '../home/home_page.dart';
+import '../supplier/supplier_dashboard.dart';
 import 'my_order_page.dart';
 
-/// صفحة تعرض ملخص الطلب قبل تأكيده. يتم عرض الفاتورة بشكل مرتب
-/// مع جدول يوضح القطع والكمية والسعر والإجمالي لكل قطعة. كما يتم
-/// عرض طريقة الدفع والموقع المختار. عند الضغط على "تأكيد"، يتم إرسال
-/// الطلب إلى الخادم وبعد النجاح يتم الانتقال إلى صفحة "طلباتي".
 class OrderSummaryPage extends StatefulWidget {
   final List<CartItem> items;
   final double total;
@@ -44,7 +42,6 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
     _fetchAddress();
   }
 
-  /// يجلب اسم المنطقة من إحداثيات موقع المستخدم باستخدام خدمة Nominatim.
   Future<void> _fetchAddress() async {
     final lat = widget.location.latitude;
     final lon = widget.location.longitude;
@@ -52,7 +49,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
       final uri = Uri.parse(
           'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=jsonv2');
       final response = await http.get(uri, headers: {
-        // إضافة User-Agent لتجنب حظر الطلب
+
         'User-Agent': 'parttec-app/1.0 (https://example.com)'
       });
       if (response.statusCode == 200) {
@@ -75,17 +72,17 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
     }
   }
 
-  /// إرسال الطلب إلى الخادم مع إحداثيات الموقع. في حال النجاح يتم تفريغ السلة
-  /// والانتقال إلى صفحة الطلبات الخاصة بالمستخدم.
   Future<void> _confirmOrder() async {
     setState(() {
       _isSending = true;
     });
+
     final orderProvider = context.read<OrderProvider>();
     final coords = [widget.location.longitude, widget.location.latitude];
     await orderProvider.sendOrder(coords);
 
     if (!mounted) return;
+
     if (orderProvider.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(orderProvider.error!)),
@@ -96,19 +93,28 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
       return;
     }
 
-    // تحديث السلة بعد إرسال الطلب
+
     await context.read<CartProvider>().fetchCartFromServer();
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('✅ تم إرسال الطلب بنجاح')),
     );
 
-    // الانتقال إلى الصفحة الرئيسية وإزالة كل الصفحات السابقة
+
+    final role = await SessionStore.role();
+
     if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const HomePage()),
-      (route) => false,
-    );
+    if (role == 'seller') {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const SupplierDashboard()),
+            (route) => false,
+      );
+    } else {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const HomePage()),
+            (route) => false,
+      );
+    }
   }
 
   @override

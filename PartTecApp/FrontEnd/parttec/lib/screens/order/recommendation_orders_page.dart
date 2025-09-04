@@ -101,10 +101,10 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
                             imageUrl: imageUrlController.text,
                           );
 
-                  if (!mounted) return; // ✅ تحقق أن الصفحة لسا موجودة
+                  if (!mounted) return;
                   Navigator.pop(context);
 
-                  if (!mounted) return; // ✅ تحقق ثاني
+                  if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
@@ -129,7 +129,7 @@ class _RecommendationOrdersPageState extends State<RecommendationOrdersPage> {
         child: Scaffold(
           appBar: AppBar(
             title: const Text('طلبات التوصية'),
-            // استخدم لون الأساس للتطبيق
+
             backgroundColor: AppColors.primary,
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(48),

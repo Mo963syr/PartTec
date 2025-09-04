@@ -79,7 +79,7 @@ class _DeliveredOrdersPageState extends State<DeliveredOrdersPage>
     );
   }
 
-  /// فلترة حسب الزمن (مع خيار "الكل")
+
   List<Map<String, dynamic>> _filterOrders(
       List<Map<String, dynamic>> orders, String filter) {
     DateTime now = DateTime.now().toUtc();
@@ -120,7 +120,7 @@ class _DeliveredOrdersPageState extends State<DeliveredOrdersPage>
     }).toList();
   }
 
-  /// رسم بياني
+
   Widget _buildChart(List<Map<String, dynamic>> orders, String filter) {
     if (orders.isEmpty) {
       return const SizedBox(
@@ -223,8 +223,8 @@ class _DeliveredOrdersPageState extends State<DeliveredOrdersPage>
                           child: Text(items.length.toString()),
                         ),
                         title: Text(
-                            'طلب #${(order['orderId'] ?? '').toString().substring(0, 6)}'),
-                        subtitle: Text(order['customer']?['name'] ?? 'زبون'),
+                            ' ${(order['customer']?['name'] ?? '')}'),
+                        // subtitle: Text(order['customer']?['name'] ?? 'زبون'),
                         trailing: Text('\$${order['totalAmount']}'),
                         onTap: () {
                           Navigator.push(
@@ -288,28 +288,40 @@ class _DeliveredOrdersPageState extends State<DeliveredOrdersPage>
           child: filteredPurchases.isEmpty
               ? const Center(child: Text('لا توجد مشتريات'))
               : ListView.builder(
-                  itemCount: filteredPurchases.length,
-                  itemBuilder: (context, index) {
-                    final order = filteredPurchases[index];
-                    final items = (order['items'] as List?) ?? [];
+            itemCount: filteredPurchases.length,
+            itemBuilder: (context, index) {
+              final order = filteredPurchases[index];
+              final items = (order['items'] as List?) ?? [];
 
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.orange,
-                          child: Text(items.length.toString()),
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.orange,
+                    child: Text(items.length.toString()),
+                  ),
+                  title: Text(
+                    'فاتورة #${(order['orderId'] ?? '').toString().substring(0, (order['orderId'] ?? '').toString().length.clamp(0, 6))}',
+                  ),
+                  subtitle: Text(order['supplier']?['name'] ?? 'مورد'),
+                  trailing: Text('\$${order['totalAmount']}'),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SellerOrderDetailsPage(
+                          customerName: order['supplier']?['name'] ?? 'مورد',
+                          orders: [order],
                         ),
-                        title: Text(
-                            'فاتورة #${(order['orderId'] ?? '').toString().substring(0, 6)}'),
-                        subtitle: Text(order['supplier']?['name'] ?? 'مورد'),
-                        trailing: Text('\$${order['totalAmount']}'),
                       ),
                     );
                   },
                 ),
+              );
+            },
+          ),
         ),
+
         Container(
           padding: const EdgeInsets.all(12),
           color: Colors.grey.shade200,

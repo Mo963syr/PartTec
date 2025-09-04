@@ -29,16 +29,15 @@ class OrderProvider with ChangeNotifier {
   String? get lastOrderId => _lastOrderId;
   String? get lastError => _lastError;
 
-  // ───────────────────────── Helpers ─────────────────────────
+
   Future<String?> _getUserId() async {
-    _userId ??= await SessionStore.userId();
-    return _userId;
+    return await SessionStore.userId();
   }
 
   Future<String?> _getRole() async {
-    _role ??= await SessionStore.role();
-    return _role;
+    return await SessionStore.role();
   }
+
 
   Map<String, dynamic> _decodeToMapBytes(List<int> bodyBytes) {
     final raw = jsonDecode(utf8.decode(bodyBytes));
@@ -103,7 +102,7 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
-  // ───────────────────────── Orders: طلب محدد ─────────────────────────
+
   Future<bool> createSpecificOrder({
     required String brandCode,
     required String partName,

@@ -4,20 +4,15 @@ import 'package:parttec/theme/app_theme.dart';
 import 'package:parttec/widgets/ui_kit.dart';
 
 import 'package:parttec/screens/order/my_order_page.dart';
-import 'package:parttec/screens/recommendation/request_recommendation_page.dart';
 import '../auth/auth_page.dart';
+import '../cart/cart_page.dart';
 import '../order/recommendation_orders_page.dart';
-import '../part/add_part_page_supplier.dart';
-import '../part/manage_parts_page.dart';
 import '../order/GroupedOrdersPage.dart';
 import '../part/added_parts_page.dart';
-import '../recommendation/recommendation_requests_page.dart';
-import 'seller_reviews_page.dart';
 import 'DeliveredOrdersPage.dart';
 import 'sellers.dart';
 
 import '../../utils/session_store.dart';
-
 
 class SupplierDashboard extends StatelessWidget {
   const SupplierDashboard({super.key});
@@ -58,108 +53,110 @@ class SupplierDashboard extends StatelessWidget {
                 ],
               ),
               Expanded(
-                child: Padding(
+                child: SingleChildScrollView(
                   padding: const EdgeInsets.all(AppSpaces.md),
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: AppSpaces.lg,
-                    crossAxisSpacing: AppSpaces.lg,
-                    childAspectRatio: 1,
-                    children: [
-                      _buildCard(
-                        context,
-                        icon: Icons.widgets,
-                        title: 'قسم القطع',
-                        onTap: () {
-                          Navigator.push(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      double maxWidth = constraints.maxWidth;
+                      double cardWidth =
+                          (maxWidth / 2) - (AppSpaces.lg * 1.5);
+                      double cardHeight = cardWidth;
+
+                      return Wrap(
+                        spacing: AppSpaces.lg,
+                        runSpacing: AppSpaces.lg,
+                        alignment: WrapAlignment.center,
+                        children: [
+                          _buildCard(
                             context,
-                            MaterialPageRoute(
-                              builder: (_) => PartsSectionPage(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildCard(
-                        context,
-                        icon: Icons.edit_note,
-                        title: 'طلباتي',
-                        onTap: () {
-                          Navigator.push(
+                            icon: Icons.widgets,
+                            title: 'قسم القطع',
+                            onTap: () {
+                              Navigator.push(context,
+                                  MaterialPageRoute(builder: (_) => PartsSectionPage()));
+                            },
+                          ),
+                          _buildCard(
                             context,
-                            MaterialPageRoute(
-                              builder: (_) => MyOrdersPage(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildCard(
-                        context,
-                        icon: Icons.shopping_cart,
-                        title: 'الطلبات المقدمة من الزبون',
-                        onTap: () {
-                          Navigator.push(
+                            icon: Icons.edit_note,
+                            title: 'طلباتي',
+                            onTap: () {
+                              Navigator.push(
+                                  context, MaterialPageRoute(builder: (_) => MyOrdersPage()));
+                            },
+                          ),
+                          _buildCard(
                             context,
-                            MaterialPageRoute(
-                              builder: (_) => GroupedOrdersPage(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildCard(
-                        context,
-                        icon: Icons.view_list,
-                        title: 'عرض القطع المضافة',
-                        onTap: () {
-                          Navigator.push(
+                            icon: Icons.shopping_cart,
+                            title: 'الطلبات المقدمة من الزبون',
+                            onTap: () {
+                              Navigator.push(
+                                  context, MaterialPageRoute(builder: (_) => GroupedOrdersPage()));
+                            },
+                          ),
+                          _buildCard(
                             context,
-                            MaterialPageRoute(
-                              builder: (_) => AddedPartsPage(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildCard(
-                        context,
-                        icon: Icons.recommend,
-                        title: 'طلبات التوصية',
-                        onTap: () {
-                          Navigator.push(
+                            icon: Icons.view_list,
+                            title: 'عرض القطع المضافة',
+                            onTap: () {
+                              Navigator.push(
+                                  context, MaterialPageRoute(builder: (_) => AddedPartsPage()));
+                            },
+                          ),
+                          _buildCard(
                             context,
-                            MaterialPageRoute(
-                              builder: (_) => RecommendationOrdersPage(
-                                roleOverride: 'user',
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildCard(
-                        context,
-                        icon: Icons.storefront,
-                        title: 'التجار',
-                        onTap: () {
-                          Navigator.push(
+                            icon: Icons.recommend,
+                            title: 'طلبات التوصية',
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => RecommendationOrdersPage(roleOverride: 'user')),
+                              );
+                            },
+                          ),
+                          _buildCard(
                             context,
-                            MaterialPageRoute(
-                              builder: (_) => const TradersDashboard(),
-                            ),
-                          );
-                        },
-                      ),
-                      _buildCard(
-                        context,
-                        icon: Icons.history,
-                        title: 'السجل',
-                        onTap: () {
-                          Navigator.push(
+                            icon: Icons.storefront,
+                            title: 'التجار',
+                            onTap: () {
+                              Navigator.push(context,
+                                  MaterialPageRoute(builder: (_) => const TradersDashboard()));
+                            },
+                          ),
+                          _buildCard(
                             context,
-                            MaterialPageRoute(
-                              builder: (_) => DeliveredOrdersPage(),
-                            ),
+                            icon: Icons.history,
+                            title: 'السجل',
+                            onTap: () {
+                              Navigator.push(
+                                  context, MaterialPageRoute(builder: (_) => DeliveredOrdersPage()));
+                            },
+                          ),
+
+                          _buildCard(
+                            context,
+                            icon: Icons.shopping_basket,
+                            title: 'سلة المشتريات',
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => CartPage(),
+                                ),
+                              );
+                            },
+                          ),
+                        ].map((card) {
+                          return SizedBox(
+                            width: cardWidth,
+                            height: cardHeight,
+                            child: card,
                           );
-                        },
-                      ),
-                    ],
+                        }).toList(),
+                      );
+
+                    },
                   ),
                 ),
               ),
@@ -192,13 +189,17 @@ class SupplierDashboard extends StatelessWidget {
             children: [
               Icon(icon, size: 40, color: AppColors.primary),
               const SizedBox(height: AppSpaces.sm),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.text,
+              Flexible(
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.text,
+                  ),
                 ),
               ),
             ],

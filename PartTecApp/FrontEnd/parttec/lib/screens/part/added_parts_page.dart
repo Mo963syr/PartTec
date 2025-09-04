@@ -37,11 +37,13 @@ class _AddedPartsPageState extends State<AddedPartsPage>
         TabController(length: categorizedParts.length, vsync: this);
     fetchParts();
   }
-
   Future<void> fetchParts() async {
     setState(() => isLoading = true);
     try {
       final uid = await SessionStore.userId();
+      final role = await SessionStore.role();
+      debugPrint('🔑 User ID: $uid | 🎭 Role: $role');
+
       if (uid == null || uid.isEmpty) {
         debugPrint('❌ لا يوجد مستخدم مسجل');
         setState(() => isLoading = false);
@@ -56,7 +58,7 @@ class _AddedPartsPageState extends State<AddedPartsPage>
         final Map<String, dynamic> data = json.decode(response.body);
         final List<dynamic> parts = data['parts'] ?? [];
 
-        // إعادة التصنيف
+
         for (var key in categorizedParts.keys) {
           categorizedParts[key] = [];
         }
@@ -75,6 +77,7 @@ class _AddedPartsPageState extends State<AddedPartsPage>
       if (mounted) setState(() => isLoading = false);
     }
   }
+
 
   String _extractId(Map<String, dynamic> part) {
     return (part['_id'] ?? part['id'] ?? '').toString();

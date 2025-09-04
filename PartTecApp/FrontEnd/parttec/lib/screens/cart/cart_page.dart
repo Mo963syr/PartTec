@@ -11,6 +11,9 @@ import '../../models/cart_item.dart';
 import '../location/add_location.dart';
 import '../order/order_summary_page.dart';
 import '../../utils/session_store.dart'; // 🆕 لجلب userId
+import '../../utils/session_store.dart';
+import '../home/home_page.dart';
+import '../supplier/supplier_dashboard.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -284,7 +287,7 @@ class _CartPageState extends State<CartPage> {
                                           await Navigator.of(context).push(
                                             MaterialPageRoute(
                                               builder: (_) => LocationPickerPage(
-                                                userId: uid, // نمرره عند الحاجة
+                                                userId: uid,
                                               ),
                                             ),
                                           );
@@ -361,7 +364,7 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  void _confirmOrder(BuildContext context, String method) {
+  void _confirmOrder(BuildContext context, String method) async {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -373,11 +376,33 @@ class _CartPageState extends State<CartPage> {
             child: const Text('إلغاء'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(context).pop();
+
+              // ✅ أظهر رسالة نجاح
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('تم تأكيد الطلب ✅')),
               );
+
+              // ✅ جلب الدور من SessionStore
+              final role = await SessionStore.role();
+
+              // ✅ الانتقال حسب الدور
+              if (context.mounted) {
+                if (role == 'seller') {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SupplierDashboard()),
+                        (route) => false,
+                  );
+                } else {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HomePage()),
+                        (route) => false,
+                  );
+                }
+              }
             },
             child: const Text('تأكيد'),
           ),

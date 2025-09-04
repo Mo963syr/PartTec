@@ -27,8 +27,8 @@ class _RequestRecommendationPageState extends State<RequestRecommendationPage> {
   final List<String> years = ['2025', '2024', '2023', '2022'];
 
   final Map<String, String> _brandCodeMap = const {
-    'Toyota': 'TOY',
-    'Hyundai': 'HYU',
+    'Toyota': 'Toyota',
+    'Hyundai': 'Hyundai',
     'Kia': 'KIA',
   };
 
@@ -158,7 +158,7 @@ class _RequestRecommendationPageState extends State<RequestRecommendationPage> {
                   onPressed: isSubmitting ? null : _submit,
                   icon: const Icon(Icons.send),
                   label: Text(isSubmitting ? 'جارٍ الإرسال...' : 'إرسال الطلب'),
-                  // استخدم لون الزر من الثيم مع الحفاظ على حجم الحد الأدنى
+
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 50),
                     backgroundColor: AppColors.primary,

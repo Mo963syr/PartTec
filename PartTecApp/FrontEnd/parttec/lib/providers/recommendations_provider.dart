@@ -8,27 +8,16 @@ class RecommendationsProvider extends ChangeNotifier {
   bool isLoading = false;
   String? lastError;
 
-  String userId;
-  RecommendationsProvider(this.userId);
-
   List<Map<String, dynamic>> compatibleParts = [];
   List<String> userprands = [];
   int totalOrders = 0;
 
   final Set<String> _busyIds = {};
   bool isBusy(String id) => _busyIds.contains(id);
-  String? _role;
-  String? _userId;
 
-  Future<String?> _getUserId() async {
-    _userId ??= await SessionStore.userId();
-    return _userId;
-  }
 
-  Future<String?> _getRole() async {
-    _role ??= await SessionStore.role();
-    return _role;
-  }
+  Future<String?> _getUserId() async => await SessionStore.userId();
+  Future<String?> _getRole() async => await SessionStore.role();
 
   Future<bool> fetchMyRecommendationOrders({
     String? authToken,
@@ -39,9 +28,17 @@ class RecommendationsProvider extends ChangeNotifier {
     notifyListeners();
 
     final uid = await _getUserId();
-    final role = roleOverride;
+    final role = roleOverride ?? await _getRole();
+
     print('Role: $role');
     print('UserId: $uid');
+
+    if (uid == null || uid.isEmpty) {
+      lastError = 'لم يتم العثور على معرف المستخدم';
+      isLoading = false;
+      notifyListeners();
+      return false;
+    }
 
     final uri = Uri.parse(
       '${AppSettings.serverurl}/part/CompatibleSpicificOrders/$uid/$role',
@@ -66,7 +63,6 @@ class RecommendationsProvider extends ChangeNotifier {
             .toList();
 
         totalOrders = decoded['meta']?['totalorders'] ?? compatibleParts.length;
-
         isLoading = false;
         notifyListeners();
         return true;
@@ -117,8 +113,8 @@ class RecommendationsProvider extends ChangeNotifier {
       final statusEn = (newStatusArabic == 'موجودة')
           ? 'available'
           : (newStatusArabic == 'غير موجودة')
-              ? 'unavailable'
-              : 'pending';
+          ? 'unavailable'
+          : 'pending';
 
       final res = await http.post(
         url,
@@ -166,8 +162,7 @@ class RecommendationsProvider extends ChangeNotifier {
 
     try {
       final uid = await _getUserId();
-      final storedUserId = await SessionStore.userId();
-      if (storedUserId == null) {
+      if (uid == null) {
         lastError = 'User ID not found in session';
         _busyIds.remove(orderId);
         notifyListeners();
@@ -175,7 +170,7 @@ class RecommendationsProvider extends ChangeNotifier {
       }
 
       final uri =
-          Uri.parse('${AppSettings.serverurl}/order/recommendation-offer');
+      Uri.parse('${AppSettings.serverurl}/order/recommendation-offer');
       final res = await http.post(
         uri,
         headers: {'Content-Type': 'application/json'},
@@ -205,15 +200,12 @@ class RecommendationsProvider extends ChangeNotifier {
     return false;
   }
 
-  Future<bool> markAvailable(String orderId, {String? authToken}) => _setStatus(
-      orderId: orderId, newStatusArabic: 'موجودة', authToken: authToken);
+  Future<bool> markAvailable(String orderId, {String? authToken}) =>
+      _setStatus(orderId: orderId, newStatusArabic: 'موجودة', authToken: authToken);
 
   Future<bool> markUnavailable(String orderId, {String? authToken}) =>
-      _setStatus(
-          orderId: orderId,
-          newStatusArabic: 'غير موجودة',
-          authToken: authToken);
+      _setStatus(orderId: orderId, newStatusArabic: 'غير موجودة', authToken: authToken);
 
-  Future<bool> markPending(String orderId, {String? authToken}) => _setStatus(
-      orderId: orderId, newStatusArabic: 'قيد البحث', authToken: authToken);
+  Future<bool> markPending(String orderId, {String? authToken}) =>
+      _setStatus(orderId: orderId, newStatusArabic: 'قيد البحث', authToken: authToken);
 }

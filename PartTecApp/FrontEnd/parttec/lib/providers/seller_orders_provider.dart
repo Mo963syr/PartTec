@@ -8,27 +8,34 @@ class SellerOrdersProvider with ChangeNotifier {
   String? _sellerId;
 
   List<Map<String, dynamic>> _orders = [];
-  double totalAmount = 0;
+  double totalAmount = 0.0;
   bool isLoading = false;
   String? error;
 
   List<Map<String, dynamic>> get orders => _orders;
 
   Future<void> fetchOrders() async {
-    _sellerId ??= await SessionStore.userId();
-    print('Seller ID: $_sellerId');
-    if (_sellerId == null || _sellerId!.isEmpty) {
+
+    final currentSellerId = await SessionStore.userId();
+    print('Seller ID: $currentSellerId');
+
+    if (currentSellerId == null || currentSellerId.isEmpty) {
       error = 'لم يتم العثور على معرف البائع';
+      _orders.clear();
+      totalAmount = 0.0;
       notifyListeners();
       return;
     }
+
+    _sellerId = currentSellerId;
 
     isLoading = true;
     error = null;
     notifyListeners();
 
     final url = Uri.parse(
-        '${AppSettings.serverurl}/order/getOrderForSellrer/$_sellerId');
+      '${AppSettings.serverurl}/order/getOrderForSellrer/$_sellerId',
+    );
 
     try {
       final response = await http.get(url);
@@ -60,8 +67,9 @@ class SellerOrdersProvider with ChangeNotifier {
   }
 
   Future<bool> updateStatus(String orderId, String newStatus) async {
-    final url =
-        Uri.parse('${AppSettings.serverurl}/order/updateOrderStatus/$orderId');
+    final url = Uri.parse(
+      '${AppSettings.serverurl}/order/updateOrderStatus/$orderId',
+    );
 
     try {
       final response = await http.put(
@@ -74,12 +82,18 @@ class SellerOrdersProvider with ChangeNotifier {
       if (response.statusCode == 200 &&
           data is Map &&
           data['success'] == true) {
-        await fetchOrders(); // إعادة جلب الطلبات
+
+        await fetchOrders();
         return true;
       } else {
+        error = (data is Map ? data['message']?.toString() : null) ??
+            'فشل تحديث حالة الطلب';
+        notifyListeners();
         return false;
       }
     } catch (e) {
+      error = 'حدث خطأ أثناء تحديث الحالة: $e';
+      notifyListeners();
       return false;
     }
   }

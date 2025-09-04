@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
+import '../../theme/app_theme.dart';
 import '../../utils/app_settings.dart';
 import '../../utils/session_store.dart';
 import '../../providers/order_provider.dart';
@@ -36,8 +36,6 @@ class _MyOrdersViewState extends State<_MyOrdersView> {
   bool isLoading = true;
   List<Map<String, dynamic>> grouped = [];
   String? errorMsg;
-  String? _uid;
-  String? _role;
 
   @override
   void initState() {
@@ -52,9 +50,11 @@ class _MyOrdersViewState extends State<_MyOrdersView> {
     });
 
     try {
-      _uid ??= await SessionStore.userId();
-      _role ??= await SessionStore.role();
-      if (_uid == null || _uid!.isEmpty) {
+      final uid = await SessionStore.userId();
+      final role = await SessionStore.role();
+      print('🔑 uid: $uid');
+      print('🎭 role: $role');
+      if (uid == null || uid.isEmpty) {
         setState(() {
           errorMsg = '⚠️ يُرجى تسجيل الدخول أولًا لعرض الطلبات.';
           isLoading = false;
@@ -66,13 +66,11 @@ class _MyOrdersViewState extends State<_MyOrdersView> {
       http.Response? res1;
       http.Response? res2;
 
-      if (_role == 'user') {
-        res1 = await http.get(Uri.parse('$base/order/viewuserorder/$_uid'));
-        res2 = await http
-            .get(Uri.parse('$base/order/viewuserspicificorder/$_uid'));
-      } else if (_role == 'seller') {
-        res2 = await http
-            .get(Uri.parse('$base/order/viewuserspicificorder/$_uid'));
+      if (role == 'user') {
+        res1 = await http.get(Uri.parse('$base/order/viewuserorder/$uid'));
+        res2 = await http.get(Uri.parse('$base/order/viewuserspicificorder/$uid'));
+      } else if (role == 'seller') {
+        res2 = await http.get(Uri.parse('$base/order/viewuserspicificorder/$uid'));
       }
 
       final List<Map<String, dynamic>> list = [];
@@ -88,7 +86,7 @@ class _MyOrdersViewState extends State<_MyOrdersView> {
           ((res1 != null && res1.statusCode != 200) ||
               (res2 != null && res2.statusCode != 200))) {
         errorMsg =
-            'فشل تحميل الطلبات (${res1?.statusCode ?? '-'}/${res2?.statusCode ?? '-'})';
+        'فشل تحميل الطلبات (${res1?.statusCode ?? '-'}/${res2?.statusCode ?? '-'})';
       }
 
       setState(() {
@@ -123,7 +121,6 @@ class _MyOrdersViewState extends State<_MyOrdersView> {
 
       if (specific) {
         final rawStatus = (map['status'] ?? 'غير محدد').toString();
-        // عرض حالة "مؤكد" للمستخدم العادي على أنها "قيد المعالجة"
         final userStatus = rawStatus == 'مؤكد' ? 'قيد المعالجة' : rawStatus;
         return {
           'orderId': map['_id'] ?? '',
@@ -142,9 +139,9 @@ class _MyOrdersViewState extends State<_MyOrdersView> {
         };
       } else {
         final src =
-            (map['cartIds'] is List ? map['cartIds'] : map['items']) as List?;
+        (map['cartIds'] is List ? map['cartIds'] : map['items']) as List?;
         final items =
-            (src ?? []).whereType<Map>().map<Map<String, dynamic>>((it) {
+        (src ?? []).whereType<Map>().map<Map<String, dynamic>>((it) {
           final itm = Map<String, dynamic>.from(it as Map);
           final part = (itm['partId'] ?? itm);
           String? name, image;
@@ -155,8 +152,10 @@ class _MyOrdersViewState extends State<_MyOrdersView> {
             image = pMap['imageUrl']?.toString();
             price = pMap['price'];
           }
-          final rawItemStatus = (itm['status'] ?? map['status'] ?? 'غير متوفر').toString();
-          final userItemStatus = rawItemStatus == 'مؤكد' ? 'قيد المعالجة' : rawItemStatus;
+          final rawItemStatus =
+          (itm['status'] ?? map['status'] ?? 'غير متوفر').toString();
+          final userItemStatus =
+          rawItemStatus == 'مؤكد' ? 'قيد المعالجة' : rawItemStatus;
           return {
             'name': name ?? 'اسم غير معروف',
             'image': image,
@@ -168,7 +167,8 @@ class _MyOrdersViewState extends State<_MyOrdersView> {
         }).toList();
 
         final rawOrderStatus = (map['status'] ?? 'غير معروف').toString();
-        final userOrderStatus = rawOrderStatus == 'مؤكد' ? 'قيد المعالجة' : rawOrderStatus;
+        final userOrderStatus =
+        rawOrderStatus == 'مؤكد' ? 'قيد المعالجة' : rawOrderStatus;
 
         return {
           'orderId': map['_id'] ?? '',
@@ -213,8 +213,7 @@ class _MyOrdersViewState extends State<_MyOrdersView> {
           final expanded = (order['expanded'] as bool?) ?? false;
           final status = order['status'] as String? ?? 'غير معروف';
           final items =
-              (order['items'] as List?)?.cast<Map<String, dynamic>>() ??
-                  const [];
+              (order['items'] as List?)?.cast<Map<String, dynamic>>() ?? const [];
           final orderId = (order['orderId'] ?? '').toString();
 
           return _OrderCard(
@@ -265,41 +264,27 @@ class _OrderCard extends StatelessWidget {
           }
         },
         children: [
-          // عناصر الطلب
           ...items.map((item) => ListTile(
-                leading: (item['image'] != null &&
-                        item['image'].toString().isNotEmpty)
-                    ? Image.network(
-                        item['image'],
-                        width: 40,
-                        height: 40,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (ctx, child, progress) {
-                          if (progress == null) return child;
-                          return const SizedBox(
-                            width: 40,
-                            height: 40,
-                            child: Center(
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2)),
-                          );
-                        },
-                        errorBuilder: (_, __, ___) =>
-                            const Icon(Icons.image_not_supported),
-                      )
-                    : const Icon(Icons.image_not_supported),
-                title: Text(item['name']),
-                subtitle: Text("السعر: ${item['price'] ?? 'غير محدد'}"),
-                trailing: item['canCancel'] == true
-                    ? IconButton(
-                        // استخدم لون الخطأ من الثيم بدلاً من الأحمر الصريح
-                        icon: const Icon(Icons.cancel, color: AppColors.error),
-                        onPressed: () => onCancel(item['cartId']),
-                      )
-                    : null,
-              )),
-
-     
+            leading: (item['image'] != null &&
+                item['image'].toString().isNotEmpty)
+                ? Image.network(
+              item['image'],
+              width: 40,
+              height: 40,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) =>
+              const Icon(Icons.image_not_supported),
+            )
+                : const Icon(Icons.image_not_supported),
+            title: Text(item['name']),
+            subtitle: Text("السعر: ${item['price'] ?? 'غير محدد'}"),
+            trailing: item['canCancel'] == true
+                ? IconButton(
+              icon: const Icon(Icons.cancel, color: AppColors.error),
+              onPressed: () => onCancel(item['cartId']),
+            )
+                : null,
+          )),
           Padding(
             padding: const EdgeInsets.only(bottom: 8.0),
             child: Consumer<OrderProvider>(
@@ -317,8 +302,7 @@ class _OrderCard extends StatelessWidget {
                 if (offers.isEmpty) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12.0),
-                    child:
-                        Center(child: Text('لا توجد عروض حالياً لهذا الطلب')),
+                    child: Center(child: Text('لا توجد عروض حالياً لهذا الطلب')),
                   );
                 }
 
@@ -328,7 +312,7 @@ class _OrderCard extends StatelessWidget {
                     const Divider(),
                     const Padding(
                       padding:
-                          EdgeInsets.symmetric(horizontal: 16.0, vertical: 6),
+                      EdgeInsets.symmetric(horizontal: 16.0, vertical: 6),
                       child: Text(
                         "العروض المتاحة:",
                         style: TextStyle(
@@ -339,48 +323,47 @@ class _OrderCard extends StatelessWidget {
                     ),
                     ...offers.map((offer) {
                       final offerId = (offer['_id'] ??
-                              offer['id'] ??
-                              offer['offerId'] ??
-                              '')
+                          offer['id'] ??
+                          offer['offerId'] ??
+                          '')
                           .toString();
                       final desc = (offer['description'] ?? 'عرض').toString();
                       final price = (offer['price'] ?? 'غير محدد').toString();
                       final image = (offer['imageUrl'] ?? '').toString();
                       final supplier =
-                          (offer['supplierName'] ?? 'مورد').toString();
+                      (offer['supplierName'] ?? 'مورد').toString();
 
                       return ListTile(
                         leading: image.isNotEmpty
                             ? ClipRRect(
-                                borderRadius: BorderRadius.circular(6),
-                                child: Image.network(
-                                  image,
-                                  width: 44,
-                                  height: 44,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => const Icon(
-                                      Icons.local_offer,
-                                      color: AppColors.primary),
-                                ),
-                              )
-                            : const Icon(Icons.local_offer,
+                          borderRadius: BorderRadius.circular(6),
+                          child: Image.network(
+                            image,
+                            width: 44,
+                            height: 44,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.local_offer,
                                 color: AppColors.primary),
+                          ),
+                        )
+                            : const Icon(Icons.local_offer,
+                            color: AppColors.primary),
                         title: Text(desc),
                         subtitle: Text('السعر: $price — $supplier'),
                         trailing: ElevatedButton(
                           onPressed: () async {
                             final ok = await context
                                 .read<OrderProvider>()
-                                .addOfferToCart(
-                                    offerId, orderId); // ✅ تمرير orderId
+                                .addOfferToCart(offerId, orderId);
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                               content: Text(ok
                                   ? '✅ تمت إضافة العرض إلى السلة'
                                   : (context
-                                          .read<OrderProvider>()
-                                          .offersError ??
-                                      'فشل إضافة العرض')),
+                                  .read<OrderProvider>()
+                                  .offersError ??
+                                  'فشل إضافة العرض')),
                             ));
                           },
                           child: const Text('إضافة للسلة'),
