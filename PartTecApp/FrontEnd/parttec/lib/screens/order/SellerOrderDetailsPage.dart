@@ -32,7 +32,7 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
 
   Future<void> _fetchAddress() async {
     final order =
-        widget.orders.isNotEmpty ? widget.orders.first : <String, dynamic>{};
+    widget.orders.isNotEmpty ? widget.orders.first : <String, dynamic>{};
 
     List? coords = order['coordinates'] as List?;
     if (coords == null || coords.length < 2) {
@@ -46,8 +46,9 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
         try {
           final uri = Uri.parse(
               'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=jsonv2');
-          final res = await http.get(uri,
-              headers: {'User-Agent': 'parttec-app/1.0 (https://example.com)'});
+          final res = await http.get(uri, headers: {
+            'User-Agent': 'parttec-app/1.0 (https://example.com)'
+          });
           if (res.statusCode == 200) {
             final data = jsonDecode(res.body) as Map?;
             setState(() {
@@ -85,7 +86,7 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final order =
-        widget.orders.isNotEmpty ? widget.orders.first : <String, dynamic>{};
+    widget.orders.isNotEmpty ? widget.orders.first : <String, dynamic>{};
 
     final orderId = (order['_id'] ?? order['orderId'])?.toString() ?? '';
     final status = (order['status'] ?? '').toString();
@@ -98,12 +99,12 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
     final totalAmount = (order['totalAmount'] != null)
         ? _numToDouble(order['totalAmount'])
         : items.fold<double>(0.0, (s, it) {
-            final qty = _numToDouble(it['quantity']).toInt();
-            final price = _numToDouble(it['price']);
-            final tot =
-                it['total'] != null ? _numToDouble(it['total']) : (price * qty);
-            return s + tot;
-          });
+      final qty = _numToDouble(it['quantity']).toInt();
+      final price = _numToDouble(it['price']);
+      final tot =
+      it['total'] != null ? _numToDouble(it['total']) : (price * qty);
+      return s + tot;
+    });
 
     final shouldShowActions = status == 'قيد التجهيز' || status == 'مؤكد';
 
@@ -158,8 +159,8 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
                     else if (_address != null)
                       Text('الموقع: $_address')
                     else if (lat != null && lon != null)
-                      Text(
-                          'إحداثيات الموقع: ${lat.toStringAsFixed(5)}, ${lon.toStringAsFixed(5)}'),
+                        Text(
+                            'إحداثيات الموقع: ${lat.toStringAsFixed(5)}, ${lon.toStringAsFixed(5)}'),
                   ],
                 ),
               ),
@@ -174,7 +175,7 @@ class _SellerOrderDetailsPageState extends State<SellerOrderDetailsPage> {
                     const Text(
                       'تفاصيل الفاتورة',
                       style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     const SizedBox(height: 8),
                     SingleChildScrollView(

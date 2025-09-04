@@ -5,6 +5,7 @@ import 'package:parttec/widgets/ui_kit.dart';
 
 import 'package:parttec/screens/order/my_order_page.dart';
 import 'package:parttec/screens/recommendation/request_recommendation_page.dart';
+import '../auth/auth_page.dart';
 import '../order/recommendation_orders_page.dart';
 import '../part/add_part_page_supplier.dart';
 import '../part/manage_parts_page.dart';
@@ -14,6 +15,9 @@ import '../recommendation/recommendation_requests_page.dart';
 import 'seller_reviews_page.dart';
 import 'DeliveredOrdersPage.dart';
 import 'sellers.dart';
+
+import '../../utils/session_store.dart';
+
 
 class SupplierDashboard extends StatelessWidget {
   const SupplierDashboard({super.key});
@@ -37,6 +41,21 @@ class SupplierDashboard extends StatelessWidget {
                     color: Colors.white,
                   ),
                 ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.logout, color: Colors.white),
+                    onPressed: () async {
+                      await SessionStore.clear();
+                      if (context.mounted) {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (_) => const AuthPage()),
+                              (route) => false,
+                        );
+                      }
+                    },
+                  ),
+                ],
               ),
               Expanded(
                 child: Padding(
@@ -76,7 +95,6 @@ class SupplierDashboard extends StatelessWidget {
                       _buildCard(
                         context,
                         icon: Icons.shopping_cart,
-                        // تغيير العنوان ليعكس الطلبات المقدمة من الزبون فقط
                         title: 'الطلبات المقدمة من الزبون',
                         onTap: () {
                           Navigator.push(
@@ -153,11 +171,11 @@ class SupplierDashboard extends StatelessWidget {
   }
 
   Widget _buildCard(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
+      BuildContext context, {
+        required IconData icon,
+        required String title,
+        required VoidCallback onTap,
+      }) {
     return Card(
       elevation: 6,
       color: Colors.white,
