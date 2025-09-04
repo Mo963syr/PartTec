@@ -29,7 +29,6 @@ class DeliveryOrdersProvider with ChangeNotifier {
     _lastStatus = status;
     notifyListeners();
 
-
     try {
       final driverId = await _getDriverId();
       if (driverId == null || driverId.isEmpty) {
@@ -38,7 +37,8 @@ class DeliveryOrdersProvider with ChangeNotifier {
 
       final uri = Uri.parse('${AppSettings.serverurl}/delivery/orders')
           .replace(queryParameters: {
-        'status': status,   // مثال: "مؤكد" / "مستلمة" / "على الطريق" / "تم التوصيل"
+        'status':
+            status, // مثال: "مؤكد" / "مستلمة" / "على الطريق" / "تم التوصيل"
         'driverId': driverId,
       });
 
@@ -49,7 +49,8 @@ class DeliveryOrdersProvider with ChangeNotifier {
       final bodyText = utf8.decode(response.bodyBytes);
       debugPrint('GET $uri -> ${response.statusCode}');
       debugPrint('📦 Response Body: $bodyText');
-      debugPrint('Body (first 200): ${bodyText.substring(0, bodyText.length > 200 ? 200 : bodyText.length)}');
+      debugPrint(
+          'Body (first 200): ${bodyText.substring(0, bodyText.length > 200 ? 200 : bodyText.length)}');
 
       if (response.statusCode != 200) {
         throw Exception('HTTP ${response.statusCode}: $bodyText');
@@ -59,7 +60,8 @@ class DeliveryOrdersProvider with ChangeNotifier {
       try {
         json = jsonDecode(bodyText) as Map<String, dynamic>;
       } catch (_) {
-        throw Exception('الرد ليس JSON صالحًا. تأكد من أن مسار /delivery/orders فعّال.');
+        throw Exception(
+            'الرد ليس JSON صالحًا. تأكد من أن مسار /delivery/orders فعّال.');
       }
 
       if (json['success'] != true) {
@@ -71,7 +73,6 @@ class DeliveryOrdersProvider with ChangeNotifier {
       _orders
         ..clear()
         ..addAll(list.cast<Map<String, dynamic>>());
-
     } catch (e) {
       error = 'حدث خطأ أثناء تحميل الطلبات: $e';
     } finally {
@@ -79,7 +80,9 @@ class DeliveryOrdersProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-  Future<bool> acceptOrder(String orderId, double fee, BuildContext context) async {
+
+  Future<bool> acceptOrder(
+      String orderId, double fee, BuildContext context) async {
     final driverId = await SessionStore.userId();
     if (driverId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -88,7 +91,8 @@ class DeliveryOrdersProvider with ChangeNotifier {
       return false;
     }
 
-    final url = Uri.parse('${AppSettings.serverurl}/delivery/orders/$orderId/accept');
+    final url =
+        Uri.parse('${AppSettings.serverurl}/delivery/orders/$orderId/accept');
 
     try {
       final response = await http.put(
@@ -106,7 +110,8 @@ class DeliveryOrdersProvider with ChangeNotifier {
         return true;
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message']?.toString() ?? 'فشل الاستلام')),
+          SnackBar(
+              content: Text(data['message']?.toString() ?? 'فشل الاستلام')),
         );
       }
     } catch (e) {
@@ -117,15 +122,14 @@ class DeliveryOrdersProvider with ChangeNotifier {
     return false;
   }
 
-
   /// تحديث حالة الطلب عبر مسارات التوصيل
   Future<void> updateStatus(
-      String orderId,
-      String newStatus, {
-        double? deliveryPrice,  // مطلوب فقط عند "مستلمة"
-        String? reason,         // اختياري عند "ملغي"
-        BuildContext? context,
-      }) async {
+    String orderId,
+    String newStatus, {
+    double? deliveryPrice, // مطلوب فقط عند "مستلمة"
+    String? reason, // اختياري عند "ملغي"
+    BuildContext? context,
+  }) async {
     try {
       final driverId = await _getDriverId();
       if (driverId == null || driverId.isEmpty) {
@@ -141,45 +145,54 @@ class DeliveryOrdersProvider with ChangeNotifier {
           if (deliveryPrice == null || deliveryPrice <= 0) {
             throw Exception('يجب تحديد سعر توصيل صالح لقبول الطلب.');
           }
-          uri = Uri.parse('${AppSettings.serverurl}/delivery/orders/$orderId/accept');
+          uri = Uri.parse(
+              '${AppSettings.serverurl}/delivery/orders/$orderId/accept');
           body = {'driverId': driverId, 'fee': deliveryPrice};
           successMsg = 'تم استلام الطلب وتحديد سعر التوصيل';
           break;
 
         case 'على الطريق':
-          uri = Uri.parse('${AppSettings.serverurl}/delivery/orders/$orderId/start');
+          uri = Uri.parse(
+              '${AppSettings.serverurl}/delivery/orders/$orderId/start');
           body = {'driverId': driverId};
           successMsg = 'تم بدء التوصيل';
           break;
 
         case 'تم التوصيل':
-          uri = Uri.parse('${AppSettings.serverurl}/delivery/orders/$orderId/complete');
+          uri = Uri.parse(
+              '${AppSettings.serverurl}/delivery/orders/$orderId/complete');
           body = {'driverId': driverId};
           successMsg = 'تم التسليم';
           break;
 
         case 'ملغي':
-          uri = Uri.parse('${AppSettings.serverurl}/delivery/orders/$orderId/cancel');
+          uri = Uri.parse(
+              '${AppSettings.serverurl}/delivery/orders/$orderId/cancel');
           body = {'driverId': driverId, 'reason': reason ?? 'إلغاء من التطبيق'};
           successMsg = 'تم إلغاء الطلب';
           break;
 
         default:
-        // في حال أردت دعم حالات قديمة عبر الـ order/updateOrderStatus
-          uri = Uri.parse('${AppSettings.serverurl}/order/updateOrderStatus/$orderId');
+          // في حال أردت دعم حالات قديمة عبر الـ order/updateOrderStatus
+          uri = Uri.parse(
+              '${AppSettings.serverurl}/order/updateOrderStatus/$orderId');
           body = {'status': newStatus};
           successMsg = 'تم تحديث حالة الطلب';
       }
 
       final res = await http.put(
         uri,
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: jsonEncode(body),
       );
 
       final bodyText = utf8.decode(res.bodyBytes);
       debugPrint('PUT $uri -> ${res.statusCode}');
-      debugPrint('Body (first 200): ${bodyText.substring(0, bodyText.length > 200 ? 200 : bodyText.length)}');
+      debugPrint(
+          'Body (first 200): ${bodyText.substring(0, bodyText.length > 200 ? 200 : bodyText.length)}');
 
       if (res.statusCode != 200) {
         throw Exception('HTTP ${res.statusCode}: $bodyText');
@@ -187,16 +200,17 @@ class DeliveryOrdersProvider with ChangeNotifier {
 
       final data = jsonDecode(bodyText);
       if (data is! Map || data['success'] != true) {
-        throw Exception((data is Map ? data['message'] : null) ?? 'فشل تحديث الطلب');
+        throw Exception(
+            (data is Map ? data['message'] : null) ?? 'فشل تحديث الطلب');
       }
 
       if (context != null) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(successMsg)));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(successMsg)));
       }
 
       // بعد التحديث أعد تحميل التبويب الحالي
       await fetchOrders(_lastStatus);
-
     } catch (e) {
       if (context != null) {
         ScaffoldMessenger.of(context).showSnackBar(
