@@ -8,6 +8,8 @@ import '../cart/cart_page.dart';
 import '../order/my_order_page.dart';
 import '../favorites/favorite_parts_page.dart';
 import '../order/user_delivered_orders_page.dart';
+import '../auth/auth_page.dart';
+import '../../utils/session_store.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -32,6 +34,44 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     {'label': 'نظام التعليق', 'icon': Icons.sync_alt},
   ];
   int _selectedCategoryIndex = 0;
+
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  Future<void> _logout() async {
+    try {
+      await SessionStore.clear();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const AuthPage()),
+        (route) => false,
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذّر تسجيل الخروج: $e')),
+      );
+    }
+  }
+
+  Future<bool> _confirmLogout() async {
+    final res = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('تأكيد تسجيل الخروج'),
+        content: const Text('هل تريد تسجيل الخروج وإنهاء الجلسة؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('خروج'),
+          ),
+        ],
+      ),
+    );
+    return res ?? false;
+  }
 
   @override
   void initState() {
@@ -91,6 +131,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final provider = Provider.of<HomeProvider>(context);
 
     return Scaffold(
+      key: _scaffoldKey,
       body: Stack(
         children: [
           const _GradientBackground(),
@@ -111,7 +152,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         expandedHeight: 150,
                         leading: IconButton(
                           icon: const Icon(Icons.menu, color: Colors.white),
-                          onPressed: () {},
+                          onPressed: () =>
+                              _scaffoldKey.currentState?.openDrawer(),
                         ),
                         actions: [
                           IconButton(
@@ -244,8 +286,32 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 ),
         ],
       ),
+      drawer: Drawer(
+        child: SafeArea(
+          child: Column(
+            children: [
+              const ListTile(
+                leading: CircleAvatar(child: Icon(Icons.person)),
+                title: Text('مرحباً بك'),
+                subtitle: Text('مستخدم PartTec'),
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.logout, color: Colors.redAccent),
+                title: const Text('تسجيل الخروج'),
+                onTap: () async {
+                  final ok = await _confirmLogout();
+                  if (ok) {
+                    Navigator.of(context).pop();
+                    await _logout();
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
 
-      // زر إضافة طافٍ
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(context,
