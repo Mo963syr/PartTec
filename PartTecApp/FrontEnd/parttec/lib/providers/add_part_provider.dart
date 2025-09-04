@@ -14,21 +14,18 @@ class AddPartProvider extends ChangeNotifier {
     required String name,
     required String manufacturer,
     required String model,
-    String? year,
-    required String fuelType,
+    required String year,
     required String category,
     required String status,
     required String price,
     File? image,
     String? serialNumber,
     String? description,
-    int quantity = 1,
-  })
-  async {
+    int count = 1, // 👈 مطابق مع schema
+  }) async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
-
 
     final uid = await SessionStore.userId();
     if (uid == null || uid.isEmpty) {
@@ -41,22 +38,18 @@ class AddPartProvider extends ChangeNotifier {
     final uri = Uri.parse('${AppSettings.serverurl}/part/add');
     final request = http.MultipartRequest('POST', uri);
 
-
+    // 📝 الحقول الأساسية
     request.fields['name'] = name;
     request.fields['manufacturer'] = manufacturer;
     request.fields['model'] = model;
-    if (year != null && year.isNotEmpty) {
-      request.fields['year'] = year;
-    }
-    request.fields['fuelType'] = fuelType;
+    request.fields['year'] = year; // 👈 لازم يوصله كـ String بس السيرفر يحوله Number
     request.fields['category'] = category;
     request.fields['status'] = status;
     request.fields['price'] = price;
-    request.fields['quantity'] = quantity.toString();
+    request.fields['count'] = count.toString(); // 👈 مطابق للـ schema
+    request.fields['user'] = uid; // 👈 ObjectId
 
-
-    request.fields['user'] = uid;
-
+    // 📝 الحقول الاختيارية
     if (serialNumber != null && serialNumber.isNotEmpty) {
       request.fields['serialNumber'] = serialNumber;
     }
@@ -64,12 +57,13 @@ class AddPartProvider extends ChangeNotifier {
       request.fields['description'] = description;
     }
 
-
+    // 🖼️ رفع الصورة إذا موجودة
     if (image != null) {
-      final subtype = image.path.toLowerCase().endsWith('.png') ? 'png' : 'jpeg';
+      final subtype =
+      image.path.toLowerCase().endsWith('.png') ? 'png' : 'jpeg';
       request.files.add(
         await http.MultipartFile.fromPath(
-          'image',
+          'image', // 👈 لازم يطابق اسم الحقل بالسيرفر (multer/cloudinary)
           image.path,
           contentType: MediaType('image', subtype),
         ),
@@ -81,13 +75,16 @@ class AddPartProvider extends ChangeNotifier {
       final responseStr = await response.stream.bytesToString();
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
+        debugPrint('✅ تم الإرسال بنجاح: $responseStr');
         return true;
       } else {
         errorMessage = 'فشل الإضافة (${response.statusCode}): $responseStr';
+        debugPrint('❌ $errorMessage');
         return false;
       }
     } catch (e) {
       errorMessage = 'خطأ أثناء الإرسال: $e';
+      debugPrint(errorMessage);
       return false;
     } finally {
       isLoading = false;

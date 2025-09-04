@@ -25,7 +25,6 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
     'ردياتير',
     'بواجي'
   ];
-  final List<String> fuels = ['بترول', 'ديزل'];
   final List<String> categories = ['محرك', 'فرامل', 'كهرباء', 'هيكل'];
   final List<String> statuses = ['جديد', 'مستعمل'];
 
@@ -36,13 +35,13 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
   String? selectedModel;
   String? selectedYear;
   String? selectedPart;
-  String? selectedFuel;
   String? selectedCategory;
   String? selectedStatus;
 
   File? _pickedImage;
   final priceController = TextEditingController();
   final serialNumberController = TextEditingController();
+  final countController = TextEditingController(text: "1"); // 👈 عدد القطع
 
   bool isLoading = false;
   bool isModelsLoading = false;
@@ -57,6 +56,7 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
   void dispose() {
     priceController.dispose();
     serialNumberController.dispose();
+    countController.dispose();
     super.dispose();
   }
 
@@ -104,15 +104,15 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
 
   Future<void> _submit() async {
     if ([
-          selectedBrand,
-          selectedModel,
-          selectedYear,
-          selectedPart,
-          selectedFuel,
-          selectedCategory,
-          selectedStatus
-        ].contains(null) ||
+      selectedBrand,
+      selectedModel,
+      selectedYear,
+      selectedPart,
+      selectedCategory,
+      selectedStatus
+    ].contains(null) ||
         priceController.text.isEmpty ||
+        countController.text.isEmpty ||
         _pickedImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('⚠️ يرجى تعبئة جميع الحقول')),
@@ -120,18 +120,21 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
       return;
     }
     setState(() => isLoading = true);
+
     final ok = await context.read<AddPartProvider>().addPart(
-          name: selectedPart!,
-          manufacturer: selectedBrand!.toLowerCase(),
-          model: selectedModel!,
-          year: selectedYear!,
-          fuelType: selectedFuel!,
-          category: selectedCategory!,
-          status: selectedStatus!,
-          price: priceController.text,
-          image: _pickedImage,
-          serialNumber: serialNumberController.text,
-        );
+      name: selectedPart!,
+      manufacturer: selectedBrand!.toLowerCase(),
+      model: selectedModel!,
+      year: selectedYear!,
+      category: selectedCategory!,
+      status: selectedStatus!,
+      price: priceController.text,
+      image: _pickedImage,
+      serialNumber: serialNumberController.text,
+      description: "", // 👈 ممكن تضيف حقل للوصف
+      count: int.tryParse(countController.text) ?? 1, // 👈 عدد القطع
+    );
+
     setState(() => isLoading = false);
 
     final msg = ok
@@ -146,10 +149,9 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
     if (selectedModel == null) return 1;
     if (selectedYear == null) return 2;
     if (selectedPart == null) return 3;
-    if (selectedFuel == null) return 4;
-    if (selectedCategory == null) return 5;
-    if (selectedStatus == null) return 6;
-    return 7;
+    if (selectedCategory == null) return 4;
+    if (selectedStatus == null) return 5;
+    return 6;
   }
 
   Widget _buildCurrentStep(int step) {
@@ -167,36 +169,33 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
           'اختر الموديل:',
           models,
           selectedModel,
-          (m) => setState(() => selectedModel = m),
+              (m) => setState(() => selectedModel = m),
           loading: isModelsLoading,
         );
       case 2:
         return _cardStep('اختر سنة الصنع:', years, selectedYear,
-            (y) => setState(() => selectedYear = y));
+                (y) => setState(() => selectedYear = y));
       case 3:
         return _cardStep('اختر اسم القطعة:', partsList, selectedPart,
-            (p) => setState(() => selectedPart = p));
+                (p) => setState(() => selectedPart = p));
       case 4:
-        return _cardStep('اختر نوع الوقود:', fuels, selectedFuel,
-            (f) => setState(() => selectedFuel = f));
-      case 5:
         return _cardStep('اختر التصنيف:', categories, selectedCategory,
-            (c) => setState(() => selectedCategory = c));
-      case 6:
+                (c) => setState(() => selectedCategory = c));
+      case 5:
         return _cardStep('اختر الحالة:', statuses, selectedStatus,
-            (s) => setState(() => selectedStatus = s));
+                (s) => setState(() => selectedStatus = s));
       default:
         return _buildFinalForm();
     }
   }
 
   Widget _cardStep<T>(
-    String title,
-    List<T> options,
-    T? selected,
-    void Function(T) onSelect, {
-    bool loading = false,
-  }) {
+      String title,
+      List<T> options,
+      T? selected,
+      void Function(T) onSelect, {
+        bool loading = false,
+      }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -219,7 +218,7 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
                 duration: const Duration(milliseconds: 300),
                 decoration: BoxDecoration(
                   color:
-                      isSel ? AppColors.primary.withOpacity(0.1) : Colors.white,
+                  isSel ? AppColors.primary.withOpacity(0.1) : Colors.white,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                       color: isSel ? AppColors.primary : AppColors.chipBorder,
@@ -292,6 +291,15 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
           ),
         ),
         const SizedBox(height: AppSpaces.md),
+        TextField(
+          controller: countController,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: 'عدد القطع',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        const SizedBox(height: AppSpaces.md),
         ElevatedButton.icon(
           onPressed: _pickImage,
           icon: const Icon(Icons.image),
@@ -326,19 +334,19 @@ class _KiaPartAddPageState extends State<KiaPartAddPage> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : AnimatedSwitcher(
-              duration: const Duration(milliseconds: 400),
-              transitionBuilder: (child, anim) => SlideTransition(
-                position:
-                    Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
-                        .animate(anim),
-                child: child,
-              ),
-              child: SingleChildScrollView(
-                key: ValueKey<int>(_currentStep),
-                padding: const EdgeInsets.all(AppSpaces.md),
-                child: _buildCurrentStep(_currentStep),
-              ),
-            ),
+        duration: const Duration(milliseconds: 400),
+        transitionBuilder: (child, anim) => SlideTransition(
+          position:
+          Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+              .animate(anim),
+          child: child,
+        ),
+        child: SingleChildScrollView(
+          key: ValueKey<int>(_currentStep),
+          padding: const EdgeInsets.all(AppSpaces.md),
+          child: _buildCurrentStep(_currentStep),
+        ),
+      ),
     );
   }
 }
