@@ -63,9 +63,8 @@ void main() async {
         ChangeNotifierProvider(create: (_) => SellerOrdersProvider()),
         ChangeNotifierProvider(create: (_) => PartRatingProvider()),
         ChangeNotifierProvider(
-          create: (_) => RecommendationsProvider(),
+          create: (_) => RecommendationsProvider(auth.userId ?? ''),
         ),
-
         ChangeNotifierProvider(create: (_) => PurchasesProvider()),
       ],
       child: const MyApp(),
@@ -82,7 +81,7 @@ class MyApp extends StatelessWidget {
       title: 'PartTec',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: const SplashPage(),
+      home: const SplashPage(), // ✅ بدلنا AuthPage بـ SplashPage
     );
   }
 }
@@ -120,10 +119,12 @@ class _SplashPageState extends State<SplashPage> {
         case 'seller':
           next = const SupplierDashboard();
           break;
-        case 'delevery':
+        case 'delevery': // نفس الاسم المكتوب بالباك
           next = const DeliveryDashboard();
           break;
-
+        // case 'admin':
+        //   next = const AdminDashboard();
+        //   break;
         default:
           next = const HomePage();
       }
