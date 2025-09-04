@@ -1,50 +1,35 @@
 import 'package:flutter/material.dart';
-import 'package:parttec/providers/purchases_provider.dart';
-import 'package:parttec/screens/employee/DeliveryDashboard.dart';
 import 'package:provider/provider.dart';
-
-import 'package:parttec/providers/recommendations_provider.dart';
-
-import 'providers/home_provider.dart';
-import 'providers/parts_provider.dart';
-import 'providers/add_part_provider.dart';
-import 'providers/cart_provider.dart';
-import 'providers/favorites_provider.dart';
-import 'providers/seller_orders_provider.dart';
-import 'providers/order_provider.dart';
-import 'providers/reviews_provider.dart';
-import 'providers/auth_provider.dart';
-import 'providers/delivery_orders_provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'theme/app_theme.dart';
-import 'screens/auth/auth_page.dart';
-import 'package:flutter/material.dart';
-import 'package:parttec/screens/employee/DeliveryDashboard.dart';
-import 'package:provider/provider.dart';
+import 'utils/session_store.dart';
+import 'services/push_notifications.dart';
 
-import 'package:parttec/providers/recommendations_provider.dart';
-
-import 'providers/home_provider.dart';
-import 'providers/parts_provider.dart';
-import 'providers/add_part_provider.dart';
-import 'providers/cart_provider.dart';
-import 'providers/favorites_provider.dart';
-import 'providers/seller_orders_provider.dart';
-import 'providers/order_provider.dart';
-import 'providers/reviews_provider.dart';
-import 'providers/auth_provider.dart';
-import 'providers/delivery_orders_provider.dart';
-
-import 'theme/app_theme.dart';
 import 'screens/auth/auth_page.dart';
 import 'screens/home/home_page.dart';
 import 'screens/supplier/supplier_dashboard.dart';
-// import 'screens/delivery/delivery_orders_page.dart';
-// import 'screens/admin/admin_dashboard.dart';
-import 'utils/session_store.dart';
+import 'package:parttec/screens/employee/DeliveryDashboard.dart';
 
-void main() async {
+import 'providers/auth_provider.dart';
+import 'providers/add_part_provider.dart';
+import 'providers/home_provider.dart';
+import 'providers/parts_provider.dart';
+import 'providers/cart_provider.dart';
+import 'providers/favorites_provider.dart';
+import 'providers/seller_orders_provider.dart';
+import 'providers/order_provider.dart';
+import 'providers/reviews_provider.dart';
+import 'providers/delivery_orders_provider.dart';
+import 'package:parttec/providers/recommendations_provider.dart';
+import 'package:parttec/providers/purchases_provider.dart';
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
+  await PushNotifications.init();
+
   final auth = AuthProvider();
   await auth.loadSession();
 
@@ -60,6 +45,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => OrderProvider()),
         ChangeNotifierProvider(create: (_) => ReviewsProvider()),
         ChangeNotifierProvider(create: (_) => DeliveryOrdersProvider()),
+        ChangeNotifierProvider(create: (_) => PartRatingProvider()),
         ChangeNotifierProvider(create: (_) => SellerOrdersProvider()),
         ChangeNotifierProvider(
           create: (_) => RecommendationsProvider(auth.userId ?? ''),
@@ -80,7 +66,7 @@ class MyApp extends StatelessWidget {
       title: 'PartTec',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: const SplashPage(), // ✅ بدلنا AuthPage بـ SplashPage
+      home: const SplashPage(),
     );
   }
 }
@@ -104,7 +90,6 @@ class _SplashPageState extends State<SplashPage> {
     final role = await SessionStore.role();
 
     await Future.delayed(const Duration(seconds: 2));
-
     if (!mounted) return;
 
     if (userId == null || role == null) {
@@ -118,12 +103,9 @@ class _SplashPageState extends State<SplashPage> {
         case 'seller':
           next = const SupplierDashboard();
           break;
-        case 'delevery': // نفس الاسم المكتوب بالباك
+        case 'delevery':
           next = const DeliveryDashboard();
           break;
-        // case 'admin':
-        //   next = const AdminDashboard();
-        //   break;
         default:
           next = const HomePage();
       }
