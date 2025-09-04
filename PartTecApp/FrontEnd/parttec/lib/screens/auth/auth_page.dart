@@ -51,6 +51,11 @@ class _AuthPageState extends State<AuthPage>
     super.dispose();
   }
 
+  void _logUser(String? id, String? role) {
+    debugPrint('🔑 userId: $id');
+    debugPrint('👤 role: $role');
+  }
+
   void _navigateByRole(String role) {
     Widget target;
     switch (role) {
@@ -78,24 +83,24 @@ class _AuthPageState extends State<AuthPage>
   }
 
   InputDecoration _input(String label, {IconData? icon}) => InputDecoration(
-        labelText: label,
-        prefixIcon: icon != null ? Icon(icon) : null,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.chipBorder),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.4),
-        ),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpaces.md,
-          vertical: AppSpaces.sm,
-        ),
-      );
+    labelText: label,
+    prefixIcon: icon != null ? Icon(icon) : null,
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: AppColors.chipBorder),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: AppColors.primary, width: 1.4),
+    ),
+    filled: true,
+    fillColor: Colors.white,
+    contentPadding: const EdgeInsets.symmetric(
+      horizontal: AppSpaces.md,
+      vertical: AppSpaces.sm,
+    ),
+  );
 
   String? _vEmail(String? v) {
     if (v == null || v.trim().isEmpty) return 'الرجاء إدخال البريد';
@@ -184,11 +189,11 @@ class _AuthPageState extends State<AuthPage>
                                         indicator: BoxDecoration(
                                           color: const Color(0x1A2196F3),
                                           borderRadius:
-                                              BorderRadius.circular(10),
+                                          BorderRadius.circular(10),
                                         ),
                                         labelColor: AppColors.primary,
                                         unselectedLabelColor:
-                                            AppColors.textWeak,
+                                        AppColors.textWeak,
                                         labelStyle: const TextStyle(
                                             fontWeight: FontWeight.w800),
                                         tabs: const [
@@ -202,14 +207,12 @@ class _AuthPageState extends State<AuthPage>
                                       ),
                                     ),
                                     const SizedBox(height: AppSpaces.lg),
-                                    // هنا التعديل الأساسي
                                     SizedBox(
-                                      height: 500, // عشان يكون في مجال للتمرير
+                                      height: 500,
                                       child: TabBarView(
                                         controller: _tabController,
                                         physics: const BouncingScrollPhysics(),
                                         children: [
-                                          // تسجيل الدخول
                                           SingleChildScrollView(
                                             child: Form(
                                               key: _loginFormKey,
@@ -252,60 +255,66 @@ class _AuthPageState extends State<AuthPage>
                                                     width: double.infinity,
                                                     child: ElevatedButton.icon(
                                                       onPressed:
-                                                          auth.isLoggingIn
-                                                              ? null
-                                                              : () async {
-                                                                  if (_loginFormKey
-                                                                      .currentState!
-                                                                      .validate()) {
-                                                                    final res =
-                                                                        await auth
-                                                                            .login(
-                                                                      email: _loginEmailCtrl
-                                                                          .text
-                                                                          .trim(),
-                                                                      password:
-                                                                          _loginPassCtrl
-                                                                              .text,
-                                                                    );
-                                                                    if (res !=
-                                                                        null) {
-                                                                      final r = auth
-                                                                              .role ??
-                                                                          res['role']
-                                                                              ?.toString() ??
-                                                                          '';
-                                                                      if (r
-                                                                          .isNotEmpty) {
-                                                                        _navigateByRole(
-                                                                            r);
-                                                                      } else {
-                                                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                                                                            content:
-                                                                                Text('لم يتم إرجاع الدور من الخادم')));
-                                                                      }
-                                                                    } else {
-                                                                      ScaffoldMessenger.of(
-                                                                              context)
-                                                                          .showSnackBar(
-                                                                              SnackBar(content: Text(auth.lastError ?? 'حدث خطأ أثناء تسجيل الدخول')));
-                                                                    }
-                                                                  }
-                                                                },
+                                                      auth.isLoggingIn
+                                                          ? null
+                                                          : () async {
+                                                        if (_loginFormKey
+                                                            .currentState!
+                                                            .validate()) {
+                                                          final res =
+                                                          await auth
+                                                              .login(
+                                                            email: _loginEmailCtrl
+                                                                .text
+                                                                .trim(),
+                                                            password:
+                                                            _loginPassCtrl
+                                                                .text,
+                                                          );
+                                                          if (res !=
+                                                              null) {
+                                                            final id = auth
+                                                                .userId ??
+                                                                res['user']?['_id']?.toString() ??
+                                                                res['_id']?.toString();
+                                                            final r = auth
+                                                                .role ??
+                                                                res['role']?.toString() ??
+                                                                res['user']?['role']?.toString() ??
+                                                                '';
+                                                            _logUser(
+                                                                id,
+                                                                r);
+                                                            if (r
+                                                                .isNotEmpty) {
+                                                              _navigateByRole(
+                                                                  r);
+                                                            } else {
+                                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                                  const SnackBar(content: Text('لم يتم إرجاع الدور من الخادم')));
+                                                            }
+                                                          } else {
+                                                            ScaffoldMessenger.of(
+                                                                context)
+                                                                .showSnackBar(
+                                                                SnackBar(content: Text(auth.lastError ?? 'حدث خطأ أثناء تسجيل الدخول')));
+                                                          }
+                                                        }
+                                                      },
                                                       icon: auth.isLoggingIn
                                                           ? const SizedBox(
-                                                              height: 20,
-                                                              width: 20,
-                                                              child: CircularProgressIndicator(
-                                                                  strokeWidth:
-                                                                      2,
-                                                                  color: Colors
-                                                                      .white),
-                                                            )
+                                                        height: 20,
+                                                        width: 20,
+                                                        child: CircularProgressIndicator(
+                                                            strokeWidth:
+                                                            2,
+                                                            color: Colors
+                                                                .white),
+                                                      )
                                                           : const Icon(Icons
-                                                              .check_circle),
+                                                          .check_circle),
                                                       label: Text(auth
-                                                              .isLoggingIn
+                                                          .isLoggingIn
                                                           ? '... جارٍ الدخول'
                                                           : 'تسجيل الدخول'),
                                                     ),
@@ -314,7 +323,6 @@ class _AuthPageState extends State<AuthPage>
                                               ),
                                             ),
                                           ),
-                                          // إنشاء حساب
                                           SingleChildScrollView(
                                             child: Form(
                                               key: _registerFormKey,
@@ -343,7 +351,7 @@ class _AuthPageState extends State<AuthPage>
                                                   TextFormField(
                                                     controller: _phoneCtrl,
                                                     keyboardType:
-                                                        TextInputType.phone,
+                                                    TextInputType.phone,
                                                     decoration: _input(
                                                         'رقم الموبايل',
                                                         icon: Icons.phone),
@@ -369,7 +377,7 @@ class _AuthPageState extends State<AuthPage>
                                                         icon: Icons.lock_reset),
                                                     validator: (v) {
                                                       final base =
-                                                          _vPassword(v);
+                                                      _vPassword(v);
                                                       if (base != null)
                                                         return base;
                                                       if (v != _passCtrl.text) {
@@ -386,10 +394,10 @@ class _AuthPageState extends State<AuthPage>
                                                         value: _agreeTerms,
                                                         onChanged: (v) =>
                                                             setState(() =>
-                                                                _agreeTerms =
-                                                                    v ?? false),
+                                                            _agreeTerms =
+                                                                v ?? false),
                                                         activeColor:
-                                                            AppColors.primary,
+                                                        AppColors.primary,
                                                       ),
                                                       const SizedBox(width: 6),
                                                       Expanded(
@@ -408,75 +416,81 @@ class _AuthPageState extends State<AuthPage>
                                                     width: double.infinity,
                                                     child: ElevatedButton.icon(
                                                       onPressed: (!_agreeTerms ||
-                                                              context
-                                                                  .read<
-                                                                      AuthProvider>()
-                                                                  .isRegistering)
+                                                          context
+                                                              .read<
+                                                              AuthProvider>()
+                                                              .isRegistering)
                                                           ? null
                                                           : () async {
-                                                              final auth =
-                                                                  context.read<
-                                                                      AuthProvider>();
-                                                              if (_registerFormKey
-                                                                  .currentState!
-                                                                  .validate()) {
-                                                                final res =
-                                                                    await auth
-                                                                        .register(
-                                                                  name: _nameCtrl
-                                                                      .text
-                                                                      .trim(),
-                                                                  email:
-                                                                      _emailCtrl
-                                                                          .text
-                                                                          .trim(),
-                                                                  password:
-                                                                      _passCtrl
-                                                                          .text,
-                                                                  phoneNumber:
-                                                                      _phoneCtrl
-                                                                          .text
-                                                                          .trim(),
-                                                                );
-                                                                if (res !=
-                                                                    null) {
-                                                                  final r = auth
-                                                                          .role ??
-                                                                      (res['user']?['role'] ??
-                                                                              res['role'] ??
-                                                                              'user')
-                                                                          .toString();
-                                                                  _navigateByRole(
-                                                                      r);
-                                                                } else {
-                                                                  ScaffoldMessenger.of(
-                                                                          context)
-                                                                      .showSnackBar(SnackBar(
-                                                                          content:
-                                                                              Text(auth.lastError ?? 'حدث خطأ أثناء إنشاء الحساب')));
-                                                                }
-                                                              }
-                                                            },
+                                                        final auth =
+                                                        context.read<
+                                                            AuthProvider>();
+                                                        if (_registerFormKey
+                                                            .currentState!
+                                                            .validate()) {
+                                                          final res =
+                                                          await auth
+                                                              .register(
+                                                            name: _nameCtrl
+                                                                .text
+                                                                .trim(),
+                                                            email:
+                                                            _emailCtrl
+                                                                .text
+                                                                .trim(),
+                                                            password:
+                                                            _passCtrl
+                                                                .text,
+                                                            phoneNumber:
+                                                            _phoneCtrl
+                                                                .text
+                                                                .trim(),
+                                                          );
+                                                          if (res !=
+                                                              null) {
+                                                            final id = auth
+                                                                .userId ??
+                                                                res['user']?['_id']
+                                                                    ?.toString();
+                                                            final r = auth
+                                                                .role ??
+                                                                (res['user']?['role'] ??
+                                                                    res['role'] ??
+                                                                    'user')
+                                                                    .toString();
+                                                            _logUser(
+                                                                id, r);
+                                                            _navigateByRole(
+                                                                r);
+                                                          } else {
+                                                            ScaffoldMessenger.of(
+                                                                context)
+                                                                .showSnackBar(SnackBar(
+                                                                content:
+                                                                Text(auth.lastError ?? 'حدث خطأ أثناء إنشاء الحساب')));
+                                                          }
+                                                        }
+                                                      },
                                                       icon: context
-                                                              .watch<
-                                                                  AuthProvider>()
-                                                              .isRegistering
+                                                          .watch<
+                                                          AuthProvider>()
+                                                          .isRegistering
                                                           ? const SizedBox(
-                                                              height: 20,
-                                                              width: 20,
-                                                              child: CircularProgressIndicator(
-                                                                  strokeWidth:
-                                                                      2,
-                                                                  color: Colors
-                                                                      .white),
-                                                            )
+                                                        height: 20,
+                                                        width: 20,
+                                                        child: CircularProgressIndicator(
+                                                            strokeWidth:
+                                                            2,
+                                                            color: Colors
+                                                                .white),
+                                                      )
                                                           : const Icon(Icons
-                                                              .person_add_alt),
+                                                          .person_add_alt),
                                                       label: Text(
                                                         context
-                                                                .watch<
-                                                                    AuthProvider>()
-                                                                .isRegistering
+                                                            .watch<
+                                                            AuthProvider>()
+                                                            .isRegistering
                                                             ? '... جارٍ الإنشاء'
                                                             : 'إنشاء حساب',
                                                       ),

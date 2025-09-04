@@ -299,7 +299,7 @@ class _OrderCard extends StatelessWidget {
                     : null,
               )),
 
-          // العروض
+     
           Padding(
             padding: const EdgeInsets.only(bottom: 8.0),
             child: Consumer<OrderProvider>(

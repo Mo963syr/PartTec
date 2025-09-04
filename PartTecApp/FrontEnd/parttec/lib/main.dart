@@ -61,6 +61,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ReviewsProvider()),
         ChangeNotifierProvider(create: (_) => DeliveryOrdersProvider()),
         ChangeNotifierProvider(create: (_) => SellerOrdersProvider()),
+        ChangeNotifierProvider(create: (_) => PartRatingProvider()),
         ChangeNotifierProvider(
           create: (_) => RecommendationsProvider(auth.userId ?? ''),
         ),

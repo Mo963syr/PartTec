@@ -1,12 +1,37 @@
 import 'package:flutter/material.dart';
 import 'delivery_orders_page.dart';
-
 import '../auth/auth_page.dart';
-
 import 'package:shared_preferences/shared_preferences.dart';
 
-class DeliveryDashboard extends StatelessWidget {
+class DeliveryDashboard extends StatefulWidget {
   const DeliveryDashboard({Key? key}) : super(key: key);
+
+  @override
+  State<DeliveryDashboard> createState() => _DeliveryDashboardState();
+}
+
+class _DeliveryDashboardState extends State<DeliveryDashboard> {
+  String? _userId;
+  String? _role;
+
+  @override
+  void initState() {
+    super.initState();
+    _printUserData();
+  }
+
+  Future<void> _printUserData() async {
+    final sp = await SharedPreferences.getInstance();
+    final id = sp.getString('userId');
+    final role = sp.getString('role');
+    setState(() {
+      _userId = id;
+      _role = role;
+    });
+
+    debugPrint('🔑 UserId: $id');
+    debugPrint('👤 Role: $role');
+  }
 
   Future<void> _logout(BuildContext context) async {
     if (Navigator.of(context).canPop()) {
@@ -25,7 +50,7 @@ class DeliveryDashboard extends StatelessWidget {
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const AuthPage()),
-        (route) => false,
+            (route) => false,
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -46,10 +71,14 @@ class DeliveryDashboard extends StatelessWidget {
         child: SafeArea(
           child: Column(
             children: [
-              const ListTile(
-                leading: CircleAvatar(child: Icon(Icons.person)),
-                title: Text('مرحبا بك'),
-                subtitle: Text('موظف التوصيل'),
+              ListTile(
+                leading: const CircleAvatar(child: Icon(Icons.person)),
+                title: const Text('مرحبا بك'),
+                subtitle: Text(
+                  _userId != null && _role != null
+                      ? 'ID: $_userId\nRole: $_role'
+                      : 'موظف التوصيل',
+                ),
               ),
               const Divider(),
               ListTile(
@@ -60,8 +89,7 @@ class DeliveryDashboard extends StatelessWidget {
                     context: context,
                     builder: (ctx) => AlertDialog(
                       title: const Text('تأكيد تسجيل الخروج'),
-                      content:
-                          const Text('هل تريد تسجيل الخروج وإنهاء الجلسة؟'),
+                      content: const Text('هل تريد تسجيل الخروج وإنهاء الجلسة؟'),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(ctx).pop(false),
