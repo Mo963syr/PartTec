@@ -201,8 +201,11 @@ class _OrderCard extends StatelessWidget {
         backgroundColor: Colors.white,
         collapsedBackgroundColor: Colors.white,
         title: Text(
-          status == "مؤكد"
+          status == "موافق عليها"
               ? "الطلب رقم ${index + 1} - يتم البحث عن سائق توصيل" :
+
+          status == "مؤكد"
+              ? "الطلب رقم ${index + 1} -بانتظار موافقة البائع" :
           status == "مستلمة" ? "الطلب رقم ${index + 1} -تم ايجاد موظف توصيل":
           status == "على الطريق" ? "الطلب رقم ${index + 1} -القطعة بطريقها اليك"
               : "الطلب رقم ${index + 1} - $status",
