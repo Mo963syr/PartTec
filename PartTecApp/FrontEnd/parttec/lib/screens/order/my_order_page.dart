@@ -66,12 +66,12 @@ class _MyOrdersViewState extends State<_MyOrdersView> {
       http.Response? res1;
       http.Response? res2;
 
-      if (role == 'user') {
+      // if (role == 'user') {
         res1 = await http.get(Uri.parse('$base/order/viewuserorder/$uid'));
         res2 = await http.get(Uri.parse('$base/order/viewuserspicificorder/$uid'));
-      } else if (role == 'seller') {
-        res2 = await http.get(Uri.parse('$base/order/viewuserspicificorder/$uid'));
-      }
+      // } else if (role == 'seller') {
+      //   res2 = await http.get(Uri.parse('$base/order/viewuserspicificorder/$uid'));
+      // }
 
       final List<Map<String, dynamic>> list = [];
 

@@ -6,6 +6,7 @@ import 'package:parttec/widgets/ui_kit.dart';
 import 'package:parttec/screens/order/my_order_page.dart';
 import '../auth/auth_page.dart';
 import '../cart/cart_page.dart';
+import '../order/MyOrdersDashboard.dart';
 import '../order/recommendation_orders_page.dart';
 import '../order/GroupedOrdersPage.dart';
 import '../part/added_parts_page.dart';
@@ -82,7 +83,7 @@ class SupplierDashboard extends StatelessWidget {
                             title: 'طلباتي',
                             onTap: () {
                               Navigator.push(
-                                  context, MaterialPageRoute(builder: (_) => MyOrdersPage()));
+                                  context, MaterialPageRoute(builder: (_) => MyOrdersDashboard()));
                             },
                           ),
                           _buildCard(

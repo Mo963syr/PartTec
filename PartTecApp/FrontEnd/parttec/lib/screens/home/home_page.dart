@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:parttec/models/part.dart';
 import '../../widgets/parts_widgets.dart';
+import '../order/MyOrdersDashboard.dart';
 import '../part/add_part_page.dart';
 import '../../providers/home_provider.dart';
 import '../cart/cart_page.dart';
@@ -365,7 +366,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           const BorderRadius.vertical(top: Radius.circular(24)),
                       child: Material(
                         color: Colors.white,
-                        child: const MyOrdersPage(),
+                        child: const MyOrdersDashboard(),
                       ),
                     ),
                   ),
