@@ -63,7 +63,7 @@ class _MyOrdersNormalPageState extends State<MyOrdersNormalPage> {
                 manufacturer = pMap['manufacturer']?.toString();
                 model = pMap['model']?.toString();
                 year = pMap['year'];
-                notes = pMap['description']?.toString();
+                notes = pMap['notes']?.toString();
                 price = pMap['price'];
                 if (pMap['imageUrl'] is List && pMap['imageUrl'].isNotEmpty) {
                   image = pMap['imageUrl'][0].toString();
@@ -200,7 +200,14 @@ class _OrderCard extends StatelessWidget {
       child: ExpansionTile(
         backgroundColor: Colors.white,
         collapsedBackgroundColor: Colors.white,
-        title: Text("الطلب رقم ${index + 1} - $status"),
+        title: Text(
+          status == "مؤكد"
+              ? "الطلب رقم ${index + 1} - يتم البحث عن سائق توصيل" :
+          status == "مستلمة" ? "الطلب رقم ${index + 1} -تم ايجاد موظف توصيل":
+          status == "على الطريق" ? "الطلب رقم ${index + 1} -القطعة بطريقها اليك"
+              : "الطلب رقم ${index + 1} - $status",
+        ),
+
         initiallyExpanded: expanded,
         onExpansionChanged: onToggle,
         children: [
@@ -259,7 +266,7 @@ class _OrderCard extends StatelessWidget {
             );
           }).toList(),
 
-          // ✅ تفصيل الأسعار
+
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             child: Column(
@@ -267,7 +274,12 @@ class _OrderCard extends StatelessWidget {
               children: [
                 const Divider(),
                 Text("إجمالي سعر القطع: \$${partsTotal.toStringAsFixed(2)}"),
-                Text("سعر التوصيل: \$${(double.tryParse(fee.toString()) ?? 0).toStringAsFixed(2)}"),
+                Text(
+                  (double.tryParse(fee.toString()) ?? 0) == 0
+                      ? "سعر التوصيل: سيتم التحديد بعد ايجاد سائق"
+                      : "سعر التوصيل: \$${(double.tryParse(fee.toString()) ?? 0).toStringAsFixed(2)}",
+                ),
+
                 Text(
                   "المجموع الكلي: \$${grandTotal.toStringAsFixed(2)}",
                   style: const TextStyle(

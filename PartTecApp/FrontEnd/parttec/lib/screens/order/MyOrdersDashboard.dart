@@ -24,7 +24,7 @@ class MyOrdersDashboard extends StatelessWidget {
             children: [
               _buildCard(
                 context,
-                title: "طلباتي العادية",
+                title: "حالة الطلبات",
                 icon: Icons.shopping_cart,
                 color: Colors.blue,
                 onTap: () {
@@ -36,7 +36,7 @@ class MyOrdersDashboard extends StatelessWidget {
               ),
               _buildCard(
                 context,
-                title: "طلبات العروض",
+                title: "عروض الاسعار ",
                 icon: Icons.local_offer,
                 color: Colors.green,
                 onTap: () {
