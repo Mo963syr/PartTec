@@ -23,7 +23,7 @@ import 'package:parttec/screens/employee/DeliveryDashboard.dart';
 import 'package:provider/provider.dart';
 
 import 'package:parttec/providers/recommendations_provider.dart';
-
+import 'providers/user_provider.dart';
 import 'providers/home_provider.dart';
 import 'providers/parts_provider.dart';
 import 'providers/add_part_provider.dart';
@@ -39,8 +39,7 @@ import 'theme/app_theme.dart';
 import 'screens/auth/auth_page.dart';
 import 'screens/home/home_page.dart';
 import 'screens/supplier/supplier_dashboard.dart';
-// import 'screens/delivery/delivery_orders_page.dart';
-// import 'screens/admin/admin_dashboard.dart';
+
 import 'utils/session_store.dart';
 
 void main() async {
@@ -66,6 +65,7 @@ void main() async {
           create: (_) => RecommendationsProvider(),
         ),
         ChangeNotifierProvider(create: (_) => PurchasesProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
       ],
       child: const MyApp(),
     ),
