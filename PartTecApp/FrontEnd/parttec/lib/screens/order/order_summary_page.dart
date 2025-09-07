@@ -11,6 +11,7 @@ import '../../theme/app_theme.dart';
 import '../../utils/session_store.dart';
 import '../home/home_page.dart';
 import '../supplier/supplier_dashboard.dart';
+import '../order/PaymentPage.dart';
 
 class OrderSummaryPage extends StatefulWidget {
   final List<CartItem> items;
@@ -82,14 +83,15 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
   }
 
   Future<void> _confirmOrder() async {
-    // إذا كانت تكلفة التوصيل مازالت تُحسب أو غير متاحة، امنع الإرسال
     final orderProvider = context.read<OrderProvider>();
+
     if (orderProvider.loadingDelivery) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('⏳ يرجى انتظار حساب تكلفة التوصيل...')),
       );
       return;
     }
+
     final deliveryFee = orderProvider.deliveryPrice;
     if (deliveryFee == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -104,13 +106,12 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
 
     final coords = [widget.location.longitude, widget.location.latitude];
 
-    await orderProvider.sendOrder(coords, deliveryFee);
-
+    final orderId = await orderProvider.sendOrder(coords, deliveryFee);
     if (!mounted) return;
 
-    if (orderProvider.error != null) {
+    if (orderProvider.error != null || orderId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(orderProvider.error!)),
+        SnackBar(content: Text(orderProvider.error ?? "فشل إنشاء الطلب")),
       );
       setState(() {
         _isSending = false;
@@ -120,23 +121,36 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
 
     await context.read<CartProvider>().fetchCartFromServer();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('✅ تم إرسال الطلب بنجاح')),
-    );
+    final totalWithDelivery = (widget.total + deliveryFee).toInt();
 
-    final role = await SessionStore.role();
-    if (!mounted) return;
-
-    if (role == 'seller') {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const SupplierDashboard()),
-        (route) => false,
+    if (widget.paymentMethod == "الدفع بالبطاقة") {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => PaymentTestPage(
+            orderId: orderId,
+            amount: (widget.total + deliveryFee).toInt(),
+          ),
+        ),
       );
     } else {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const HomePage()),
-        (route) => false,
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('✅ تم إرسال الطلب بنجاح')),
       );
+
+      final role = await SessionStore.role();
+      if (!mounted) return;
+
+      if (role == 'seller') {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const SupplierDashboard()),
+          (route) => false,
+        );
+      } else {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const HomePage()),
+          (route) => false,
+        );
+      }
     }
   }
 
@@ -294,7 +308,6 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
 
               const SizedBox(height: 20),
 
-              // ✅ أزرار
               Row(
                 children: [
                   Expanded(
