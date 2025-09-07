@@ -92,11 +92,6 @@ class HomeProvider with ChangeNotifier {
 
   final List<String> fuelTypes = ['بترول', 'ديزل'];
 
-  Future<String?> _getUserId() async {
-    _userId ??= await SessionStore.userId();
-    return _userId;
-  }
-
   List<Part> recommendedParts = [];
   bool isLoadingRecommendations = false;
 
@@ -201,7 +196,7 @@ class HomeProvider with ChangeNotifier {
   }
 
   void submitCar(BuildContext context) async {
-    final uid = await _getUserId();
+    final uid = await SessionStore.userId();
     if (uid == null || uid.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('⚠️ يرجى تسجيل الدخول أولاً')),

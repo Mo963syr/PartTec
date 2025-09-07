@@ -17,18 +17,12 @@ class CartProvider extends ChangeNotifier {
   String? error;
   String? errorMessage;
 
-  Future<String?> _getUserId() async {
-    _userId ??= await SessionStore.userId();
-    return _userId;
-  }
-
   Future<void> fetchCartFromServer() async {
     isLoading = true;
     error = null;
     errorMessage = null;
     notifyListeners();
-
-    final uid = await _getUserId();
+    final uid = await SessionStore.userId();
     if (uid == null || uid.isEmpty) {
       errorMessage = 'لم يتم العثور على userId. الرجاء تسجيل الدخول أولاً.';
       isLoading = false;
@@ -70,7 +64,7 @@ class CartProvider extends ChangeNotifier {
   }
 
   Future<bool> addToCartToServer(Part part, int quantity) async {
-    final uid = await _getUserId();
+    final uid = await SessionStore.userId();
     if (uid == null || uid.isEmpty) {
       error = 'لم يتم العثور على userId. الرجاء تسجيل الدخول أولاً.';
       notifyListeners();

@@ -17,12 +17,6 @@ class DeliveryOrdersProvider with ChangeNotifier {
   final List<Map<String, dynamic>> _orders = [];
   List<Map<String, dynamic>> get orders => List.unmodifiable(_orders);
 
-  Future<String?> _getDriverId() async {
-    _driverId ??= await SessionStore.userId();
-    return _driverId;
-  }
-
-  /// جلب الطلبات حسب الحالة
   Future<void> fetchOrders(String status) async {
     isLoading = true;
     error = null;
@@ -30,16 +24,15 @@ class DeliveryOrdersProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final driverId = await _getDriverId();
-      if (driverId == null || driverId.isEmpty) {
+      final uid = await SessionStore.userId();
+      if (uid == null || uid.isEmpty) {
         throw Exception('لم يتم العثور على معرف موظف التوصيل (driverId).');
       }
 
       final uri = Uri.parse('${AppSettings.serverurl}/delivery/orders')
           .replace(queryParameters: {
-        'status':
-            status, // مثال: "مؤكد" / "مستلمة" / "على الطريق" / "تم التوصيل"
-        'driverId': driverId,
+        'status': status,
+        'driverId': uid,
       });
 
       final response = await http.get(uri, headers: {
@@ -122,17 +115,16 @@ class DeliveryOrdersProvider with ChangeNotifier {
     return false;
   }
 
-  /// تحديث حالة الطلب عبر مسارات التوصيل
   Future<void> updateStatus(
     String orderId,
     String newStatus, {
-    double? deliveryPrice, // مطلوب فقط عند "مستلمة"
-    String? reason, // اختياري عند "ملغي"
+    double? deliveryPrice,
+    String? reason,
     BuildContext? context,
   }) async {
     try {
-      final driverId = await _getDriverId();
-      if (driverId == null || driverId.isEmpty) {
+      final uid = await SessionStore.userId();
+      if (uid == null || uid.isEmpty) {
         throw Exception('لم يتم العثور على معرف موظف التوصيل (driverId).');
       }
 
@@ -147,28 +139,28 @@ class DeliveryOrdersProvider with ChangeNotifier {
           }
           uri = Uri.parse(
               '${AppSettings.serverurl}/delivery/orders/$orderId/accept');
-          body = {'driverId': driverId, 'fee': deliveryPrice};
+          body = {'driverId': uid, 'fee': deliveryPrice};
           successMsg = 'تم استلام الطلب وتحديد سعر التوصيل';
           break;
 
         case 'على الطريق':
           uri = Uri.parse(
               '${AppSettings.serverurl}/delivery/orders/$orderId/start');
-          body = {'driverId': driverId};
+          body = {'driverId': uid};
           successMsg = 'تم بدء التوصيل';
           break;
 
         case 'تم التوصيل':
           uri = Uri.parse(
               '${AppSettings.serverurl}/delivery/orders/$orderId/complete');
-          body = {'driverId': driverId};
+          body = {'driverId': uid};
           successMsg = 'تم التسليم';
           break;
 
         case 'ملغي':
           uri = Uri.parse(
               '${AppSettings.serverurl}/delivery/orders/$orderId/cancel');
-          body = {'driverId': driverId, 'reason': reason ?? 'إلغاء من التطبيق'};
+          body = {'driverId': uid, 'reason': reason ?? 'إلغاء من التطبيق'};
           successMsg = 'تم إلغاء الطلب';
           break;
 
@@ -209,7 +201,6 @@ class DeliveryOrdersProvider with ChangeNotifier {
             .showSnackBar(SnackBar(content: Text(successMsg)));
       }
 
-      // بعد التحديث أعد تحميل التبويب الحالي
       await fetchOrders(_lastStatus);
     } catch (e) {
       if (context != null) {

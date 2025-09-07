@@ -9,8 +9,8 @@ class PaymentTestPage extends StatefulWidget {
 
   const PaymentTestPage({
     Key? key,
-    required this.orderId,
-    required this.amount,
+    this.orderId = "68bd232c21e448827d467c0c",
+    this.amount = 15,
   }) : super(key: key);
 
   @override
@@ -36,13 +36,14 @@ class _PaymentTestPageState extends State<PaymentTestPage> {
       url,
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
-        "orderId":"68bd232c21e448827d467c0c",
+        "orderId": "68bd232c21e448827d467c0c",
         "amount": 15,
       }),
     );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
+      if (!mounted) return;
       setState(() {
         paymentUrl = data["url"];
         _controller.loadRequest(Uri.parse(paymentUrl!));
@@ -61,10 +62,12 @@ class _PaymentTestPageState extends State<PaymentTestPage> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
+      if (!mounted) return;
       setState(() {
         statusMessage = "حالة الطلب: ${data["status"]}";
       });
     } else {
+      if (!mounted) return;
       setState(() {
         statusMessage = "تعذر جلب حالة الطلب";
       });

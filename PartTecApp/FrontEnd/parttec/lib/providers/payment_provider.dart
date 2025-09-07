@@ -35,7 +35,8 @@ class PaymentProvider with ChangeNotifier {
       final response = await http.post(
         url,
         headers: {
-          "Authorization": "Basic ${base64Encode(utf8.encode("$username:$password"))}",
+          "Authorization":
+              "Basic ${base64Encode(utf8.encode("$username:$password"))}",
           "Content-Type": "application/json",
         },
         body: jsonEncode(body),
@@ -44,7 +45,7 @@ class PaymentProvider with ChangeNotifier {
       final data = jsonDecode(response.body);
 
       if (data["ErrorCode"] == 0) {
-        return data["Data"]; // بيرجع url و paymentId
+        return data["Data"];
       } else {
         errorMessage = data["ErrorMessage"];
         return null;
@@ -66,7 +67,8 @@ class PaymentProvider with ChangeNotifier {
       final response = await http.get(
         url,
         headers: {
-          "Authorization": "Basic ${base64Encode(utf8.encode("$username:$password"))}",
+          "Authorization":
+              "Basic ${base64Encode(utf8.encode("$username:$password"))}",
         },
       );
 
@@ -93,7 +95,8 @@ class PaymentProvider with ChangeNotifier {
       final response = await http.post(
         url,
         headers: {
-          "Authorization": "Basic ${base64Encode(utf8.encode("$username:$password"))}",
+          "Authorization":
+              "Basic ${base64Encode(utf8.encode("$username:$password"))}",
           "Content-Type": "application/json",
         },
         body: jsonEncode(body),

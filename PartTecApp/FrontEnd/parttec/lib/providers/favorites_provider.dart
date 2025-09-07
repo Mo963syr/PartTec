@@ -12,13 +12,8 @@ class FavoritesProvider extends ChangeNotifier {
 
   List<Part> get favorites => List.unmodifiable(_favorites);
 
-  Future<String?> _getUserId() async {
-    _userId ??= await SessionStore.userId(); // ✅ الصحيح
-    return _userId;
-  }
-
   Future<void> toggleFavorite(Part part) async {
-    final uid = await _getUserId();
+    final uid = await SessionStore.userId();
     if (uid == null || uid.isEmpty) {
       debugPrint('⚠️ لا يوجد userId، الرجاء تسجيل الدخول أولاً.');
       return;
@@ -42,7 +37,8 @@ class FavoritesProvider extends ChangeNotifier {
         }
         notifyListeners();
       } else {
-        debugPrint('❌ فشل تحديث المفضلة: ${response.statusCode} ${response.body}');
+        debugPrint(
+            '❌ فشل تحديث المفضلة: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
       debugPrint('خطأ أثناء تحديث المفضلة: $e');
@@ -52,7 +48,7 @@ class FavoritesProvider extends ChangeNotifier {
   bool isFavorite(String id) => _favorites.any((p) => p.id == id);
 
   Future<void> fetchFavorites() async {
-    final uid = await _getUserId(); // ✅ بدّلنا إلى userId()
+    final uid = await SessionStore.userId();
     if (uid == null || uid.isEmpty) {
       debugPrint('⚠️ لا يوجد مستخدم مسجل دخول');
       return;
@@ -66,17 +62,20 @@ class FavoritesProvider extends ChangeNotifier {
       if (response.statusCode == 200) {
         final raw = jsonDecode(response.body);
         final Map<String, dynamic> data =
-        (raw is Map) ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+            (raw is Map) ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
 
         // دعم كلا المفتاحين إذا اختلف عندك في الباك
-        final list = (data['favorites'] as List?) ?? (data['items'] as List?) ?? <dynamic>[];
+        final list = (data['favorites'] as List?) ??
+            (data['items'] as List?) ??
+            <dynamic>[];
 
         _favorites
           ..clear()
           ..addAll(list.whereType<Map<String, dynamic>>().map(Part.fromJson));
         notifyListeners();
       } else {
-        debugPrint('فشل تحميل المفضلة: ${response.statusCode} ${response.body}');
+        debugPrint(
+            'فشل تحميل المفضلة: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
       debugPrint('خطأ أثناء تحميل المفضلة: $e');
