@@ -9,8 +9,8 @@ class PaymentTestPage extends StatefulWidget {
 
   const PaymentTestPage({
     Key? key,
-    this.orderId = "68bd232c21e448827d467c0c",
-    this.amount = 15,
+    required this.orderId,
+    required this.amount,
   }) : super(key: key);
 
   @override
@@ -36,8 +36,8 @@ class _PaymentTestPageState extends State<PaymentTestPage> {
       url,
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
-        "orderId": "68bd232c21e448827d467c0c",
-        "amount": 15,
+        "orderId": widget.orderId,
+        "amount": widget.amount,
       }),
     );
 
@@ -57,19 +57,19 @@ class _PaymentTestPageState extends State<PaymentTestPage> {
 
   Future<void> _checkOrderStatus() async {
     final url = Uri.parse(
-        "https://parttec.onrender.com/order/${widget.orderId}/status");
+        "https://parttec.onrender.com/payment/status/${widget.orderId}");
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (!mounted) return;
       setState(() {
-        statusMessage = "حالة الطلب: ${data["status"]}";
+        statusMessage = "حالة الدفع: ${data["paymentStatus"]}";
       });
     } else {
       if (!mounted) return;
       setState(() {
-        statusMessage = "تعذر جلب حالة الطلب";
+        statusMessage = "تعذر جلب حالة الدفع";
       });
     }
   }
