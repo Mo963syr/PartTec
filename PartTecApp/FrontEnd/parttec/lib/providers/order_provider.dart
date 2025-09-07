@@ -91,7 +91,7 @@ class OrderProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> sendOrder(List<double> coordinates, double fee) async {
+  Future<String?> sendOrder(List<double> coordinates, double fee) async {
     isLoading = true;
     error = null;
     orderResponse = null;
@@ -102,7 +102,7 @@ class OrderProvider with ChangeNotifier {
       error = 'لم يتم العثور على userId. الرجاء تسجيل الدخول أولاً.';
       isLoading = false;
       notifyListeners();
-      return;
+      return null;
     }
 
     final url = Uri.parse('${AppSettings.serverurl}/order/create');
@@ -122,11 +122,21 @@ class OrderProvider with ChangeNotifier {
 
       if (response.statusCode == 201 && (data['success'] == true)) {
         orderResponse = data;
+
+        final orderId = (data['order']?['_id'] ??
+                data['orderId'] ??
+                data['_id'] ??
+                data['id'])
+            ?.toString();
+
+        return orderId;
       } else {
         error = (data['message'] as String?) ?? 'حدث خطأ أثناء إرسال الطلب';
+        return null;
       }
     } catch (e) {
       error = 'حدث خطأ: $e';
+      return null;
     } finally {
       isLoading = false;
       notifyListeners();
