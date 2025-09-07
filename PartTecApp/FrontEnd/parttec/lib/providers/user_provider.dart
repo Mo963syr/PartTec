@@ -32,7 +32,7 @@ class UserProvider with ChangeNotifier {
       final url =
           Uri.parse('${AppSettings.serverurl}/user/updateUserLocation/$uid');
 
-      final res = await http.put(
+      final res = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({

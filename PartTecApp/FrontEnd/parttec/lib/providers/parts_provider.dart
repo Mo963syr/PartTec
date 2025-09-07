@@ -83,12 +83,23 @@ class PartRatingProvider with ChangeNotifier {
   double averageRating = 0.0;
   int ratingsCount = 0;
   bool isLoading = false;
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
+  void _safeNotify() {
+    if (!_disposed) {
+      notifyListeners();
+    }
+  }
 
   Future<void> fetchRating(String partId) async {
     isLoading = true;
-    print("lhedfdk");
-    print(partId);
-    notifyListeners();
+    _safeNotify();
 
     try {
       final url =
@@ -105,7 +116,7 @@ class PartRatingProvider with ChangeNotifier {
       debugPrint("❌ خطأ أثناء جلب التقييم: $e");
     } finally {
       isLoading = false;
-      notifyListeners();
+      _safeNotify();
     }
   }
 }

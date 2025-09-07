@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
-
+import 'package:flutter/foundation.dart';
 import '../utils/app_settings.dart';
 import '../utils/session_store.dart';
 
@@ -20,7 +20,6 @@ class OrderProvider with ChangeNotifier {
   String? _role;
 
   final Map<String, List<Map<String, dynamic>>> _offersByOrderId = {};
-
   final Set<String> _loadingOffersOrderIds = {};
 
   String? offersError;
@@ -29,15 +28,14 @@ class OrderProvider with ChangeNotifier {
   String? get lastOrderId => _lastOrderId;
   String? get lastError => _lastError;
 
+  double? deliveryPrice;
+  double? distanceKm;
+  double? durationMin;
+  bool loadingDelivery = false;
+  String? deliveryError;
 
-  Future<String?> _getUserId() async {
-    return await SessionStore.userId();
-  }
-
-  Future<String?> _getRole() async {
-    return await SessionStore.role();
-  }
-
+  Future<String?> _getUserId() async => await SessionStore.userId();
+  Future<String?> _getRole() async => await SessionStore.role();
 
   Map<String, dynamic> _decodeToMapBytes(List<int> bodyBytes) {
     final raw = jsonDecode(utf8.decode(bodyBytes));
@@ -61,7 +59,39 @@ class OrderProvider with ChangeNotifier {
     return MediaType('image', 'jpeg');
   }
 
-  Future<void> sendOrder(List<double> coordinates) async {
+  Future<void> fetchDeliveryPricing({
+    required String partId,
+    required double toLat,
+    required double toLon,
+  }) async {
+    loadingDelivery = true;
+    deliveryError = null;
+    notifyListeners();
+
+    try {
+      final uri = Uri.parse(
+        '${AppSettings.serverurl}/pricing/distance-price'
+        '?partId=$partId&toLat=$toLat&toLon=$toLon',
+      );
+
+      final res = await http.get(uri);
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        distanceKm = (data['distanceKm'] as num?)?.toDouble();
+        durationMin = (data['durationMin'] as num?)?.toDouble();
+        deliveryPrice = ((data['price'] as num?)?.toDouble() ?? 0) / 11000;
+      } else {
+        deliveryError = 'فشل في جلب تكلفة التوصيل (${res.statusCode})';
+      }
+    } catch (e) {
+      deliveryError = 'خطأ اتصال: $e';
+    }
+
+    loadingDelivery = false;
+    notifyListeners();
+  }
+
+  Future<void> sendOrder(List<double> coordinates, double fee) async {
     isLoading = true;
     error = null;
     orderResponse = null;
@@ -84,6 +114,7 @@ class OrderProvider with ChangeNotifier {
         body: jsonEncode({
           'userId': uid,
           'coordinates': coordinates,
+          'fee': fee,
         }),
       );
 
@@ -101,7 +132,6 @@ class OrderProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-
 
   Future<bool> createSpecificOrder({
     required String brandCode,
@@ -127,12 +157,12 @@ class OrderProvider with ChangeNotifier {
     }
     final role = await _getRole();
     if (role == null || role.isEmpty) {
-      _lastError = 'لم يتم العثور على userId. الرجاء تسجيل الدخول أولاً.';
+      _lastError = 'لم يتم العثور على الدور.';
       _isSubmitting = false;
       notifyListeners();
       return false;
     }
-    print(' rolle $role');
+
     final uri = Uri.parse('${AppSettings.serverurl}/order/addspicificorder');
 
     try {
@@ -205,12 +235,9 @@ class OrderProvider with ChangeNotifier {
     try {
       final uri = Uri.parse(
           '${AppSettings.serverurl}/order/recommendation-offer/$orderId');
-      final res = await http.get(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      );
+      final res = await http.get(uri, headers: {
+        'Content-Type': 'application/json',
+      });
 
       final data = _decodeToMapString(res.body);
 
