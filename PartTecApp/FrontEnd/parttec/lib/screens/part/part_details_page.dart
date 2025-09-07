@@ -12,13 +12,27 @@ import '../../models/part.dart';
 import 'part_reviews_section.dart';
 import '../../utils/session_store.dart';
 
-class PartDetailsPage extends StatelessWidget {
+class PartDetailsPage extends StatefulWidget {
   final Part part;
   const PartDetailsPage({Key? key, required this.part}) : super(key: key);
 
   @override
+  State<PartDetailsPage> createState() => _PartDetailsPageState();
+}
+
+class _PartDetailsPageState extends State<PartDetailsPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<PartRatingProvider>(context, listen: false)
+          .fetchRating(widget.part.id);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final imageUrl = part.imageUrl;
+    final imageUrl = widget.part.imageUrl;
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -65,7 +79,7 @@ class PartDetailsPage extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(part.name,
+                                Text(widget.part.name,
                                     style: const TextStyle(
                                         fontSize: 20,
                                         fontWeight: FontWeight.w900,
@@ -73,7 +87,7 @@ class PartDetailsPage extends StatelessWidget {
                                 const SizedBox(height: 10),
                                 Row(
                                   children: [
-                                    Text('\$${part.price}',
+                                    Text('\$${widget.part.price}',
                                         style: const TextStyle(
                                             fontSize: 22,
                                             fontWeight: FontWeight.bold,
@@ -86,15 +100,16 @@ class PartDetailsPage extends StatelessWidget {
                                         color: Colors.green.withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
-                                      child: Text(part.status ?? "غير محدد",
+                                      child: Text(
+                                          widget.part.status ?? "غير محدد",
                                           style: const TextStyle(
                                               fontWeight: FontWeight.w700)),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 10),
-                                if (part.serialNumber != null &&
-                                    part.serialNumber!.isNotEmpty)
+                                if (widget.part.serialNumber != null &&
+                                    widget.part.serialNumber!.isNotEmpty)
                                   Row(
                                     children: [
                                       const Icon(Icons.qr_code_2,
@@ -102,13 +117,13 @@ class PartDetailsPage extends StatelessWidget {
                                       const SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
-                                            "تسلسلي: ${part.serialNumber}"),
+                                            "تسلسلي: ${widget.part.serialNumber}"),
                                       ),
                                       IconButton(
                                         icon: const Icon(Icons.copy, size: 18),
                                         onPressed: () async {
                                           await Clipboard.setData(ClipboardData(
-                                              text: part.serialNumber!));
+                                              text: widget.part.serialNumber!));
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             const SnackBar(
@@ -129,29 +144,31 @@ class PartDetailsPage extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _buildDetailRow(Icons.directions_car, "الموديل",
-                                    part.model),
+                                    widget.part.model),
                                 _buildDetailRow(Icons.factory, "الماركة",
-                                    part.manufacturer),
+                                    widget.part.manufacturer),
                                 _buildDetailRow(
                                   Icons.event,
                                   "سنة الصنع",
-                                  part.year != 0
-                                      ? part.year.toString()
+                                  widget.part.year != 0
+                                      ? widget.part.year.toString()
                                       : "غير محدد",
                                 ),
                                 _buildDetailRow(Icons.local_gas_station,
-                                    "نوع الوقود", part.fuelType),
+                                    "نوع الوقود", widget.part.fuelType),
+                                _buildDetailRow(Icons.category, "الفئة",
+                                    widget.part.category),
                                 _buildDetailRow(
-                                    Icons.category, "الفئة", part.category),
-                                _buildDetailRow(Icons.inventory,
-                                    "الكمية المتوفرة", part.count.toString()),
+                                    Icons.inventory,
+                                    "الكمية المتوفرة",
+                                    widget.part.count.toString()),
                                 const SizedBox(height: 10),
                                 const Text("الوصف",
                                     style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 6),
-                                Text(part.description ?? "لا يوجد وصف"),
+                                Text(widget.part.description ?? "لا يوجد وصف"),
                               ],
                             ),
                           ),
@@ -209,7 +226,7 @@ class PartDetailsPage extends StatelessWidget {
                             ),
                           ),
                           _GlassCard(
-                            child: _PartStarRating(partId: part.id),
+                            child: _PartStarRating(partId: widget.part.id),
                           ),
                           const SizedBox(height: 16),
                           _GlassCard(
@@ -221,7 +238,7 @@ class PartDetailsPage extends StatelessWidget {
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 8),
-                                _ReviewsGate(partId: part.id),
+                                _ReviewsGate(partId: widget.part.id),
                               ],
                             ),
                           ),
@@ -237,7 +254,7 @@ class PartDetailsPage extends StatelessWidget {
               left: 16,
               right: 16,
               bottom: 16 + MediaQuery.of(context).padding.bottom,
-              child: _BottomAddToCart(part: part),
+              child: _BottomAddToCart(part: widget.part),
             ),
           ],
         ),
@@ -269,7 +286,6 @@ class _GlassCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        // استخدم لون الكارد من الثيم بدلاً من الأبيض الصريح
         color: AppColors.card,
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [
@@ -329,7 +345,6 @@ class _BottomAddToCartState extends State<_BottomAddToCart> {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        // عداد الكمية
         Container(
           decoration: BoxDecoration(
             color: AppColors.card,
@@ -355,7 +370,6 @@ class _BottomAddToCartState extends State<_BottomAddToCart> {
           ),
         ),
         const SizedBox(width: 12),
-
         Expanded(
           child: ElevatedButton.icon(
             onPressed: () async {
@@ -453,7 +467,7 @@ class _PartStarRatingState extends State<_PartStarRating> {
   void initState() {
     super.initState();
     SessionStore.userId().then((id) {
-      setState(() => _uid = id);
+      if (mounted) setState(() => _uid = id);
     });
   }
 
