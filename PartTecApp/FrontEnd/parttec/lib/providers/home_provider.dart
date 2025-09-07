@@ -7,7 +7,7 @@ import '../models/part.dart';
 import '../utils/session_store.dart';
 
 class HomeProvider with ChangeNotifier {
-  String? _userId; // نخزن المعرف هنا
+  String? _userId;
 
   bool showCars = true;
   String? selectedMake;
@@ -97,8 +97,41 @@ class HomeProvider with ChangeNotifier {
     return _userId;
   }
 
+  List<Part> recommendedParts = [];
+  bool isLoadingRecommendations = false;
+
+  Future<void> fetchRecommendations() async {
+    try {
+      final uid = await SessionStore.userId();
+      isLoadingRecommendations = true;
+      notifyListeners();
+
+      final uri =
+          Uri.parse('${AppSettings.serverurl}/part/getRecommendations/${uid}');
+      final res = await http.get(uri);
+      print('recomendations ${res.body}');
+      if (res.statusCode == 200) {
+        final data = json.decode(res.body);
+
+        if (data['success'] == true && data['recommendations'] is List) {
+          final recs = data['recommendations'] as List;
+          recommendedParts = recs.map((e) => Part.fromJson(e)).toList();
+        } else {
+          recommendedParts = [];
+        }
+      } else {
+        recommendedParts = [];
+      }
+    } catch (e) {
+      recommendedParts = [];
+    } finally {
+      isLoadingRecommendations = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> fetchUserCars() async {
-    final uid = await _getUserId();
+    final uid = await SessionStore.userId();
     if (uid == null || uid.isEmpty) {
       print('⚠️ لم يتم العثور على userId. يرجى تسجيل الدخول.');
       return;
@@ -129,7 +162,7 @@ class HomeProvider with ChangeNotifier {
   }
 
   Future<void> fetchAvailableParts() async {
-    final uid = await _getUserId();
+    final uid = await SessionStore.userId();
     if (uid == null || uid.isEmpty) {
       print('⚠️ لا يوجد userId، لا يمكن تحميل القطع الخاصة.');
       availableParts = [];

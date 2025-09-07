@@ -4,9 +4,10 @@ import 'package:parttec/models/part.dart';
 import '../../widgets/parts_widgets.dart';
 import '../order/MyOrdersDashboard.dart';
 import '../part/add_part_page.dart';
+
 import '../../providers/home_provider.dart';
 import '../cart/cart_page.dart';
-import '../order/my_order_page.dart';
+
 import '../favorites/favorite_parts_page.dart';
 import '../order/user_delivered_orders_page.dart';
 import '../auth/auth_page.dart';
@@ -116,7 +117,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  /// الخطوة الكاملة: افتح الخريطة → خزّن محليًا → أرسل للسيرفر مع userId
   Future<void> _pinUserLocationToProfile() async {
     final picked = await _pickLocationOnMap();
     if (picked == null) return;
@@ -152,7 +152,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     super.initState();
     _serialController = TextEditingController();
     _loadPinnedLocation();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refresh();
+      Provider.of<HomeProvider>(context, listen: false).fetchRecommendations();
+    });
   }
 
   @override
@@ -297,10 +301,41 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                               setState(() => _selectedCategoryIndex = i),
                         ),
                       ),
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                          child: _SectionTitle(title: 'قطع مقترحة لك'),
+                        ),
+                      ),
 
-                      // ===== النتائج =====
+                      SliverToBoxAdapter(
+                        child: Consumer<HomeProvider>(
+                          builder: (context, prov, _) {
+                            if (prov.isLoadingRecommendations) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            }
+                            if (prov.recommendedParts.isEmpty) {
+                              return Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Text('لا توجد اقتراحات حالياً',
+                                    style: TextStyle(color: Colors.grey[600])),
+                              );
+                            }
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              child: SizedBox(
+                                height:
+                                    MediaQuery.of(context).size.height * 0.42,
+                                child: PartsGrid(parts: prov.recommendedParts),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+
                       if (_serialSearchQuery.isNotEmpty) ...[
-                        // نتائج البحث بالرقم التسلسلي
                         SliverToBoxAdapter(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
@@ -326,7 +361,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           ),
                         ),
                       ] else ...[
-                        // عرض القطع حسب الفئة المختارة
                         SliverToBoxAdapter(
                           child: Padding(
                             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
