@@ -11,15 +11,15 @@ import '../../theme/app_theme.dart';
 import '../../utils/session_store.dart';
 import '../home/home_page.dart';
 import '../supplier/supplier_dashboard.dart';
-import 'my_order_page.dart';
 
 class OrderSummaryPage extends StatefulWidget {
   final List<CartItem> items;
   final double total;
   final LatLng location;
+
   final String paymentMethod;
 
-  const OrderSummaryPage({
+  OrderSummaryPage({
     Key? key,
     required this.items,
     required this.total,
@@ -40,6 +40,17 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
   void initState() {
     super.initState();
     _fetchAddress();
+
+    if (widget.items.isNotEmpty) {
+      final firstPartId = widget.items.first.part.id; // 🆕 partId من أول عنصر
+      Future.microtask(() {
+        context.read<OrderProvider>().fetchDeliveryPricing(
+              partId: firstPartId,
+              toLat: widget.location.latitude,
+              toLon: widget.location.longitude,
+            );
+      });
+    }
   }
 
   Future<void> _fetchAddress() async {
@@ -48,10 +59,8 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
     try {
       final uri = Uri.parse(
           'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=jsonv2');
-      final response = await http.get(uri, headers: {
-
-        'User-Agent': 'parttec-app/1.0 (https://example.com)'
-      });
+      final response = await http.get(uri,
+          headers: {'User-Agent': 'parttec-app/1.0 (https://example.com)'});
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
@@ -73,13 +82,29 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
   }
 
   Future<void> _confirmOrder() async {
+    // إذا كانت تكلفة التوصيل مازالت تُحسب أو غير متاحة، امنع الإرسال
+    final orderProvider = context.read<OrderProvider>();
+    if (orderProvider.loadingDelivery) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('⏳ يرجى انتظار حساب تكلفة التوصيل...')),
+      );
+      return;
+    }
+    final deliveryFee = orderProvider.deliveryPrice;
+    if (deliveryFee == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('⚠️ فشل في جلب تكلفة التوصيل')),
+      );
+      return;
+    }
+
     setState(() {
       _isSending = true;
     });
 
-    final orderProvider = context.read<OrderProvider>();
     final coords = [widget.location.longitude, widget.location.latitude];
-    await orderProvider.sendOrder(coords);
+
+    await orderProvider.sendOrder(coords, deliveryFee);
 
     if (!mounted) return;
 
@@ -93,32 +118,32 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
       return;
     }
 
-
     await context.read<CartProvider>().fetchCartFromServer();
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('✅ تم إرسال الطلب بنجاح')),
     );
 
-
     final role = await SessionStore.role();
-
     if (!mounted) return;
+
     if (role == 'seller') {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const SupplierDashboard()),
-            (route) => false,
+        (route) => false,
       );
     } else {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const HomePage()),
-            (route) => false,
+        (route) => false,
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final orderProv = context.watch<OrderProvider>();
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -130,6 +155,7 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 🗺️ كرت الموقع
               Card(
                 margin: const EdgeInsets.only(bottom: 16),
                 child: Padding(
@@ -171,7 +197,8 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                   ),
                 ),
               ),
-              // جدول الفاتورة
+
+              // 💰 كرت الفاتورة
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(12),
@@ -197,12 +224,11 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                               .map(
                                 (item) => DataRow(
                                   cells: [
-                                    DataCell(Text(
-                                        item.part.name,
+                                    DataCell(Text(item.part.name,
                                         overflow: TextOverflow.ellipsis)),
                                     DataCell(Text(item.quantity.toString())),
-                                    DataCell(Text(item.part.price
-                                        .toStringAsFixed(2))),
+                                    DataCell(Text(
+                                        item.part.price.toStringAsFixed(2))),
                                     DataCell(Text(
                                         (item.part.price * item.quantity)
                                             .toStringAsFixed(2))),
@@ -213,32 +239,68 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Spacer(),
-                          const Text(
-                            'المجموع الكلي:',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            widget.total.toStringAsFixed(2),
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                        ],
-                      ),
+                      if (orderProv.loadingDelivery) ...[
+                        const SizedBox(height: 8),
+                        const Row(
+                          children: [
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            SizedBox(width: 8),
+                            Text('جاري حساب تكلفة التوصيل...'),
+                          ],
+                        ),
+                      ] else if (orderProv.deliveryPrice != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                            'المسافة: ${orderProv.distanceKm!.toStringAsFixed(2)} كم'),
+                        const SizedBox(height: 4),
+                        Text(
+                            'الوقت المقدر: ${orderProv.durationMin!.toStringAsFixed(1)} دقيقة'),
+                        const SizedBox(height: 4),
+                        Text(
+                          'تكلفة التوصيل: ${orderProv.deliveryPrice!.toStringAsFixed(2)} USD',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const Divider(),
+                        Row(
+                          children: [
+                            const Spacer(),
+                            const Text(
+                              'المجموع مع التوصيل:',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              (widget.total + orderProv.deliveryPrice!)
+                                  .toStringAsFixed(2),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                          ],
+                        ),
+                      ] else if (orderProv.deliveryError != null) ...[
+                        Text('⚠️ ${orderProv.deliveryError}'),
+                      ] else ...[
+                        const Text('لا يوجد بيانات للتوصيل'),
+                      ],
                     ],
                   ),
                 ),
               ),
+
               const SizedBox(height: 20),
+
+              // ✅ أزرار
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: _isSending ? null : () => Navigator.pop(context),
+                      onPressed:
+                          _isSending ? null : () => Navigator.pop(context),
                       child: const Text('إلغاء'),
                     ),
                   ),
