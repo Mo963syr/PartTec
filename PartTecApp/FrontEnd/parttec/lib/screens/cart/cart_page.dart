@@ -315,13 +315,34 @@ class _CartPageState extends State<CartPage> {
                                   const SizedBox(width: AppSpaces.md),
                                   Expanded(
                                     child: ElevatedButton.icon(
-                                      onPressed: () => Navigator.of(context)
-                                          .push(
-                                            MaterialPageRoute(
-                                              builder: (_) => PaymentTestPage(),
-                                            ),
-                                          )
-                                          .then((_) {}),
+                                      onPressed: () async {
+                                        final uid = await SessionStore.userId();
+                                        if (uid == null || uid.isEmpty) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                                content: Text(
+                                                    '⚠️ الرجاء تسجيل الدخول أولاً')),
+                                          );
+                                          return;
+                                        }
+
+                                        final LatLng? location =
+                                            await Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                LocationPickerPage(userId: uid),
+                                          ),
+                                        );
+
+                                        if (location != null) {
+                                          _confirmOrderWithLocation(
+                                            context,
+                                            location,
+                                            'الدفع بالبطاقة',
+                                          );
+                                        }
+                                      },
                                       icon: const Icon(Icons.credit_card),
                                       label: const Text('الدفع بالبطاقة'),
                                       style: ElevatedButton.styleFrom(
