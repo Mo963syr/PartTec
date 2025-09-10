@@ -5,7 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 @pragma('vm:entry-point')
-Future<void> _firebaseBgHandler(RemoteMessage message) async {
+Future<void> _bgHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
 }
 
@@ -21,62 +21,50 @@ class PushNotifications {
   );
 
   static Future<void> init() async {
-    FirebaseMessaging.onBackgroundMessage(_firebaseBgHandler);
+    FirebaseMessaging.onBackgroundMessage(_bgHandler);
 
-    await _fcm.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      provisional: false,
-    );
+    await _fcm.requestPermission(alert: true, badge: true, sound: true);
 
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
     const initSettings = InitializationSettings(android: androidInit);
-    await _local.initialize(
-      initSettings,
-      onDidReceiveNotificationResponse: (resp) async {},
-    );
+    await _local.initialize(initSettings);
 
     await _local
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(_androidChannel);
 
-    FirebaseMessaging.onMessage.listen((RemoteMessage msg) async {
-      final notif = msg.notification;
-      if (notif != null && !Platform.isIOS) {
+    FirebaseMessaging.onMessage.listen((msg) async {
+      final n = msg.notification;
+      if (n != null && !Platform.isIOS) {
         await _local.show(
-          notif.hashCode,
-          notif.title,
-          notif.body,
+          n.hashCode,
+          n.title,
+          n.body,
           NotificationDetails(
             android: AndroidNotificationDetails(
               _androidChannel.id,
               _androidChannel.name,
               channelDescription: _androidChannel.description,
-              priority: Priority.max,
               importance: Importance.max,
+              priority: Priority.max,
             ),
           ),
           payload: msg.data.toString(),
         );
       }
     });
-
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage msg) {});
-
-    final initialMsg = await _fcm.getInitialMessage();
-    if (initialMsg != null) {}
   }
 
-  static Future<String?> getTokenAndPrint() async {
-    final token = await _fcm.getToken();
-    debugPrint('FCM TOKEN: $token');
-    return token;
+  static String _sellerTopic(String supplierId) {
+    return 'seller-${supplierId.replaceAll(RegExp(r'[^a-zA-Z0-9_\-\.~%]'), '_')}';
   }
 
-  static Future<void> subscribeRole(String role) =>
-      _fcm.subscribeToTopic('role-$role');
+  static Future<void> subscribeSupplier(String supplierId) async {
+    await _fcm.subscribeToTopic(_sellerTopic(supplierId));
+  }
 
-  static Future<void> subscribeAll() => _fcm.subscribeToTopic('all');
+  static Future<void> unsubscribeSupplier(String supplierId) async {
+    await _fcm.unsubscribeFromTopic(_sellerTopic(supplierId));
+  }
 }
