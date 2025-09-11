@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../utils/app_settings.dart';
 import '../utils/session_store.dart';
 
@@ -21,23 +22,45 @@ class AuthProvider extends ChangeNotifier {
     await SessionStore.save(userId: uid, role: r);
     userId = uid;
     role = r;
+
+    if (role == 'seller' && userId != null) {
+      await FirebaseMessaging.instance.subscribeToTopic("seller_$userId");
+      if (kDebugMode) {
+        print("✅ Subscribed to topic seller_$userId");
+      }
+    }
+
     notifyListeners();
   }
 
   Future<void> loadSession() async {
     userId = await SessionStore.userId();
     role = await SessionStore.role();
+
+    if (role == 'seller' && userId != null) {
+      await FirebaseMessaging.instance.subscribeToTopic("seller_$userId");
+      if (kDebugMode) {
+        print("🔄 Re-subscribed to topic seller_$userId");
+      }
+    }
+
     notifyListeners();
   }
 
   Future<void> logout() async {
+    if (role == 'seller' && userId != null) {
+      await FirebaseMessaging.instance.unsubscribeFromTopic("seller_$userId");
+      if (kDebugMode) {
+        print("🚫 Unsubscribed from topic seller_$userId");
+      }
+    }
+
     await SessionStore.clear();
     userId = null;
     role = null;
     notifyListeners();
   }
 
-  // -------- REGISTER --------
   Future<Map?> register({
     required String name,
     required String email,
@@ -86,7 +109,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // -------- LOGIN --------
   Future<Map?> login({
     required String email,
     required String password,

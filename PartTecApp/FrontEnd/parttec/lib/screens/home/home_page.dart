@@ -4,10 +4,8 @@ import 'package:parttec/models/part.dart';
 import '../../widgets/parts_widgets.dart';
 import '../order/MyOrdersDashboard.dart';
 import '../part/add_part_page.dart';
-
 import '../../providers/home_provider.dart';
 import '../cart/cart_page.dart';
-
 import '../favorites/favorite_parts_page.dart';
 import '../order/user_delivered_orders_page.dart';
 import '../auth/auth_page.dart';
@@ -19,7 +17,6 @@ import '../../providers/user_provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
-
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -27,9 +24,12 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   int _selectedIndex = 2;
 
+  // نستخدم نفس الكنترولر
   late final TextEditingController _serialController;
-  String _serialSearchQuery = '';
-  List<Part> _serialSearchResults = [];
+
+  // حقول البحث الجديدة
+  String _searchQuery = '';
+  List<Part> _searchResults = [];
 
   final List<Map<String, dynamic>> _categories = const [
     {'label': 'محرك', 'icon': Icons.settings},
@@ -40,22 +40,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     {'label': 'نظام التعليق', 'icon': Icons.sync_alt},
   ];
   int _selectedCategoryIndex = 0;
-
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  LatLng? _pinnedLocation;
 
   Future<void> _logout() async {
-    try {
-      await SessionStore.clear();
-      if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const AuthPage()),
-        (route) => false,
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('تعذّر تسجيل الخروج: $e')),
-      );
-    }
+    await SessionStore.clear();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const AuthPage()),
+      (route) => false,
+    );
   }
 
   Future<bool> _confirmLogout() async {
@@ -79,8 +73,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     return res ?? false;
   }
 
-  LatLng? _pinnedLocation;
-
   Future<void> _loadPinnedLocation() async {
     final prefs = await SharedPreferences.getInstance();
     final lat = prefs.getDouble('user_lat');
@@ -98,8 +90,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   Future<LatLng?> _pickLocationOnMap() async {
-    final initial =
-        _pinnedLocation ?? const LatLng(33.5138, 36.2765); // افتراضي
+    final initial = _pinnedLocation ?? const LatLng(33.5138, 36.2765);
     return await showModalBottomSheet<LatLng>(
       context: context,
       isScrollControlled: true,
@@ -120,30 +111,23 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Future<void> _pinUserLocationToProfile() async {
     final picked = await _pickLocationOnMap();
     if (picked == null) return;
-
     await _savePinnedLocationLocal(picked);
-
     if (!mounted) return;
     final userProv = Provider.of<UserProvider>(context, listen: false);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('جاري حفظ موقعك في الحساب...')),
-    );
-
+        const SnackBar(content: Text('جاري حفظ موقعك في الحساب...')));
     final ok = await userProv.updateUserLocation(
       lat: picked.latitude,
       lng: picked.longitude,
     );
-
     if (!mounted) return;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم حفظ موقعك في الحساب بنجاح')),
-      );
+          const SnackBar(content: Text('تم حفظ موقعك في الحساب بنجاح')));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(userProv.error ?? 'تعذّر حفظ الموقع')),
-      );
+          SnackBar(content: Text(userProv.error ?? 'تعذّر حفظ الموقع')));
     }
   }
 
@@ -152,7 +136,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     super.initState();
     _serialController = TextEditingController();
     _loadPinnedLocation();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refresh();
       Provider.of<HomeProvider>(context, listen: false).fetchRecommendations();
@@ -171,21 +154,38 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     await provider.fetchAvailableParts();
   }
 
-  void _performSerialSearch() {
-    final provider = Provider.of<HomeProvider>(context, listen: false);
-    final query = _serialController.text.trim();
+  // مقارنة البحث: بالاسم والرقم التسلسلي
+  bool _matchesPart(Part part, String q) {
+    final qq = q.trim().toLowerCase();
+    if (qq.isEmpty) return false;
 
+    final name = (part.name ?? '').trim().toLowerCase();
+    final sn = (part.serialNumber ?? '').trim().toLowerCase();
+
+    final byName = name.contains(qq);
+    final bySerial = sn == qq || sn.contains(qq);
+
+    return byName || bySerial;
+  }
+
+  void _performSearch() {
+    final provider = Provider.of<HomeProvider>(context, listen: false);
+    final query = _serialController.text;
     setState(() {
-      _serialSearchQuery = query;
-      if (query.isNotEmpty) {
-        _serialSearchResults = provider.availableParts
-            .where((part) =>
-                part.serialNumber != null &&
-                part.serialNumber!.trim().toLowerCase() == query.toLowerCase())
-            .toList();
-      } else {
-        _serialSearchResults = [];
-      }
+      _searchQuery = query;
+      _searchResults = query.trim().isEmpty
+          ? []
+          : provider.availableParts
+              .where((p) => _matchesPart(p, query))
+              .toList();
+    });
+  }
+
+  void _clearSearch() {
+    _serialController.clear();
+    setState(() {
+      _searchQuery = '';
+      _searchResults = [];
     });
   }
 
@@ -197,18 +197,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         .toList();
   }
 
-  void _clearSerialSearch() {
-    _serialController.clear();
-    setState(() {
-      _serialSearchQuery = '';
-      _serialSearchResults = [];
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<HomeProvider>(context);
-
     return Scaffold(
       key: _scaffoldKey,
       body: Stack(
@@ -255,11 +246,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           background: _HeaderGlow(),
                         ),
                       ),
-
+                      // الهيدر المثبت مع تقليص الارتفاع الأدنى لإزالة الفراغ
                       SliverPersistentHeader(
                         pinned: true,
                         delegate: _SearchBarHeader(
-                          minExtent: 120,
+                          minExtent: 72, // كان 120
                           maxExtent: 120,
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -269,8 +260,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     const EdgeInsets.symmetric(horizontal: 16),
                                 child: _FloatingSearchBar(
                                   controller: _serialController,
-                                  onSearch: _performSerialSearch,
-                                  onClear: _clearSerialSearch,
+                                  onSearch: _performSearch,
+                                  onClear: _clearSearch,
+                                  onChanged: (_) =>
+                                      setState(() {}), // لتحديث زر المسح
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -307,7 +300,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           child: _SectionTitle(title: 'قطع مقترحة لك'),
                         ),
                       ),
-
                       SliverToBoxAdapter(
                         child: Consumer<HomeProvider>(
                           builder: (context, prov, _) {
@@ -322,28 +314,34 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     style: TextStyle(color: Colors.grey[600])),
                               );
                             }
-                            return Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child: SizedBox(
-                                height:
-                                    MediaQuery.of(context).size.height * 0.42,
-                                child: PartsGrid(parts: prov.recommendedParts),
+                            return SizedBox(
+                              height: 260,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                reverse: true,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                itemCount: prov.recommendedParts.length,
+                                itemBuilder: (_, i) {
+                                  return SizedBox(
+                                      width: 180,
+                                      child: PartCard(
+                                          part: prov.recommendedParts[i]));
+                                },
                               ),
                             );
                           },
                         ),
                       ),
-
-                      if (_serialSearchQuery.isNotEmpty) ...[
+                      if (_searchQuery.isNotEmpty) ...[
                         SliverToBoxAdapter(
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 10),
                             child: _SectionTitle(
-                              title: 'نتائج الرقم التسلسلي',
+                              title: 'نتائج البحث',
                               trailing: Text(
-                                '${_serialSearchResults.length} نتيجة',
+                                '${_searchResults.length} نتيجة',
                                 style: TextStyle(
                                     color: Colors.grey[600],
                                     fontWeight: FontWeight.w600),
@@ -352,11 +350,19 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           ),
                         ),
                         SliverToBoxAdapter(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: SizedBox(
-                              height: MediaQuery.of(context).size.height * 0.45,
-                              child: PartsGrid(parts: _serialSearchResults),
+                          child: SizedBox(
+                            height: 260,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              reverse: true,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: _searchResults.length,
+                              itemBuilder: (_, i) {
+                                return SizedBox(
+                                    width: 180,
+                                    child: PartCard(part: _searchResults[i]));
+                              },
                             ),
                           ),
                         ),
@@ -370,20 +376,26 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           ),
                         ),
                         SliverToBoxAdapter(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: SizedBox(
-                              height: MediaQuery.of(context).size.height * 0.48,
-                              child: PartsGrid(
-                                parts:
-                                    _filterByCategory(provider.availableParts),
-                              ),
+                          child: SizedBox(
+                            height: 260,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              reverse: true,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount:
+                                  _filterByCategory(provider.availableParts)
+                                      .length,
+                              itemBuilder: (_, i) {
+                                final part = _filterByCategory(
+                                    provider.availableParts)[i];
+                                return SizedBox(
+                                    width: 180, child: PartCard(part: part));
+                              },
                             ),
                           ),
                         ),
                       ],
-
-                      // 🚗 "سياراتي" — سلايدر جذّاب + تبويب الإضافة
                       SliverToBoxAdapter(
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 140),
@@ -425,7 +437,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       : 'Lat: ${_pinnedLocation!.latitude.toStringAsFixed(6)}, Lng: ${_pinnedLocation!.longitude.toStringAsFixed(6)}',
                 ),
                 onTap: () async {
-                  Navigator.of(context).pop(); // إغلاق القائمة
+                  Navigator.of(context).pop();
                   await _pinUserLocationToProfile();
                 },
               ),
@@ -435,7 +447,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ),
         ),
       ),
-
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(context,
@@ -447,8 +458,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         label: const Text('إضافة قطعة'),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-
-      // شريط سفلي
       bottomNavigationBar: _buildBottomAppBar(),
     );
   }
@@ -530,7 +539,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
 class _GradientBackground extends StatelessWidget {
   const _GradientBackground();
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -552,7 +560,6 @@ class _GradientBackground extends StatelessWidget {
 
 class _HeaderGlow extends StatelessWidget {
   const _HeaderGlow();
-
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -583,25 +590,20 @@ class _HeaderGlow extends StatelessWidget {
   }
 }
 
-// ===== شريط البحث المثبّت (مع ضبط الارتفاع) =====
 class _SearchBarHeader extends SliverPersistentHeaderDelegate {
   final double _minExtent;
   final double _maxExtent;
   final Widget child;
-
   _SearchBarHeader({
     required double minExtent,
     required double maxExtent,
     required this.child,
   })  : _minExtent = minExtent,
         _maxExtent = maxExtent;
-
   @override
   double get minExtent => _minExtent;
-
   @override
   double get maxExtent => _maxExtent;
-
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
@@ -621,18 +623,18 @@ class _SearchBarHeader extends SliverPersistentHeaderDelegate {
   }
 }
 
-// ===== شريط بحث مُحسّن مع زر مسح =====
 class _FloatingSearchBar extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSearch;
   final VoidCallback? onClear;
+  final ValueChanged<String>? onChanged; // جديد
 
   const _FloatingSearchBar({
     required this.controller,
     required this.onSearch,
     this.onClear,
+    this.onChanged, // جديد
   });
-
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -643,8 +645,9 @@ class _FloatingSearchBar extends StatelessWidget {
         controller: controller,
         textInputAction: TextInputAction.search,
         onSubmitted: (_) => onSearch(),
+        onChanged: onChanged, // لتحديث أيقونات الحقل لحظيًا
         decoration: InputDecoration(
-          hintText: 'ابحث بالرقم التسلسلي...',
+          hintText: 'ابحث بالاسم أو الرقم التسلسلي...',
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -671,13 +674,10 @@ class _FloatingSearchBar extends StatelessWidget {
   }
 }
 
-// ===== عنوان قسم بسيط =====
 class _SectionTitle extends StatelessWidget {
   final String title;
   final Widget? trailing;
-
   const _SectionTitle({required this.title, this.trailing});
-
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -695,7 +695,6 @@ class _VisibilityToggle extends StatelessWidget {
   final bool isPrivate;
   final ValueChanged<bool> onChanged;
   const _VisibilityToggle({required this.isPrivate, required this.onChanged});
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -751,13 +750,11 @@ class _CategoryChipsBar extends StatelessWidget {
   final List<Map<String, dynamic>> categories;
   final int selectedIndex;
   final ValueChanged<int> onChanged;
-
   const _CategoryChipsBar({
     required this.categories,
     required this.selectedIndex,
     required this.onChanged,
   });
-
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -818,7 +815,6 @@ class _MyCarsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = Provider.of<HomeProvider>(context);
     final cars = provider.userCars;
-
     return Card(
       elevation: 8,
       shadowColor: Colors.black12,
@@ -857,14 +853,12 @@ class _MyCarsSection extends StatelessWidget {
                 child: TabBarView(
                   physics: const BouncingScrollPhysics(),
                   children: [
-                    // سلايدر جذّاب للسيارات
                     cars.isEmpty
                         ? Center(
                             child: Text(
                                 'لا توجد سيارات بعد — أضِف سيارتك من التبويب التالي.',
                                 style: TextStyle(color: Colors.grey[700])))
                         : _CarsSlider(cars: cars),
-                    // نموذج الإضافة/التحديث (كما هو)
                     const SingleChildScrollView(child: _CarFormCard()),
                   ],
                 ),
@@ -880,7 +874,6 @@ class _MyCarsSection extends StatelessWidget {
 class _CarsSlider extends StatefulWidget {
   final List<dynamic> cars;
   const _CarsSlider({required this.cars});
-
   @override
   State<_CarsSlider> createState() => _CarsSliderState();
 }
@@ -888,7 +881,6 @@ class _CarsSlider extends StatefulWidget {
 class _CarsSliderState extends State<_CarsSlider> {
   final PageController _page = PageController(viewportFraction: 0.86);
   int _index = 0;
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -903,7 +895,6 @@ class _CarsSliderState extends State<_CarsSlider> {
               final c = widget.cars[i];
               final title = '${c['manufacturer']} ${c['model']}';
               final sub = 'سنة ${c['year']} • ${c['fuel'] ?? 'غير محدد'}';
-
               return AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
                 margin: EdgeInsets.only(
@@ -972,7 +963,6 @@ class _CarsSliderState extends State<_CarsSlider> {
                           ],
                         ),
                       ),
-                      // أزرار سريعة (شكل فقط)
                       Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -1018,7 +1008,6 @@ class _CarsSliderState extends State<_CarsSlider> {
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
       );
-
   Widget _miniBtn({required IconData icon, String? tooltip}) => Tooltip(
         message: tooltip ?? '',
         child: InkWell(
@@ -1037,7 +1026,6 @@ class _CarsSliderState extends State<_CarsSlider> {
 
 class _CarFormCard extends StatelessWidget {
   const _CarFormCard();
-
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<HomeProvider>(context);
@@ -1124,7 +1112,6 @@ class _CarFormCard extends StatelessWidget {
 class _CardHeader extends StatelessWidget {
   final String title;
   const _CardHeader({required this.title});
-
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -1144,16 +1131,14 @@ class _CardHeader extends StatelessWidget {
 
 class _LocationPickerSheet extends StatefulWidget {
   const _LocationPickerSheet();
-
   @override
   State<_LocationPickerSheet> createState() => _LocationPickerSheetState();
 }
 
 class _LocationPickerSheetState extends State<_LocationPickerSheet> {
   final MapController _map = MapController();
-  LatLng _center = const LatLng(33.5138, 36.2765); // افتراضي
+  LatLng _center = const LatLng(33.5138, 36.2765);
   LatLng? _picked;
-
   @override
   void initState() {
     super.initState();

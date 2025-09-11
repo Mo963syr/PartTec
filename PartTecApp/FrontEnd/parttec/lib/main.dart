@@ -19,6 +19,7 @@ import 'providers/reviews_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/delivery_orders_provider.dart';
 import 'theme/app_theme.dart';
+import './screens/splashscreen/splash_screen.dart';
 import 'screens/auth/auth_page.dart';
 import 'providers/user_provider.dart';
 import 'screens/home/home_page.dart';
@@ -138,61 +139,6 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
       home: const SplashPage(),
-    );
-  }
-}
-
-class SplashPage extends StatefulWidget {
-  const SplashPage({Key? key}) : super(key: key);
-
-  @override
-  State<SplashPage> createState() => _SplashPageState();
-}
-
-class _SplashPageState extends State<SplashPage> {
-  @override
-  void initState() {
-    super.initState();
-    _checkSession();
-  }
-
-  Future<void> _checkSession() async {
-    final userId = await SessionStore.userId();
-    final role = await SessionStore.role();
-
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (!mounted) return;
-
-    if (userId == null || role == null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const AuthPage()),
-      );
-    } else {
-      Widget next;
-      switch (role) {
-        case 'seller':
-          next = const SupplierDashboard();
-          break;
-        case 'delevery':
-          next = const DeliveryDashboard();
-          break;
-        default:
-          next = const HomePage();
-      }
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => next),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
     );
   }
 }
