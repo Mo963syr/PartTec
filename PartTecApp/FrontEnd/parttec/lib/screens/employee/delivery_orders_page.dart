@@ -141,56 +141,56 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
         body: provider.isLoading
             ? const Center(child: CircularProgressIndicator())
             : provider.error != null
-            ? Center(child: Text(provider.error!))
-            : TabBarView(
-          controller: _tabController,
-          children: _tabs.map((tab) {
-            final status = _mapTabToStatus(tab);
-            final filtered = provider.orders
-                .where((o) => (o['status'] ?? '') == status)
-                .toList();
+                ? Center(child: Text(provider.error!))
+                : TabBarView(
+                    controller: _tabController,
+                    children: _tabs.map((tab) {
+                      final status = _mapTabToStatus(tab);
+                      final filtered = provider.orders
+                          .where((o) => (o['status'] ?? '') == status)
+                          .toList();
 
-            if (filtered.isEmpty) {
-              return RefreshIndicator(
-                onRefresh: () => provider.fetchOrders(status),
-                child: ListView(
-                  children: const [
-                    SizedBox(height: 120),
-                    Center(
-                      child: Text('لا توجد طلبات بحالة "طلبات جديدة"'),
-                    ),
-                  ],
-                ),
-              );
-            }
+                      if (filtered.isEmpty) {
+                        return RefreshIndicator(
+                          onRefresh: () => provider.fetchOrders(status),
+                          child: ListView(
+                            children: const [
+                              SizedBox(height: 120),
+                              Center(
+                                child:
+                                    Text('لا توجد طلبات بحالة "طلبات جديدة"'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
 
-            return RefreshIndicator(
-              onRefresh: () => provider.fetchOrders(status),
-              child: ListView.builder(
-                itemCount: filtered.length,
-                itemBuilder: (context, index) {
-                  final order =
-                  filtered[index] as Map<String, dynamic>;
-                  final orderNumber = index + 1;
-                  return _buildOrderCard(context, order, provider, tab, orderNumber);
-
-                },
-              ),
-            );
-          }).toList(),
-        ),
+                      return RefreshIndicator(
+                        onRefresh: () => provider.fetchOrders(status),
+                        child: ListView.builder(
+                          itemCount: filtered.length,
+                          itemBuilder: (context, index) {
+                            final order =
+                                filtered[index] as Map<String, dynamic>;
+                            final orderNumber = index + 1;
+                            return _buildOrderCard(
+                                context, order, provider, tab, orderNumber);
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
       ),
     );
   }
-  Widget _buildOrderCard(
-      BuildContext context,
-      Map<String, dynamic> order,
-      DeliveryOrdersProvider provider,
-      String tab,
-      int orderNumber,
-      )
 
-{
+  Widget _buildOrderCard(
+    BuildContext context,
+    Map<String, dynamic> order,
+    DeliveryOrdersProvider provider,
+    String tab,
+    int orderNumber,
+  ) {
     final status = (order['status'] ?? '').toString();
     final String orderId = (order['orderId'] ?? order['_id'] ?? '').toString();
 
@@ -204,9 +204,8 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
     final coords = _extractCoordinates(order);
     final province = (order['delivery']?['province'] ?? '').toString();
 
-    final part = (order['part'] is Map)
-        ? Map<String, dynamic>.from(order['part'])
-        : {};
+    final part =
+        (order['part'] is Map) ? Map<String, dynamic>.from(order['part']) : {};
     final part1 = (order['part1'] is Map)
         ? Map<String, dynamic>.from(order['part1'])
         : {};
@@ -219,7 +218,6 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
           (part1['name']?.toString() ?? '').trim() != 'قطعة غير معروفة')
         part1.cast<String, dynamic>(),
     ];
-
 
     double partsTotal = 0;
     for (final p in partsToShow) {
@@ -252,8 +250,6 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
             Text("الحالة: $status"),
           ],
         ),
-
-
         children: [
           // ✅ لا نعرض بيانات البائع والزبون إذا الحالة "موافق عليها"
           if (status != 'موافق عليها') ...[
@@ -270,16 +266,15 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
           ],
 
           if (partsToShow.isNotEmpty) ...[
-            const Text("القطع:",
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text("القطع:", style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
             ...partsToShow.map((p) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Text(
-                "${p['name']} - ${p['manufacturer']} - السعر: ${p['price']}",
-                style: const TextStyle(fontSize: 14),
-              ),
-            )),
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Text(
+                    "${p['name']} - ${p['manufacturer']} - السعر: ${p['price']}",
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                )),
           ],
           const SizedBox(height: 8),
 
@@ -296,7 +291,6 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
             ),
             const Divider(),
           ],
-
 
           FutureBuilder<String>(
             future: _fetchAndCacheAddress(order),
@@ -334,7 +328,6 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
 
           const SizedBox(height: 12),
 
-
           if (tab == 'طلبات جديدة' && status == 'موافق عليها') ...[
             Center(
               child: ElevatedButton(
@@ -347,7 +340,8 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
                     builder: (dialogContext) => AlertDialog(
                       title: const Text('إدخال سعر التوصيل'),
                       content: TextField(
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
                         decoration: const InputDecoration(labelText: 'السعر'),
                         onChanged: (value) => price = double.tryParse(value),
                       ),
@@ -359,7 +353,8 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
                         TextButton(
                           onPressed: () async {
                             if (price != null && price! > 0) {
-                              await provider.acceptOrder(orderId, price!, pageContext);
+                              await provider.acceptOrder(
+                                  orderId, price!, pageContext);
                               if (!mounted) return;
                               Navigator.pop(dialogContext);
                               await _refreshCurrentTab();
@@ -378,7 +373,8 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
             Center(
               child: ElevatedButton(
                 onPressed: () async {
-                  await provider.updateStatus(orderId, 'على الطريق', context: context);
+                  await provider.updateStatus(orderId, 'على الطريق',
+                      context: context);
                   if (!mounted) return;
                   await _refreshCurrentTab();
                 },
@@ -389,7 +385,8 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
             Center(
               child: ElevatedButton(
                 onPressed: () async {
-                  await provider.updateStatus(orderId, 'تم التوصيل', context: context);
+                  await provider.updateStatus(orderId, 'تم التوصيل',
+                      context: context);
                   if (!mounted) return;
                   await _refreshCurrentTab();
                 },
@@ -397,7 +394,6 @@ class _DeliveryOrdersPageState extends State<DeliveryOrdersPage>
               ),
             ),
           ],
-
         ],
       ),
     );

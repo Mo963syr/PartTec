@@ -246,12 +246,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           background: _HeaderGlow(),
                         ),
                       ),
-                      // الهيدر المثبت مع تقليص الارتفاع الأدنى لإزالة الفراغ
                       SliverPersistentHeader(
                         pinned: true,
                         delegate: _SearchBarHeader(
-                          minExtent: 72, // كان 120
-                          maxExtent: 120,
+                          minExtent: 128,
+                          maxExtent: 128,
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
